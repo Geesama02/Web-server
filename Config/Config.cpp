@@ -1,24 +1,19 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   Config.hpp                                         :+:      :+:    :+:   */
+/*   Config.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2024/12/21 15:07:06 by oait-laa          #+#    #+#             */
-/*   Updated: 2024/12/22 11:25:25 by oait-laa         ###   ########.fr       */
+/*   Created: 2024/12/22 11:25:38 by oait-laa          #+#    #+#             */
+/*   Updated: 2024/12/22 11:29:31 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "Server.hpp"
+#include "Config.hpp"
 
-class Config {
-    private:
-        std::vector<Server> Servers;
-    public:
-        // Getters
-        std::vector<Server> getServer();
+// Getters
+std::vector<Server> Config::getServer() { return Servers; }
 
-        // Setters
-        void addServer(Server new_server);
-};
+// Setters
+void Config::addServer(Server new_server) { Servers.push_back(new_server); }
