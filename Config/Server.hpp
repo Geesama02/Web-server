@@ -6,9 +6,12 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/21 15:09:59 by oait-laa          #+#    #+#             */
-/*   Updated: 2024/12/22 10:49:42 by oait-laa         ###   ########.fr       */
+/*   Updated: 2024/12/23 11:29:46 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
+
+#ifndef SERVER_HPP
+#define SERVER_HPP
 
 #include "Location.hpp"
 
@@ -55,3 +58,5 @@ class Server {
         void setRedirect(std::string& page);
         void addLocation(Location& new_location);
 };
+
+#endif

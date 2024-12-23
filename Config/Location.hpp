@@ -6,9 +6,12 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/21 16:52:32 by oait-laa          #+#    #+#             */
-/*   Updated: 2024/12/22 11:17:15 by oait-laa         ###   ########.fr       */
+/*   Updated: 2024/12/23 11:30:03 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
+
+#ifndef LOCATION_HPP
+#define LOCATION_HPP
 
 #include <iostream>
 #include <vector>
@@ -22,6 +25,7 @@ class Location {
         std::string index;
         bool autoindex;
         std::string redirect;
+        std::string cgi;
     public:
         // Constructor
         Location();
@@ -34,6 +38,7 @@ class Location {
         bool getAutoindex();
         std::vector<std::string> getAllowedMethods();
         std::string getRedirect();
+        std::string getCgi();
         
         // Setters
         void setURI(std::string& name);
@@ -43,4 +48,7 @@ class Location {
         void setAutoindex(bool n_autoindex);
         void setAllowedMethods(std::vector<std::string>& methods);
         void setRedirect(std::string& page);
+        void setCgi(std::string& page);
 };
+
+#endif

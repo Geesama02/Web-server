@@ -1,6 +1,15 @@
-#include <iostream>
+// #include <iostream>
+#include "Parser/Parser.hpp"
 
-int main()
+int main(int argc, char **argv)
 {
-    std::cout << "hey\n";
+    if (argc > 2)
+    {
+        std::cerr << "Invalid Number of parameters\n";
+        return (1);
+    }
+    Config config;
+    Parser parser(config, argv[1]);
+
+    return (0);
 }

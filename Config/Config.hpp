@@ -6,9 +6,12 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/21 15:07:06 by oait-laa          #+#    #+#             */
-/*   Updated: 2024/12/22 11:25:25 by oait-laa         ###   ########.fr       */
+/*   Updated: 2024/12/23 11:30:18 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
+
+#ifndef CONFIG_HPP
+#define CONFIG_HPP
 
 #include "Server.hpp"
 
@@ -22,3 +25,5 @@ class Config {
         // Setters
         void addServer(Server new_server);
 };
+
+#endif

@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/22 11:17:32 by oait-laa          #+#    #+#             */
-/*   Updated: 2024/12/22 11:22:09 by oait-laa         ###   ########.fr       */
+/*   Updated: 2024/12/23 11:01:30 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -34,6 +34,7 @@ std::string Location::getIndex() { return index; }
 bool Location::getAutoindex() { return autoindex; }
 std::vector<std::string> Location::getAllowedMethods() { return allowed_methods; }
 std::string Location::getRedirect() { return redirect; }
+std::string Location::getCgi() { return cgi; }
 
 // Setters
 void Location::setURI(std::string& n_URI) { root = n_URI; }
@@ -43,3 +44,4 @@ void Location::setIndex(std::string& str) { index = str; }
 void Location::setAutoindex(bool n_autoindex) { autoindex = n_autoindex; }
 void Location::setAllowedMethods(std::vector<std::string>& methods) { allowed_methods = methods; }
 void Location::setRedirect(std::string& page) { redirect = page; }
+void Location::setCgi(std::string& page) { cgi = page; }
