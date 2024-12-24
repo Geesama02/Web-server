@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/21 15:09:59 by oait-laa          #+#    #+#             */
-/*   Updated: 2024/12/23 11:29:46 by oait-laa         ###   ########.fr       */
+/*   Updated: 2024/12/24 16:29:18 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,7 +21,7 @@ class Server {
         std::string host;
         int port;
         std::string root;
-        std::vector<std::string> error_page;
+        std::map<std::vector<int>, std::string> error_page;
         int client_max_body_size;
         std::string index;
         bool autoindex;
@@ -37,7 +37,7 @@ class Server {
         std::string getHost();
         int getPort();
         std::string getRoot();
-        std::vector<std::string> getErrorPage();
+        std::map<std::vector<int>, std::string>& getErrorPage();
         int getClientMaxBodySize();
         std::string getIndex();
         bool getAutoindex();
@@ -50,7 +50,7 @@ class Server {
         void setHost(std::string& new_host);
         void setPort(int n_port);
         void setRoot(std::string& n_root);
-        void setErrorPage(std::vector<std::string>& n_ep);
+        void setErrorPage(std::map<std::vector<int>, std::string>& n_ep);
         void setClientMaxBodySize(int size);
         void setIndex(std::string& str);
         void setAutoindex(bool n_autoindex);

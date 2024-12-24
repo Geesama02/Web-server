@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/21 16:52:32 by oait-laa          #+#    #+#             */
-/*   Updated: 2024/12/23 11:30:03 by oait-laa         ###   ########.fr       */
+/*   Updated: 2024/12/24 14:58:18 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,6 +15,7 @@
 
 #include <iostream>
 #include <vector>
+#include <map>
 
 class Location {
     private:
