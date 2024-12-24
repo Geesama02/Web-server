@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/21 14:31:56 by oait-laa          #+#    #+#             */
-/*   Updated: 2024/12/24 16:52:32 by oait-laa         ###   ########.fr       */
+/*   Updated: 2024/12/24 16:57:56 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -95,6 +95,7 @@ int Parser::fill_server(Config& config, std::vector<std::string>& holder, size_t
             //     }
             //     std::cout << " }, " << it->second << std::endl;
             // }
+            
         }
         else if (holder[index] == "client_max_body_size") {
             if (set_max_body_var(holder, tmp_server, index))
