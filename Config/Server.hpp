@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/21 15:09:59 by oait-laa          #+#    #+#             */
-/*   Updated: 2024/12/24 16:29:18 by oait-laa         ###   ########.fr       */
+/*   Updated: 2024/12/25 17:02:05 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,10 +22,8 @@ class Server {
         int port;
         std::string root;
         std::map<std::vector<int>, std::string> error_page;
-        int client_max_body_size;
+        size_t client_max_body_size;
         std::string index;
-        bool autoindex;
-        std::vector<std::string> allowed_methods;
         std::string redirect;
         std::vector<Location> locations;
     public:
@@ -38,10 +36,8 @@ class Server {
         int getPort();
         std::string getRoot();
         std::map<std::vector<int>, std::string>& getErrorPage();
-        int getClientMaxBodySize();
+        size_t getClientMaxBodySize();
         std::string getIndex();
-        bool getAutoindex();
-        std::vector<std::string> getAllowedMethods();
         std::string getRedirect();
         std::vector<Location> getLocations();
 
@@ -51,10 +47,8 @@ class Server {
         void setPort(int n_port);
         void setRoot(std::string& n_root);
         void setErrorPage(std::map<std::vector<int>, std::string>& n_ep);
-        void setClientMaxBodySize(int size);
+        void setClientMaxBodySize(size_t size);
         void setIndex(std::string& str);
-        void setAutoindex(bool n_autoindex);
-        void setAllowedMethods(std::vector<std::string>& methods);
         void setRedirect(std::string& page);
         void addLocation(Location& new_location);
 };

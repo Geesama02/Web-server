@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/22 11:17:32 by oait-laa          #+#    #+#             */
-/*   Updated: 2024/12/23 11:01:30 by oait-laa         ###   ########.fr       */
+/*   Updated: 2024/12/25 15:47:46 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,8 +16,9 @@
 Location::Location() {
     URI = "/";
     root = "/";
-    error_page.push_back("404");
-    error_page.push_back("/Error_pages/404.html");
+    std::vector<int> err;
+    err.push_back(404);
+    error_page.insert(std::pair<std::vector<int>, std::string>(err, "/Error_pages/404.html"));
     index = "index.html";
     autoindex = true;
     allowed_methods.push_back("POST");
@@ -29,19 +30,21 @@ Location::Location() {
 // Getters
 std::string Location::getURI() { return URI; }
 std::string Location::getRoot() { return root; }
-std::vector<std::string> Location::getErrorPage() { return error_page; }
+std::map<std::vector<int>, std::string>& Location::getErrorPage() { return error_page; }
 std::string Location::getIndex() { return index; }
 bool Location::getAutoindex() { return autoindex; }
-std::vector<std::string> Location::getAllowedMethods() { return allowed_methods; }
+std::vector<std::string>& Location::getAllowedMethods() { return allowed_methods; }
 std::string Location::getRedirect() { return redirect; }
-std::string Location::getCgi() { return cgi; }
+std::vector<std::string>& Location::getCgiPath() { return cgi_path; }
+std::vector<std::string>& Location::getCgiExt() { return cgi_ext; }
 
 // Setters
 void Location::setURI(std::string& n_URI) { root = n_URI; }
 void Location::setRoot(std::string& n_root) { root = n_root; }
-void Location::setErrorPage(std::vector<std::string>& n_ep) { error_page = n_ep; }
+void Location::setErrorPage(std::map<std::vector<int>, std::string>& n_ep) { error_page = n_ep; }
 void Location::setIndex(std::string& str) { index = str; }
 void Location::setAutoindex(bool n_autoindex) { autoindex = n_autoindex; }
 void Location::setAllowedMethods(std::vector<std::string>& methods) { allowed_methods = methods; }
 void Location::setRedirect(std::string& page) { redirect = page; }
-void Location::setCgi(std::string& page) { cgi = page; }
+void Location::addCgiPath(std::string path) { cgi_path.push_back(path); }
+void Location::addCgiExt(std::string ext) { cgi_ext.push_back(ext); }
