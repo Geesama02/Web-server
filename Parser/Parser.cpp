@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/21 14:31:56 by oait-laa          #+#    #+#             */
-/*   Updated: 2024/12/25 17:18:06 by oait-laa         ###   ########.fr       */
+/*   Updated: 2024/12/26 10:13:48 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -42,7 +42,7 @@ int Parser::handle_line(Config& config, std::string& line) {
             holder.push_back(tmp);
     }
     for (size_t i = 0; i < holder.size(); i++) {
-        if (holder[0] != "server") {
+        if (holder[i] != "server") {
             return (1);
         }
         else {
@@ -128,7 +128,6 @@ int Parser::fill_server(Config& config, std::vector<std::string>& holder, size_t
 
 int Parser::isNumber(std::string& str) {
     for(std::string::iterator i = str.begin(); i != str.end(); i++) {
-        // std::cout <<"|"<< *i <<"|" << std::endl;
         if (!std::isdigit(*i))
             return (0);
     }
