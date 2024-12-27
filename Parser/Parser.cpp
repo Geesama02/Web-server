@@ -6,32 +6,31 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/21 14:31:56 by oait-laa          #+#    #+#             */
-/*   Updated: 2024/12/26 10:13:48 by oait-laa         ###   ########.fr       */
+/*   Updated: 2024/12/27 11:29:13 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Parser.hpp"
 
-Parser::Parser(Config &config, char *filename) {
-    (void)config;
+int Parser::start_parsing(Config &config, char *filename) {
     std::string holder;
     if (!filename)
-        return;
+        return (1);
     std::ifstream f_read(filename);
 	if (!f_read) {
 		std::cerr << "Failed to open file!\n";
-		return;
+		return (1);
 	}
     if (std::getline(f_read, holder, '\0')) {
         if (handle_line(config, holder)) {
             std::cerr << "Invalid server configuration!\n";
-            return;
+            return (1);
         }
     }
+    return (0);
 }
 
 int Parser::handle_line(Config& config, std::string& line) {
-    (void)config;
     std::vector<std::string> holder;
     std::string tmp;
     replace(line, '\t', ' ');

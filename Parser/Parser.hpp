@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/23 10:46:14 by oait-laa          #+#    #+#             */
-/*   Updated: 2024/12/25 15:03:41 by oait-laa         ###   ########.fr       */
+/*   Updated: 2024/12/27 11:27:26 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,7 +21,7 @@
 
 class Parser {
     public:
-        Parser(Config &config, char *filename);
+        int start_parsing(Config &config, char *filename);
         int handle_line(Config& config, std::string& line);
         void replace(std::string& line, char old_char, char new_char);
         int fill_server(Config& config, std::vector<std::string>& holder, size_t& index);

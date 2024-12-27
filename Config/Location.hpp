@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/21 16:52:32 by oait-laa          #+#    #+#             */
-/*   Updated: 2024/12/25 15:48:03 by oait-laa         ###   ########.fr       */
+/*   Updated: 2024/12/27 16:46:19 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,6 +16,15 @@
 #include <iostream>
 #include <vector>
 #include <map>
+#include <sys/socket.h>
+#include <unistd.h>
+#include <netinet/in.h>
+#include <netdb.h>
+#include <cstring>
+#include <string>
+#include <cstdio>
+#include <sys/epoll.h>
+#include <cerrno>
 
 class Location {
     private:

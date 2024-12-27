@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/21 15:09:59 by oait-laa          #+#    #+#             */
-/*   Updated: 2024/12/25 17:02:05 by oait-laa         ###   ########.fr       */
+/*   Updated: 2024/12/27 12:20:12 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,6 +17,7 @@
 
 class Server {
     private:
+        int socket_fd;
         std::string server_name;
         std::string host;
         int port;
@@ -31,6 +32,7 @@ class Server {
         Server();
 
         // Getters
+        int getSocket();
         std::string getServerName();
         std::string getHost();
         int getPort();
@@ -51,6 +53,12 @@ class Server {
         void setIndex(std::string& str);
         void setRedirect(std::string& page);
         void addLocation(Location& new_location);
+
+        // Functions
+        int init_server();
+
+        // Destructor
+        ~Server();
 };
 
 #endif

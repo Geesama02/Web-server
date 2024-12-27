@@ -9,7 +9,10 @@ int main(int argc, char **argv)
         return (1);
     }
     Config config;
-    Parser parser(config, argv[1]);
-
+    Parser parser;
+    if (parser.start_parsing(config, argv[1]))
+        return (1);
+    if (config.init_sockets())
+        return (1);
     return (0);
 }

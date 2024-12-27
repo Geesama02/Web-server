@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/22 10:25:22 by oait-laa          #+#    #+#             */
-/*   Updated: 2024/12/25 17:02:32 by oait-laa         ###   ########.fr       */
+/*   Updated: 2024/12/27 15:37:12 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,6 +14,7 @@
 
 // Constructor
 Server::Server() {
+    socket_fd = -1;
     server_name = "Server";
     host = "127.0.0.1";
     port = 8080;
@@ -27,6 +28,7 @@ Server::Server() {
 }
 
 // Getters
+int Server::getSocket() { return socket_fd; }
 std::string Server::getServerName() { return server_name; }
 std::string Server::getHost() { return host; }
 int Server::getPort() { return port; }
@@ -47,3 +49,50 @@ void Server::setClientMaxBodySize(size_t size) { client_max_body_size = size; }
 void Server::setIndex(std::string& str) { index = str; }
 void Server::setRedirect(std::string& page) { redirect = page; }
 void Server::addLocation(Location& new_location) { locations.push_back(new_location); }
+
+// Functions
+int Server::init_server() {
+    // struct sockaddr_in address;
+    struct addrinfo hints, *res;
+    char buff[6];
+
+    memset(&hints, 0, sizeof(hints));
+    hints.ai_family = AF_UNSPEC;
+    hints.ai_socktype = SOCK_STREAM;
+    std::sprintf(buff, "%d", port);
+    int status = getaddrinfo(host.c_str(), buff, &hints, &res);
+    if (status != 0) {
+        std::cerr << "Error in getaddrinfo: " << gai_strerror(status) << std::endl;
+        return (1);
+    }
+    socket_fd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
+    if (socket_fd < 0) {
+        freeaddrinfo(res);
+        std::cerr << "Cannot create socket!" << std::endl;
+        return (1);
+    }
+    int val = 1;
+    if (setsockopt(socket_fd, SOL_SOCKET, SO_REUSEADDR, &val, sizeof(val)) != 0) {
+        freeaddrinfo(res);
+        std::cerr << "Setsockopt Error!" << std::endl;
+        return (1);
+    }
+    if (bind(socket_fd, res->ai_addr, res->ai_addrlen) != 0) {
+        freeaddrinfo(res);
+        std::cerr << "Cannot bind socket!" << std::endl;
+        return (1);
+    }
+    freeaddrinfo(res);
+    if (listen(socket_fd, 10) != 0) {
+        std::cerr << "Cannot listen to socket!" << std::endl;
+        return (1);
+    }
+    std::cout << server_name << ": listening to port " << port << "...\n";
+    return (0);
+}
+
+// Destructor
+Server::~Server() {
+    if (socket_fd > 0)
+        close(socket_fd);
+}
