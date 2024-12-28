@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/21 15:07:06 by oait-laa          #+#    #+#             */
-/*   Updated: 2024/12/27 17:02:45 by oait-laa         ###   ########.fr       */
+/*   Updated: 2024/12/28 10:50:46 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,6 +28,8 @@ class Config {
 
         // Functions
         int init_sockets();
+        int is_server_fd(int fd);
+        Server get_server(int fd);
 };
 
 #endif

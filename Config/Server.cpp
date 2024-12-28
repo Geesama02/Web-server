@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/22 10:25:22 by oait-laa          #+#    #+#             */
-/*   Updated: 2024/12/27 15:37:12 by oait-laa         ###   ########.fr       */
+/*   Updated: 2024/12/28 15:41:05 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -87,6 +87,7 @@ int Server::init_server() {
         std::cerr << "Cannot listen to socket!" << std::endl;
         return (1);
     }
+    fcntl(socket_fd, F_SETFL, O_NONBLOCK);
     std::cout << server_name << ": listening to port " << port << "...\n";
     return (0);
 }

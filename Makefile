@@ -1,5 +1,5 @@
 CPP = c++
-FLAGS = -Wall -Wextra -Werror -fsanitize=address -std=c++98
+FLAGS = -Wall -Wextra -Werror -std=c++98 -fsanitize=address 
 NAME = webserv
 SRC = main.cpp Parser/Parser.cpp Config/Config.cpp Config/Location.cpp Config/Server.cpp
 OBJ = ${SRC:.cpp=.o}
