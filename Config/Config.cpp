@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/22 11:25:38 by oait-laa          #+#    #+#             */
-/*   Updated: 2024/12/28 17:01:53 by oait-laa         ###   ########.fr       */
+/*   Updated: 2024/12/29 11:53:00 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -39,7 +39,6 @@ int Config::init_sockets() {
     }
     epoll_event events[MAX_EVENTS];
     while (1) {
-        // std::cout << "waiting\n";
         int fds = epoll_wait(epoll_fd, events, MAX_EVENTS, -1);
         if (fds < 0) {
             std::cerr << "Cannot wait on sockets!" << std::endl;
@@ -48,46 +47,12 @@ int Config::init_sockets() {
         }
         for (int i = 0; i < fds; i++) {
             if (events[i].events & EPOLLIN) {
-                // sockaddr client_addr;
                 int fd = events[i].data.fd;
                 if (is_server_fd(fd)) {
-                    while (true) {
-                        int new_client = accept(fd, NULL, NULL);
-                        if (new_client < 0) {
-                            if (errno == EAGAIN || errno == EWOULDBLOCK) {
-                                // No more connections to accept
-                                break;
-                            } else {
-                                std::cerr << "accept error: " << strerror(errno) << std::endl;
-                                break;
-                            }
-                        }
-                        std::cout << "New client accepted with fd: " << new_client << std::endl;
-                        ev.events = EPOLLIN | EPOLLET;
-                        ev.data.fd = new_client;
-                        if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, new_client, &ev) != 0) {
-                            std::cerr << "epoll_ctl error: " << strerror(errno) << std::endl;
-                            close(new_client);
-                        }
-                    }
+                    accept_connection(fd, epoll_fd, ev);
                 }
                 else {
-                    char buff[1024];
-                    ssize_t received = recv(fd, buff, sizeof(buff), 0);
-                    if (received < 0) {
-                        std::cerr << "Failed to read!" << std::endl;
-                        close(fd);
-                        // return (1);
-                    }
-                    else if (received == 0) {
-                        std::cout << "Connection closed!" << std::endl;
-                        close(fd);
-                    }
-                    else {
-                        std::cout << "Received: " << buff;
-                        write(fd, buff, received);
-                    }
-                    
+                    handle_client(fd);
                 }
             }
             else if (events[i].events & EPOLLERR) {
@@ -117,4 +82,48 @@ Server Config::get_server(int fd) {
             return (*it);
     }
     return (Servers[0]);
+}
+
+int Config::accept_connection(int fd, int epoll_fd, epoll_event& ev) {
+    while (true) {
+        int new_client = accept(fd, NULL, NULL);
+        if (new_client < 0) {
+            if (errno == EAGAIN || errno == EWOULDBLOCK)
+                break;
+            else {
+                std::cerr << "accept error: " << strerror(errno) << std::endl;
+                break;
+            }
+        }
+        // std::cout << "New client accepted with fd: " << new_client << std::endl;
+        // Server s = get_server(fd);
+        // std::cout << "New connection to " << s.getHost()
+        //     << ":" << s.getPort() << std::endl;
+        ev.events = EPOLLIN | EPOLLET;
+        ev.data.fd = new_client;
+        if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, new_client, &ev) != 0) {
+            std::cerr << "epoll_ctl error: " << strerror(errno) << std::endl;
+            close(new_client);
+        }
+    }
+    return (0);
+}
+
+int Config::handle_client(int fd) {
+    char buff[1024];
+    ssize_t received = recv(fd, buff, sizeof(buff), 0);
+    if (received < 0) {
+        std::cerr << "Failed to read!" << std::endl;
+        close(fd);
+        return (1);
+    }
+    else if (received == 0) {
+        std::cout << "Connection closed!" << std::endl;
+        close(fd);
+    }
+    else {
+        std::cout << "Received: " << buff;
+        write(fd, "HTTP/1.1 200 OK", 16);
+    }
+    return (0);
 }
