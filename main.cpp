@@ -1,5 +1,6 @@
 // #include <iostream>
 #include "Parser/Parser.hpp"
+#include "Request/Request.hpp"
 
 // void handle_signal(int sig) {
 //     (void)sig;
@@ -16,6 +17,7 @@ int main(int argc, char **argv)
     }
     Config config;
     Parser parser;
+    // Request req;
     // if (signal(SIGINT, handle_signal) == SIG_ERR) {
     //     std::cerr << "Error setting signal handler\n";
     //     return (1);
@@ -24,5 +26,6 @@ int main(int argc, char **argv)
         return (1);
     if (config.init_sockets())
         return (1);
+    // if (re)
     return (0);
 }
