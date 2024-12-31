@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/22 11:25:38 by oait-laa          #+#    #+#             */
-/*   Updated: 2024/12/31 12:10:26 by oait-laa         ###   ########.fr       */
+/*   Updated: 2024/12/31 17:15:51 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -113,32 +113,56 @@ int Config::handle_client(int fd) {
     char buff[1024];
     std::string str;
     Request request;
-    ssize_t received = recv(fd, buff, sizeof(buff) - 1, 0);
-    if (received < 0) {
-        std::cerr << "Failed to read!" << std::endl;
-        close(fd);
-        return (1);
+    int read_body = 0;
+    std::string res =     "HTTP/1.1 200 OK\r\n"
+                    "Content-Type: text/html\r\n"
+                    "Content-Length: 147\r\n"
+                    "Connection: keep-alive\r\n"
+                    "\r\n"
+                    "<!DOCTYPE html>"
+                    "<html><body><form method=\"post\" enctype=\"multipart/form-data\">"
+                        "<input type=\"file\" name=\"file\">"
+                        "<button>Upload</button>"
+                    "</form></body></html>";
+    while (1) {
+        ssize_t received = recv(fd, buff, sizeof(buff) - 1, 0);
+        if (received < 0) {
+            std::cerr << "Failed to read!" << std::endl;
+            close(fd);
+            return (1);
+        }
+        else if (received == 0) {
+            std::cout << "Connection closed!" << std::endl;
+            break;
+        }
+        else {
+            // buff[received] = '\0';
+            str.append(buff, received);
+            size_t stop_p = str.find("\r\n\r\n");
+            if (!read_body && stop_p != std::string::npos) {
+                if (request.parse(str)) {
+                    std::cerr << "Invalid Request" << std::endl;
+                }
+                str = str.substr(stop_p + 4);
+                read_body = 1;
+            }
+            if (read_body && request.getMethod() == "POST"
+                && request.getHeaders().find("content-length") != request.getHeaders().end()) {
+                size_t s = atoi(request.getHeaders()["content-length"].c_str());
+                if (str.size() >= s) {
+                    request.setBody(str);
+                    break;
+                }
+            }
+            else
+                break;
+        }
     }
-    else if (received == 0) {
-        std::cout << "Connection closed!" << std::endl;
-        close(fd);
-    }
-    else {
-        // std::cout << "Received: " << buff;
-        std::string res =     "HTTP/1.1 200 OK\r\n"
-                            "Content-Type: text/html\r\n"
-                            "Content-Length: 47\r\n"
-                            "Connection: keep-alive\r\n"
-                            "\r\n"
-                            "<!DOCTYPE html>"
-                            "<html><body>Hello, world!</body></html>";
-        send(fd, res.c_str(), res.size(), 0);
-    }
-    buff[received] = '\0';
-    // std::cout << "=============================================\n";
-    str += buff;
+    std::cout << "Received: " << str << std::endl;
+    std::cout << "=============================================\n";
+    // send(fd, res.c_str(), res.size(), 0);
     if (request.parse(str)) {
-        std::cerr << "Invaid Request" << std::endl;
+        std::cerr << "Invalid Request" << std::endl;
     }
     return (0);
 }

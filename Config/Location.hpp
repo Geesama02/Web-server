@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/21 16:52:32 by oait-laa          #+#    #+#             */
-/*   Updated: 2024/12/28 15:41:21 by oait-laa         ###   ########.fr       */
+/*   Updated: 2024/12/31 17:10:46 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,6 +21,7 @@
 #include <netinet/in.h>
 #include <netdb.h>
 #include <cstring>
+#include <cstdlib>
 #include <string>
 #include <cstdio>
 #include <sys/epoll.h>
