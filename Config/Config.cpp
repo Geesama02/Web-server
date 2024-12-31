@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/22 11:25:38 by oait-laa          #+#    #+#             */
-/*   Updated: 2024/12/30 17:00:24 by oait-laa         ###   ########.fr       */
+/*   Updated: 2024/12/31 12:10:26 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -121,14 +121,21 @@ int Config::handle_client(int fd) {
     }
     else if (received == 0) {
         std::cout << "Connection closed!" << std::endl;
-        // close(fd);
+        close(fd);
     }
     else {
-        std::cout << "Received: " << buff;
-        write(fd, "HTTP/1.1 200 OK", 16);
+        // std::cout << "Received: " << buff;
+        std::string res =     "HTTP/1.1 200 OK\r\n"
+                            "Content-Type: text/html\r\n"
+                            "Content-Length: 47\r\n"
+                            "Connection: keep-alive\r\n"
+                            "\r\n"
+                            "<!DOCTYPE html>"
+                            "<html><body>Hello, world!</body></html>";
+        send(fd, res.c_str(), res.size(), 0);
     }
     buff[received] = '\0';
-    std::cout << "=============================================\n";
+    // std::cout << "=============================================\n";
     str += buff;
     if (request.parse(str)) {
         std::cerr << "Invaid Request" << std::endl;

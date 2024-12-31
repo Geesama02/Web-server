@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/30 12:07:04 by oait-laa          #+#    #+#             */
-/*   Updated: 2024/12/30 17:11:10 by oait-laa         ###   ########.fr       */
+/*   Updated: 2024/12/31 11:11:29 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -50,15 +50,23 @@ std::vector<std::string> Request::split(std::string buffer, int full, char del) 
         if (std::getline(s, tmp_str, del)) {
             if (*tmp_str.begin() == ' ')
                 tmp_str.erase(0, 1);
+            to_lower(tmp_str);
             holder.push_back(tmp_str);
         }
         if (std::getline(s, tmp_str, '\r')) {
             if (*tmp_str.begin() == ' ')
                 tmp_str.erase(0, 1);
+            // to_lower(tmp_str);
             holder.push_back(tmp_str);
         }
     }
     return (holder);
+}
+
+void Request::to_lower(std::string& str) {
+    for (size_t i = 0; i < str.size(); i++) {
+        str[i] = std::tolower(str[i]);
+    }
 }
 
 int Request::parse(std::string buffer) {
@@ -84,9 +92,13 @@ int Request::parse(std::string buffer) {
     }
     std::map<std::string, std::string>::iterator it;
     for (std::map<std::string, std::string>::iterator it = Headers.begin(); it != Headers.end(); it++) {
-        std::cout << " {" << it->first << ", " << it->second
-            << "} " << std::endl;
+        std::cout << "{ " << it->first << " = " << it->second
+            << " }" << std::endl;
     }
+    if (std::getline(s, line, '\0')) {
+        body = line;
+    }
+    std::cout << "Body => " << body << std::endl;
     // std::cout << "inside\n";
     return (0);
 }

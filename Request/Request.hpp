@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/30 11:15:32 by oait-laa          #+#    #+#             */
-/*   Updated: 2024/12/30 16:45:32 by oait-laa         ###   ########.fr       */
+/*   Updated: 2024/12/31 10:51:31 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -56,6 +56,7 @@ class Request {
         // Functions
         int parse(std::string buffer);
         std::vector<std::string> split(std::string buffer, int full, char del);
+        void to_lower(std::string& str);
     
 };
 
