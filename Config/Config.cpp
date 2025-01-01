@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/22 11:25:38 by oait-laa          #+#    #+#             */
-/*   Updated: 2024/12/31 17:15:51 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/01/01 11:09:11 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -126,6 +126,7 @@ int Config::handle_client(int fd) {
                     "</form></body></html>";
     while (1) {
         ssize_t received = recv(fd, buff, sizeof(buff) - 1, 0);
+        std::cout << "received: " << received << std::endl;
         if (received < 0) {
             std::cerr << "Failed to read!" << std::endl;
             close(fd);
@@ -133,6 +134,7 @@ int Config::handle_client(int fd) {
         }
         else if (received == 0) {
             std::cout << "Connection closed!" << std::endl;
+            close(fd);
             break;
         }
         else {
@@ -144,25 +146,37 @@ int Config::handle_client(int fd) {
                     std::cerr << "Invalid Request" << std::endl;
                 }
                 str = str.substr(stop_p + 4);
+                // std::cout << "str -> |" << str<< "|\n";
                 read_body = 1;
             }
             if (read_body && request.getMethod() == "POST"
                 && request.getHeaders().find("content-length") != request.getHeaders().end()) {
+                // std::cout << "inside\n";
+                std::cout << "POST str -> |" << str<< "|\n";
                 size_t s = atoi(request.getHeaders()["content-length"].c_str());
                 if (str.size() >= s) {
                     request.setBody(str);
                     break;
                 }
             }
-            else
+            else if (!read_body) {
+                std::cout << "continue\n";
+                std::cout << "str -> |" << str<< "|\n";
+                continue;
+            }
+            else {
+                std::cout << "break\n";
                 break;
+            }
         }
     }
-    std::cout << "Received: " << str << std::endl;
+    // std::cout << "Received: " << str << std::endl;
     std::cout << "=============================================\n";
-    // send(fd, res.c_str(), res.size(), 0);
-    if (request.parse(str)) {
-        std::cerr << "Invalid Request" << std::endl;
+    if (request.getMethod() == "GET") {
+        send(fd, res.c_str(), res.size(), 0);
     }
+    // if (request.parse(str)) {
+    //     std::cerr << "Invalid Request" << std::endl;
+    // }
     return (0);
 }
