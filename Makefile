@@ -1,7 +1,7 @@
 CPP = c++
 FLAGS = -Wall -Wextra -Werror -std=c++98 -fsanitize=address 
 NAME = webserv
-SRC = main.cpp Parser/Parser.cpp Config/Config.cpp Config/Location.cpp Config/Server.cpp Request/Request.cpp
+SRC = main.cpp Parser/Parser.cpp Config/Config.cpp Config/Location.cpp Config/Server.cpp Request/Request.cpp Request/UploadFile.cpp
 OBJ = ${SRC:.cpp=.o}
 
 all: ${NAME}
@@ -9,7 +9,7 @@ all: ${NAME}
 ${NAME} : ${OBJ}
 	${CPP} ${FLAGS} -o ${NAME} ${SRC}
 
-%.o: %.cpp Parser/Parser.hpp Config/Config.hpp Config/Location.hpp Config/Server.hpp Request/Request.hpp
+%.o: %.cpp Parser/Parser.hpp Config/Config.hpp Config/Location.hpp Config/Server.hpp Request/Request.hpp Request/UploadFile.hpp
 	${CPP} ${FLAGS} -c $< -o $@
 
 clean:

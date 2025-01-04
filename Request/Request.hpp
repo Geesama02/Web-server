@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/30 11:15:32 by oait-laa          #+#    #+#             */
-/*   Updated: 2024/12/31 17:03:59 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/01/04 16:38:59 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,48 +17,45 @@
 #include <sstream>
 #include <map>
 #include <vector>
+#include <unistd.h>
+#include <netinet/in.h>
+#include <netdb.h>
+#include <cstring>
+#include <cstdlib>
+#include "UploadFile.hpp"
 
 class Request {
     private:
+        static std::map<int, UploadFile> uploads;
         std::map<std::string, std::string> Headers;
         std::string method;
         std::string path;
         std::string version;
-        // std::string host;
-        // std::string connection;
-        // std::string content_length;
-        // std::string content_type;
-        // std::string accept;
         std::string body;
     public:
         // Getters
-        std::map<std::string, std::string> getHeaders();
+        std::map<std::string, std::string>& getHeaders();
         std::string getMethod();
         std::string getPath();
         std::string getVersion();
-        // std::string getHost();
-        // std::string getConnection();
-        // std::string getContentLength();
-        // std::string getContentType();
-        // std::string getAccept();
         std::string getBody();
+        std::map<int, UploadFile>& getUploads();
 
         // Setters
-        // void setMethod(std::map<std::string, std::string>);
-        void setMethod(const std::string& m);
-        void setPath(const std::string& p);
-        void setVersion(const std::string& v);
-        // void setHost(const std::string& h);
-        // void setConnection(const std::string& c);
-        // void setContentLength(const std::string& cl);
-        // void setContentType(const std::string& ct);
-        // void setAccept(const std::string& a);
-        void setBody(const std::string& b);
+        void setMethod(std::string& m);
+        void setPath(std::string& p);
+        void setVersion(std::string& v);
+        void setBody(std::string& b);
+        void addUpload(int fd, UploadFile new_upload);
 
         // Functions
         int parse(std::string buffer);
         std::vector<std::string> split(std::string buffer, int full, char del);
         void to_lower(std::string& str);
+        int readRequest(int fd);
+        void readHeaders(int fd, std::string& str);
+        int setupFile(int fd);
+        int readFile(int fd, UploadFile file, std::string str);
     
 };
 

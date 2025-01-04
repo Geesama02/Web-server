@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/21 15:07:06 by oait-laa          #+#    #+#             */
-/*   Updated: 2024/12/30 16:14:16 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/01/04 16:33:33 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,11 +28,16 @@ class Config {
         void addServer(Server new_server);
 
         // Functions
-        int init_sockets();
-        int is_server_fd(int fd);
-        int accept_connection(int fd, int epoll_fd, epoll_event& ev);
-        int handle_client(int fd);
-        Server get_server(int fd);
+        int startServers();
+        int monitorServers(int epoll_fd, epoll_event& ev);
+        int isServerFd(int fd);
+        int acceptConnection(int fd, int epoll_fd, epoll_event& ev);
+        int handleClient(int fd);
+        Server getServer(int fd);
+        // int readRequest(int fd, Request& request);
+        // void readHeaders(int fd, Request& request, std::string& str);
+        // int setupFile(Request& request, int fd);
+        // int readFile(int fd, UploadFile file, std::string str);
 };
 
 #endif

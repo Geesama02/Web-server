@@ -22,9 +22,9 @@ int main(int argc, char **argv)
     //     std::cerr << "Error setting signal handler\n";
     //     return (1);
     // }
-    if (parser.start_parsing(config, argv[1]))
+    if (parser.startParsing(config, argv[1]))
         return (1);
-    if (config.init_sockets())
+    if (config.startServers())
         return (1);
     // if (re)
     return (0);

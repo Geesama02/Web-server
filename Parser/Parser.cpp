@@ -6,13 +6,13 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/21 14:31:56 by oait-laa          #+#    #+#             */
-/*   Updated: 2024/12/27 11:29:13 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/01/02 12:11:15 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Parser.hpp"
 
-int Parser::start_parsing(Config &config, char *filename) {
+int Parser::startParsing(Config &config, char *filename) {
     std::string holder;
     if (!filename)
         return (1);
@@ -22,7 +22,7 @@ int Parser::start_parsing(Config &config, char *filename) {
 		return (1);
 	}
     if (std::getline(f_read, holder, '\0')) {
-        if (handle_line(config, holder)) {
+        if (handleLines(config, holder)) {
             std::cerr << "Invalid server configuration!\n";
             return (1);
         }
@@ -30,7 +30,7 @@ int Parser::start_parsing(Config &config, char *filename) {
     return (0);
 }
 
-int Parser::handle_line(Config& config, std::string& line) {
+int Parser::handleLines(Config& config, std::string& line) {
     std::vector<std::string> holder;
     std::string tmp;
     replace(line, '\t', ' ');
@@ -45,7 +45,7 @@ int Parser::handle_line(Config& config, std::string& line) {
             return (1);
         }
         else {
-            if (fill_server(config, holder, i))
+            if (fillServer(config, holder, i))
                 return (1);
         }
     }
@@ -60,7 +60,7 @@ void Parser::replace(std::string& line, char old_char, char new_char) {
     }
 }
 
-int Parser::fill_server(Config& config, std::vector<std::string>& holder, size_t& index) {
+int Parser::fillServer(Config& config, std::vector<std::string>& holder, size_t& index) {
     (void)config;
     Server tmp_server;
     index++;
@@ -69,32 +69,32 @@ int Parser::fill_server(Config& config, std::vector<std::string>& holder, size_t
     index++;
     while(index < holder.size()) {
         if (holder[index] == "listen") {
-            if (set_port_var(holder, tmp_server, index))
+            if (setPortVar(holder, tmp_server, index))
                 return (1);
         }
         else if (holder[index] == "host") {
-            if (set_host_var(holder, tmp_server, index))
+            if (setHostVar(holder, tmp_server, index))
                 return (1);
         }
         else if (holder[index] == "root") {
-            if (set_root_var(holder, tmp_server, index))
+            if (setRootVar(holder, tmp_server, index))
                 return (1);
         }
         else if (holder[index] == "index") {
-            if (set_index_var(holder, tmp_server, index))
+            if (setIndexVar(holder, tmp_server, index))
                 return (1);
         }
         else if (holder[index] == "return") {
-            if (set_redirect_var(holder, tmp_server, index))
+            if (setRedirectVar(holder, tmp_server, index))
                 return (1);
             // std::cout << "Redirect -> " << tmp_server.getRedirect() << std::endl;
         }
         else if (holder[index] == "server_name") {
-            if (set_sname_var(holder, tmp_server, index))
+            if (setSnameVar(holder, tmp_server, index))
                 return (1);
         }
         else if (holder[index] == "error_page") {
-            if (set_err_var(holder, tmp_server, index))
+            if (setErrVar(holder, tmp_server, index))
                 return (1);
             // for (std::map<std::vector<int>, std::string>::iterator it = tmp_server.getErrorPage().begin(); it != tmp_server.getErrorPage().end(); it++)
             // {
@@ -108,11 +108,11 @@ int Parser::fill_server(Config& config, std::vector<std::string>& holder, size_t
             
         }
         else if (holder[index] == "client_max_body_size") {
-            if (set_max_body_var(holder, tmp_server, index))
+            if (setMaxBodyVar(holder, tmp_server, index))
                 return (1);
         }
         else if (holder[index] == "location") {
-            if (handle_location(holder, tmp_server, index))
+            if (handleLocation(holder, tmp_server, index))
                 return (1);
         }
         else if (holder[index] == "}") {
@@ -133,7 +133,7 @@ int Parser::isNumber(std::string& str) {
     return (1);
 }
 
-int Parser::set_port_var(std::vector<std::string>& holder, Server& tmp_server, size_t& index) {
+int Parser::setPortVar(std::vector<std::string>& holder, Server& tmp_server, size_t& index) {
     // std::cout << "*holder[index].rbegin()" << std::endl;
     index++;
     // std::cout << str << std::endl;
@@ -154,7 +154,7 @@ int Parser::set_port_var(std::vector<std::string>& holder, Server& tmp_server, s
     return (0);
 }
 
-int Parser::set_max_body_var(std::vector<std::string>& holder, Server& tmp_server, size_t& index) {
+int Parser::setMaxBodyVar(std::vector<std::string>& holder, Server& tmp_server, size_t& index) {
     index++;
     if (index < holder.size() && *holder[index].rbegin() == ';') {
         holder[index].erase(holder[index].end() - 1);
@@ -169,7 +169,7 @@ int Parser::set_max_body_var(std::vector<std::string>& holder, Server& tmp_serve
     return (0);
 }
 
-int Parser::set_root_var(std::vector<std::string>& holder, Server& tmp_server, size_t& index) {
+int Parser::setRootVar(std::vector<std::string>& holder, Server& tmp_server, size_t& index) {
     // std::cout << "inside" << std::endl;
     index++;
     if (index < holder.size() && *holder[index].rbegin() == ';') {
@@ -184,7 +184,7 @@ int Parser::set_root_var(std::vector<std::string>& holder, Server& tmp_server, s
     return (0);
 }
 
-int Parser::set_root_var(std::vector<std::string>& holder, Location& tmp_location, size_t& index) {
+int Parser::setRootVar(std::vector<std::string>& holder, Location& tmp_location, size_t& index) {
     // std::cout << "inside" << std::endl;
     index++;
     if (index < holder.size() && *holder[index].rbegin() == ';') {
@@ -199,7 +199,7 @@ int Parser::set_root_var(std::vector<std::string>& holder, Location& tmp_locatio
     return (0);
 }
 
-int Parser::set_redirect_var(std::vector<std::string>& holder, Server& tmp_server, size_t& index) {
+int Parser::setRedirectVar(std::vector<std::string>& holder, Server& tmp_server, size_t& index) {
     index++;
     if (index < holder.size() && *holder[index].rbegin() == ';') {
         holder[index].erase(holder[index].end() - 1);
@@ -213,7 +213,7 @@ int Parser::set_redirect_var(std::vector<std::string>& holder, Server& tmp_serve
     return (0);
 }
 
-int Parser::set_redirect_var(std::vector<std::string>& holder, Location& tmp_location, size_t& index) {
+int Parser::setRedirectVar(std::vector<std::string>& holder, Location& tmp_location, size_t& index) {
     index++;
     if (index < holder.size() && *holder[index].rbegin() == ';') {
         holder[index].erase(holder[index].end() - 1);
@@ -227,7 +227,7 @@ int Parser::set_redirect_var(std::vector<std::string>& holder, Location& tmp_loc
     return (0);
 }
 
-int Parser::set_index_var(std::vector<std::string>& holder, Server& tmp_server, size_t& index) {
+int Parser::setIndexVar(std::vector<std::string>& holder, Server& tmp_server, size_t& index) {
     index++;
     if (index < holder.size() && *holder[index].rbegin() == ';') {
         holder[index].erase(holder[index].end() - 1);
@@ -241,7 +241,7 @@ int Parser::set_index_var(std::vector<std::string>& holder, Server& tmp_server, 
     return (0);
 }
 
-int Parser::set_index_var(std::vector<std::string>& holder, Location& tmp_location, size_t& index) {
+int Parser::setIndexVar(std::vector<std::string>& holder, Location& tmp_location, size_t& index) {
     index++;
     if (index < holder.size() && *holder[index].rbegin() == ';') {
         holder[index].erase(holder[index].end() - 1);
@@ -255,7 +255,7 @@ int Parser::set_index_var(std::vector<std::string>& holder, Location& tmp_locati
     return (0);
 }
 
-int Parser::set_autoindex_var(std::vector<std::string>& holder, Location& tmp_location, size_t& index) {
+int Parser::setAutoindexVar(std::vector<std::string>& holder, Location& tmp_location, size_t& index) {
     index++;
     if (index < holder.size() && *holder[index].rbegin() == ';') {
         holder[index].erase(holder[index].end() - 1);
@@ -272,7 +272,7 @@ int Parser::set_autoindex_var(std::vector<std::string>& holder, Location& tmp_lo
     return (0);
 }
 
-int Parser::set_host_var(std::vector<std::string>& holder, Server& tmp_server, size_t& index) {
+int Parser::setHostVar(std::vector<std::string>& holder, Server& tmp_server, size_t& index) {
     // std::cout << "inside" << std::endl;
     index++;
     if (index < holder.size() && *holder[index].rbegin() == ';') {
@@ -287,7 +287,7 @@ int Parser::set_host_var(std::vector<std::string>& holder, Server& tmp_server, s
     return (0);
 }
 
-int Parser::set_sname_var(std::vector<std::string>& holder, Server& tmp_server, size_t& index) {
+int Parser::setSnameVar(std::vector<std::string>& holder, Server& tmp_server, size_t& index) {
     // std::cout << "inside" << std::endl;
     index++;
     if (index < holder.size() && *holder[index].rbegin() == ';') {
@@ -302,7 +302,7 @@ int Parser::set_sname_var(std::vector<std::string>& holder, Server& tmp_server, 
     return (0);
 }
 
-int Parser::set_err_var(std::vector<std::string>& holder, Server& tmp_server, size_t& index) {
+int Parser::setErrVar(std::vector<std::string>& holder, Server& tmp_server, size_t& index) {
     std::vector<int> nums;
     std::map<std::vector<int>, std::string> err;
     index++;
@@ -327,7 +327,7 @@ int Parser::set_err_var(std::vector<std::string>& holder, Server& tmp_server, si
     return (0);
 }
 
-int Parser::set_err_var(std::vector<std::string>& holder, Location& tmp_location, size_t& index) {
+int Parser::setErrVar(std::vector<std::string>& holder, Location& tmp_location, size_t& index) {
     std::vector<int> nums;
     std::map<std::vector<int>, std::string> err;
     index++;
@@ -352,7 +352,7 @@ int Parser::set_err_var(std::vector<std::string>& holder, Location& tmp_location
     return (0);
 }
 
-int Parser::set_allowed_methods_var(std::vector<std::string>& holder, Location& tmp_location, size_t& index) {
+int Parser::setAllowedMethodsVar(std::vector<std::string>& holder, Location& tmp_location, size_t& index) {
     std::vector<std::string> tmp_holder;
     index++;
     while(index < holder.size() && *holder[index].rbegin() != ';') {
@@ -379,7 +379,7 @@ int Parser::set_allowed_methods_var(std::vector<std::string>& holder, Location& 
     return (0);
 }
 
-int Parser::set_cgi_path_var(std::vector<std::string>& holder, Location& tmp_location, size_t& index) {
+int Parser::setCgiPathVar(std::vector<std::string>& holder, Location& tmp_location, size_t& index) {
     index++;
     while(index < holder.size() && *holder[index].rbegin() != ';') {
         tmp_location.addCgiPath(holder[index]);
@@ -396,7 +396,7 @@ int Parser::set_cgi_path_var(std::vector<std::string>& holder, Location& tmp_loc
     return (0);
 }
 
-int Parser::set_cgi_ext_var(std::vector<std::string>& holder, Location& tmp_location, size_t& index) {
+int Parser::setCgiExtVar(std::vector<std::string>& holder, Location& tmp_location, size_t& index) {
     index++;
     while(index < holder.size() && *holder[index].rbegin() != ';') {
         tmp_location.addCgiExt(holder[index]);
@@ -413,7 +413,7 @@ int Parser::set_cgi_ext_var(std::vector<std::string>& holder, Location& tmp_loca
     return (0);
 }
 
-int Parser::handle_location(std::vector<std::string>& holder, Server& tmp_server, size_t& index) {
+int Parser::handleLocation(std::vector<std::string>& holder, Server& tmp_server, size_t& index) {
     Location tmp_location;
     index++;
     if (index < holder.size() && holder[index] != "{") {
@@ -423,23 +423,23 @@ int Parser::handle_location(std::vector<std::string>& holder, Server& tmp_server
             index++;
             while(index < holder.size()) {
                 if (holder[index] == "root") {
-                    if (set_root_var(holder, tmp_location, index))
+                    if (setRootVar(holder, tmp_location, index))
                         return (1);
                 }
                 else if (holder[index] == "index") {
-                    if (set_index_var(holder, tmp_location, index))
+                    if (setIndexVar(holder, tmp_location, index))
                         return (1);
                 }
                 else if (holder[index] == "autoindex") {
-                    if (set_autoindex_var(holder, tmp_location, index))
+                    if (setAutoindexVar(holder, tmp_location, index))
                         return (1);
                 }
                 else if (holder[index] == "return") {
-                    if (set_redirect_var(holder, tmp_location, index))
+                    if (setRedirectVar(holder, tmp_location, index))
                         return (1);
                 }
                 else if (holder[index] == "error_page") {
-                    if (set_err_var(holder, tmp_location, index))
+                    if (setErrVar(holder, tmp_location, index))
                         return (1);
                     // std::cout << "size: " << tmp_location.getErrorPage().size() << std::endl;
                     // for (std::map<std::vector<int>, std::string>::iterator it = tmp_location.getErrorPage().begin(); it != tmp_location.getErrorPage().end(); it++)
@@ -453,15 +453,15 @@ int Parser::handle_location(std::vector<std::string>& holder, Server& tmp_server
                     
                 }
                 else if (holder[index] == "allowed_methods") {
-                    if (set_allowed_methods_var(holder, tmp_location, index))
+                    if (setAllowedMethodsVar(holder, tmp_location, index))
                         return (1);
                 }
                 else if (holder[index] == "cgi_path") {
-                    if (set_cgi_path_var(holder, tmp_location, index))
+                    if (setCgiPathVar(holder, tmp_location, index))
                         return (1);
                 }
                 else if (holder[index] == "cgi_ext") {
-                    if (set_cgi_ext_var(holder, tmp_location, index))
+                    if (setCgiExtVar(holder, tmp_location, index))
                         return (1);
                 }
                 else if (holder[index] == "}") {

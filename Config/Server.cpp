@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/22 10:25:22 by oait-laa          #+#    #+#             */
-/*   Updated: 2024/12/28 15:41:05 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/01/02 12:06:49 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -51,7 +51,7 @@ void Server::setRedirect(std::string& page) { redirect = page; }
 void Server::addLocation(Location& new_location) { locations.push_back(new_location); }
 
 // Functions
-int Server::init_server() {
+int Server::initServer() {
     // struct sockaddr_in address;
     struct addrinfo hints, *res;
     char buff[6];

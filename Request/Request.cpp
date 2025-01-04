@@ -6,48 +6,42 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/30 12:07:04 by oait-laa          #+#    #+#             */
-/*   Updated: 2024/12/31 17:04:37 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/01/04 16:39:50 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Request.hpp"
 
+std::map<int, UploadFile> Request::uploads;
+
 // Getters
-std::map<std::string, std::string> Request::getHeaders() { return Headers; }
+std::map<std::string, std::string>& Request::getHeaders() { return Headers; }
 std::string Request::getMethod() { return method; }
 std::string Request::getPath() { return path; }
 std::string Request::getVersion() { return version; }
-// std::string Request::getHost() { return host; }
-// std::string Request::getConnection() { return connection; }
-// std::string Request::getContentLength() { return content_length; }
-// std::string Request::getContentType() { return content_type; }
-// std::string Request::getAccept() { return accept; }
 std::string Request::getBody() { return body; }
+std::map<int, UploadFile>& Request::getUploads() { return (uploads); }
 
 // Setters
-void Request::setMethod(const std::string& m) { method = m; }
-void Request::setPath(const std::string& p) { path = p; }
-void Request::setVersion(const std::string& v) { version = v; }
-// void Request::setHost(const std::string& h) { host = h; }
-// void Request::setConnection(const std::string& c) { connection = c; }
-// void Request::setContentLength(const std::string& cl) { content_length = cl; }
-// void Request::setContentType(const std::string& ct) { content_type = ct; }
-// void Request::setAccept(const std::string& a) { accept = a; }
-void Request::setBody(const std::string& b) { body = b; }
+void Request::setMethod(std::string& m) { method = m; }
+void Request::setPath(std::string& p) { path = p; }
+void Request::setVersion(std::string& v) { version = v; }
+void Request::setBody(std::string& b) { body = b; }
+void Request::addUpload(int fd, UploadFile new_upload) { uploads[fd] = new_upload; }
 
 // Functions
 std::vector<std::string> Request::split(std::string buffer, int full, char del) {
     std::stringstream s(buffer);
     std::vector<std::string> holder;
     std::string tmp_str;
-    if (full) {
+    if (full) { // split full string if full == 1
         while (std::getline(s, tmp_str, del)) {
             if (!tmp_str.empty()) {
                 holder.push_back(tmp_str);
             }
         }
     }
-    else {
+    else { // split just the first occurance of the delimeter
         if (std::getline(s, tmp_str, del)) {
             if (*tmp_str.begin() == ' ')
                 tmp_str.erase(0, 1);
@@ -57,7 +51,6 @@ std::vector<std::string> Request::split(std::string buffer, int full, char del) 
         if (std::getline(s, tmp_str, '\r')) {
             if (*tmp_str.begin() == ' ')
                 tmp_str.erase(0, 1);
-            // to_lower(tmp_str);
             holder.push_back(tmp_str);
         }
     }
@@ -73,9 +66,11 @@ void Request::to_lower(std::string& str) {
 int Request::parse(std::string buffer) {
     std::stringstream s(buffer);
     std::string line;
+    // std::cout <<"Buffer  -> " << buffer << '\n';
     if (std::getline(s, line)) {
         std::vector<std::string> holder;
         holder = split(line, 1, ' ');
+        // std::cout << line << " -> " << holder.size() << '\n';
         if (holder.size() != 3)
             return (1);
         setMethod(holder[0]);
@@ -91,16 +86,117 @@ int Request::parse(std::string buffer) {
         Headers[holder[0]] = holder[1];
         // std::cout << holder[0] << " ==> " << holder[1] << std::endl;
     }
-    std::map<std::string, std::string>::iterator it;
-    for (std::map<std::string, std::string>::iterator it = Headers.begin(); it != Headers.end(); it++) {
-        std::cout << "{ " << it->first << " = " << it->second
-            << " }" << std::endl;
+    // print headers
+    // std::map<std::string, std::string>::iterator it;
+    // for (std::map<std::string, std::string>::iterator it = Headers.begin(); it != Headers.end(); it++) {
+    //     std::cout << "{ " << it->first << " = " << it->second
+    //         << " }" << std::endl;
+    // }
+    return (0);
+}
+
+int Request::readFile(int fd, UploadFile file, std::string str) {
+    (void)fd;
+    // std::cout << "compare: -> " << str.compare(0, file.getBoundary().size() + 2, "--" + file.getBoundary()) << std::endl;
+    // std::cout << "part -> " << str << std::endl;
+    if (str.compare(0, file.getBoundary().size() + 2, "--" + file.getBoundary()) == 0) {
+        size_t namePos = str.find("filename=\"");
+        if (namePos != std::string::npos) {
+            size_t nameStart = namePos + 10;
+            size_t nameEnd = str.find("\"", nameStart);
+            if (nameEnd != std::string::npos) {
+                file.setFilename(str.substr(nameStart, nameEnd - nameStart));
+                // std::cout << "filename -> |" << file.getFilename() <<'|' << std::endl;
+                if (file.getFilename().empty())
+                    return (1);
+                if (!file.openFile())
+                    return (1);
+                // std::cout << "str -> |" << str <<'|' << std::endl;
+                size_t stop_p = str.find("\r\n\r\n");
+                if (stop_p != std::string::npos) {
+                    str = str.substr(stop_p + 4);
+                    *file.getFd() << str;
+                }
+            }
+        }
     }
-    if (std::getline(s, line, '\0')) {
-        body = line;
+    else {
+        std::cout << "str -> |" << str <<'|' << std::endl;
+        if (str.find(file.getBoundary()) != std::string::npos) {
+            std::cout << "FOUND\n";
+        }
+        if (!str.empty())
+            *file.getFd() << str;
     }
-    std::cout << "Body => " << body << std::endl;
-    std::cout << "+++++++++++++++++++++++++++++++++++++" << std::endl;
-    // std::cout << "inside\n";
+    return (0);
+}
+
+void Request::readHeaders(int fd, std::string& str) {
+    size_t stop_p = str.find("\r\n\r\n");
+    // std::cout << "str -> " << str << std::endl;
+    if (uploads.find(fd) == uploads.end()
+            && stop_p != std::string::npos) {
+        if (parse(str))
+            std::cerr << "Invalid Request" << std::endl;
+        str = str.substr(stop_p + 4);
+        if (method == "POST" 
+            && Headers.find("content-type") != Headers.end()
+            && Headers["content-type"].find("boundary=") != std::string::npos) {
+            setupFile(fd);
+        }
+    }
+    if (uploads.find(fd) != uploads.end()) {
+        if (readFile(fd, uploads[fd], str)) {
+            uploads.erase(fd);
+        }
+    }
+}
+
+int Request::setupFile(int fd) {
+    UploadFile file;
+    size_t pos = Headers["content-type"].find("boundary=");
+    size_t end = Headers["content-type"].find("\r\n", pos);
+    std::string boundary = Headers["content-type"].substr(pos + 9, end);
+    std::cout << "Boundary -> " << boundary << std::endl;
+    file.setBoundary(boundary);
+    addUpload(fd, file);
+    return (0);
+    // std::ofstream f_write = 
+}
+
+int Request::readRequest(int fd) {
+    char buff[4096];
+    // int readType;
+    std::string str;
+    ssize_t received = recv(fd, buff, sizeof(buff) - 1, 0);
+    // std::cout << "received: " << received << std::endl;
+    if (received < 0) {
+        std::cerr << "Failed to read!" << std::endl;
+        close(fd);
+        return (1);
+    }
+    else if (received == 0) {
+        std::cout << "Connection closed!" << std::endl;
+        if (uploads.find(fd) != uploads.end())
+            uploads.erase(fd);
+        close(fd);
+    }
+    else {
+        buff[received] = '\0';
+        str.append(buff, received);
+        // std::cout << "received: " << str << std::endl;
+        readHeaders(fd, str);
+        if (method == "POST"
+            && Headers.find("content-length") != Headers.end()) {
+            // std::cout << "POST str -> |" << str<< "|\n";
+            size_t s = atoi(Headers["content-length"].c_str());
+            if (str.size() >= s) {
+                setBody(str);
+            }
+        }
+        // else if (readType == 2) {
+        //     setupFile(request, str);
+        // }
+    }
     return (0);
 }

@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/23 10:46:14 by oait-laa          #+#    #+#             */
-/*   Updated: 2024/12/30 16:14:13 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/01/02 12:11:15 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,28 +22,28 @@
 
 class Parser {
     public:
-        int start_parsing(Config &config, char *filename);
-        int handle_line(Config& config, std::string& line);
+        int startParsing(Config &config, char *filename);
+        int handleLines(Config& config, std::string& line);
         void replace(std::string& line, char old_char, char new_char);
-        int fill_server(Config& config, std::vector<std::string>& holder, size_t& index);
+        int fillServer(Config& config, std::vector<std::string>& holder, size_t& index);
         int isNumber(std::string& str);
-        int set_port_var(std::vector<std::string>& holder, Server& tmp_server, size_t& index);
-        int set_root_var(std::vector<std::string>& holder, Server& tmp_server, size_t& index);
-        int set_root_var(std::vector<std::string>& holder, Location& tmp_location, size_t& index);
-        int set_host_var(std::vector<std::string>& holder, Server& tmp_server, size_t& index);
-        int set_index_var(std::vector<std::string>& holder, Server& tmp_server, size_t& index);
-        int set_index_var(std::vector<std::string>& holder, Location& tmp_location, size_t& index);
-        int set_redirect_var(std::vector<std::string>& holder, Server& tmp_server, size_t& index);
-        int set_redirect_var(std::vector<std::string>& holder, Location& tmp_location, size_t& index);
-        int set_autoindex_var(std::vector<std::string>& holder, Location& tmp_location, size_t& index);
-        int set_sname_var(std::vector<std::string>& holder, Server& tmp_server, size_t& index);
-        int set_err_var(std::vector<std::string>& holder, Server& tmp_server, size_t& index);
-        int set_err_var(std::vector<std::string>& holder, Location& tmp_location, size_t& index);
-        int set_max_body_var(std::vector<std::string>& holder, Server& tmp_server, size_t& index);
-        int set_allowed_methods_var(std::vector<std::string>& holder, Location& tmp_location, size_t& index);
-        int set_cgi_path_var(std::vector<std::string>& holder, Location& tmp_location, size_t& index);
-        int set_cgi_ext_var(std::vector<std::string>& holder, Location& tmp_location, size_t& index);
-        int handle_location(std::vector<std::string>& holder, Server& tmp_server, size_t& index);
+        int setPortVar(std::vector<std::string>& holder, Server& tmp_server, size_t& index);
+        int setRootVar(std::vector<std::string>& holder, Server& tmp_server, size_t& index);
+        int setRootVar(std::vector<std::string>& holder, Location& tmp_location, size_t& index);
+        int setHostVar(std::vector<std::string>& holder, Server& tmp_server, size_t& index);
+        int setIndexVar(std::vector<std::string>& holder, Server& tmp_server, size_t& index);
+        int setIndexVar(std::vector<std::string>& holder, Location& tmp_location, size_t& index);
+        int setRedirectVar(std::vector<std::string>& holder, Server& tmp_server, size_t& index);
+        int setRedirectVar(std::vector<std::string>& holder, Location& tmp_location, size_t& index);
+        int setAutoindexVar(std::vector<std::string>& holder, Location& tmp_location, size_t& index);
+        int setSnameVar(std::vector<std::string>& holder, Server& tmp_server, size_t& index);
+        int setErrVar(std::vector<std::string>& holder, Server& tmp_server, size_t& index);
+        int setErrVar(std::vector<std::string>& holder, Location& tmp_location, size_t& index);
+        int setMaxBodyVar(std::vector<std::string>& holder, Server& tmp_server, size_t& index);
+        int setAllowedMethodsVar(std::vector<std::string>& holder, Location& tmp_location, size_t& index);
+        int setCgiPathVar(std::vector<std::string>& holder, Location& tmp_location, size_t& index);
+        int setCgiExtVar(std::vector<std::string>& holder, Location& tmp_location, size_t& index);
+        int handleLocation(std::vector<std::string>& holder, Server& tmp_server, size_t& index);
 
 };
 

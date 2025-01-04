@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/21 15:09:59 by oait-laa          #+#    #+#             */
-/*   Updated: 2024/12/27 12:20:12 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/01/02 12:06:49 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -55,7 +55,7 @@ class Server {
         void addLocation(Location& new_location);
 
         // Functions
-        int init_server();
+        int initServer();
 
         // Destructor
         ~Server();
