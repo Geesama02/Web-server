@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/30 11:15:32 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/01/04 16:38:59 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/01/06 11:56:59 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -46,7 +46,7 @@ class Request {
         void setPath(std::string& p);
         void setVersion(std::string& v);
         void setBody(std::string& b);
-        void addUpload(int fd, UploadFile new_upload);
+        void addUpload(int fd, UploadFile& new_upload);
 
         // Functions
         int parse(std::string buffer);
@@ -55,7 +55,7 @@ class Request {
         int readRequest(int fd);
         void readHeaders(int fd, std::string& str);
         int setupFile(int fd);
-        int readFile(int fd, UploadFile file, std::string str);
+        int readFile(int fd, UploadFile& file, std::string str);
     
 };
 

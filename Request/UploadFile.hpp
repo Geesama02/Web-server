@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/03 10:58:22 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/01/04 16:11:51 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/01/06 16:21:25 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,8 +15,10 @@
 
 #include <iostream>
 #include <fstream>
+#include <sstream>
 #include <cerrno>
 #include <cstring>
+#include <sys/time.h>
 
 class UploadFile {
     private:
@@ -42,6 +44,7 @@ class UploadFile {
 
         // Functions
         int openFile();
+        void newFilename();
 
         // Destructor
         ~UploadFile();

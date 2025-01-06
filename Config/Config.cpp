@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/22 11:25:38 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/01/04 16:36:46 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/01/06 10:13:46 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -101,7 +101,7 @@ int Config::acceptConnection(int fd, int epoll_fd, epoll_event& ev) {
                 break;
             }
         }
-        ev.events = EPOLLIN | EPOLLET;
+        ev.events = EPOLLIN;
         ev.data.fd = new_client;
         fcntl(new_client, F_SETFL, O_NONBLOCK);
         // add client socket to epoll to monitor

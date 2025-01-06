@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/30 12:07:04 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/01/04 16:39:50 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/01/06 16:59:59 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,7 +27,7 @@ void Request::setMethod(std::string& m) { method = m; }
 void Request::setPath(std::string& p) { path = p; }
 void Request::setVersion(std::string& v) { version = v; }
 void Request::setBody(std::string& b) { body = b; }
-void Request::addUpload(int fd, UploadFile new_upload) { uploads[fd] = new_upload; }
+void Request::addUpload(int fd, UploadFile& new_upload) { uploads[fd] = new_upload; }
 
 // Functions
 std::vector<std::string> Request::split(std::string buffer, int full, char del) {
@@ -95,10 +95,8 @@ int Request::parse(std::string buffer) {
     return (0);
 }
 
-int Request::readFile(int fd, UploadFile file, std::string str) {
+int Request::readFile(int fd, UploadFile& file, std::string str) {
     (void)fd;
-    // std::cout << "compare: -> " << str.compare(0, file.getBoundary().size() + 2, "--" + file.getBoundary()) << std::endl;
-    // std::cout << "part -> " << str << std::endl;
     if (str.compare(0, file.getBoundary().size() + 2, "--" + file.getBoundary()) == 0) {
         size_t namePos = str.find("filename=\"");
         if (namePos != std::string::npos) {
@@ -111,7 +109,6 @@ int Request::readFile(int fd, UploadFile file, std::string str) {
                     return (1);
                 if (!file.openFile())
                     return (1);
-                // std::cout << "str -> |" << str <<'|' << std::endl;
                 size_t stop_p = str.find("\r\n\r\n");
                 if (stop_p != std::string::npos) {
                     str = str.substr(stop_p + 4);
@@ -121,9 +118,14 @@ int Request::readFile(int fd, UploadFile file, std::string str) {
         }
     }
     else {
-        std::cout << "str -> |" << str <<'|' << std::endl;
-        if (str.find(file.getBoundary()) != std::string::npos) {
-            std::cout << "FOUND\n";
+        size_t stopPos;
+        // std::cout << "is_open -> |" << file.getFd() <<'|' << std::endl;
+        // std::cout << "is_open -> |" << file.getFd()->is_open() <<'|' << std::endl;
+        if ((stopPos = str.find("\r\n--" + file.getBoundary() + "--")) != std::string::npos) {
+            str.erase(stopPos);
+            *file.getFd() << str;
+            // std::cout << "FOUND\n";
+            return (1);
         }
         if (!str.empty())
             *file.getFd() << str;
@@ -139,6 +141,7 @@ void Request::readHeaders(int fd, std::string& str) {
         if (parse(str))
             std::cerr << "Invalid Request" << std::endl;
         str = str.substr(stop_p + 4);
+        // std::cout << "length -> " << Headers["content-length"] << std::endl;
         if (method == "POST" 
             && Headers.find("content-type") != Headers.end()
             && Headers["content-type"].find("boundary=") != std::string::npos) {
@@ -157,16 +160,14 @@ int Request::setupFile(int fd) {
     size_t pos = Headers["content-type"].find("boundary=");
     size_t end = Headers["content-type"].find("\r\n", pos);
     std::string boundary = Headers["content-type"].substr(pos + 9, end);
-    std::cout << "Boundary -> " << boundary << std::endl;
+    // std::cout << "Boundary -> " << boundary << std::endl;
     file.setBoundary(boundary);
     addUpload(fd, file);
     return (0);
-    // std::ofstream f_write = 
 }
 
 int Request::readRequest(int fd) {
     char buff[4096];
-    // int readType;
     std::string str;
     ssize_t received = recv(fd, buff, sizeof(buff) - 1, 0);
     // std::cout << "received: " << received << std::endl;
@@ -177,8 +178,10 @@ int Request::readRequest(int fd) {
     }
     else if (received == 0) {
         std::cout << "Connection closed!" << std::endl;
-        if (uploads.find(fd) != uploads.end())
+        if (uploads.find(fd) != uploads.end()) {
+            std::cout << "Closed"<< std::endl;
             uploads.erase(fd);
+        }
         close(fd);
     }
     else {
@@ -186,16 +189,13 @@ int Request::readRequest(int fd) {
         str.append(buff, received);
         // std::cout << "received: " << str << std::endl;
         readHeaders(fd, str);
-        if (method == "POST"
-            && Headers.find("content-length") != Headers.end()) {
-            // std::cout << "POST str -> |" << str<< "|\n";
-            size_t s = atoi(Headers["content-length"].c_str());
-            if (str.size() >= s) {
-                setBody(str);
-            }
-        }
-        // else if (readType == 2) {
-        //     setupFile(request, str);
+        // if (method == "POST"
+        //     && Headers.find("content-length") != Headers.end()) {
+        //     // std::cout << "POST str -> |" << str<< "|\n";
+        //     size_t s = atoi(Headers["content-length"].c_str());
+        //     if (str.size() >= s) {
+        //         setBody(str);
+        //     }
         // }
     }
     return (0);
