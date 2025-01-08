@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/30 11:15:32 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/01/06 11:56:59 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/01/08 16:44:33 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -55,7 +55,10 @@ class Request {
         int readRequest(int fd);
         void readHeaders(int fd, std::string& str);
         int setupFile(int fd);
-        int readFile(int fd, UploadFile& file, std::string str);
+        int setupChunkedFile(int fd);
+        int readFile(UploadFile& file, std::string str);
+        int readChunkedFile(UploadFile& file, std::string str);
+        int hexToInt(std::string str);
     
 };
 

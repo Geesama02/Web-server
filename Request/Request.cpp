@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/30 12:07:04 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/01/06 16:59:59 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/01/08 16:53:35 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -95,8 +95,7 @@ int Request::parse(std::string buffer) {
     return (0);
 }
 
-int Request::readFile(int fd, UploadFile& file, std::string str) {
-    (void)fd;
+int Request::readFile(UploadFile& file, std::string str) {
     if (str.compare(0, file.getBoundary().size() + 2, "--" + file.getBoundary()) == 0) {
         size_t namePos = str.find("filename=\"");
         if (namePos != std::string::npos) {
@@ -124,11 +123,46 @@ int Request::readFile(int fd, UploadFile& file, std::string str) {
         if ((stopPos = str.find("\r\n--" + file.getBoundary() + "--")) != std::string::npos) {
             str.erase(stopPos);
             *file.getFd() << str;
+            file.setState(true);
             // std::cout << "FOUND\n";
             return (1);
         }
         if (!str.empty())
             *file.getFd() << str;
+    }
+    return (0);
+}
+
+int Request::hexToInt(std::string str) {
+    std::stringstream s(str);
+    int holder;
+    
+    s >> std::hex >> holder;
+    return (holder);
+}
+int Request::readChunkedFile(UploadFile& file, std::string str) {
+    if (file.isFirstRead() && !str.empty()) {
+        file.setFirstRead(false);
+        size_t endPos = str.find("\r\n");
+        if (endPos != std::string::npos) {
+            std::string toRead = str.substr(0, endPos);
+            std::cout << "Hex num -> |" << toRead << '|' << std::endl;
+            // std::cout << "decimal num -> |" << hexToInt(toRead) << '|' << std::endl;
+        }
+        else
+            std::cout << "not found\n";
+    }
+    else {
+        size_t startPos = str.find("\r\n");
+        if (startPos != std::string::npos) {
+            startPos = startPos + 2;
+            size_t endPos = str.find("\r\n", startPos);
+            if (endPos != std::string::npos) {
+                std::string toRead = str.substr(startPos, endPos - startPos);
+                std::cout << "found\n";
+                std::cout << "Hex num -> |" << toRead << '|'<< hexToInt(toRead)<< '|' << std::endl;
+            }
+        }
     }
     return (0);
 }
@@ -147,12 +181,34 @@ void Request::readHeaders(int fd, std::string& str) {
             && Headers["content-type"].find("boundary=") != std::string::npos) {
             setupFile(fd);
         }
+        else if (method == "POST" 
+            && Headers.find("transfer-encoding") != Headers.end()) {
+                if (Headers["transfer-encoding"] == "chunked") {
+                    setupChunkedFile(fd);
+                }
+                else {
+                    // bad request
+                }
+        }
     }
-    if (uploads.find(fd) != uploads.end()) {
-        if (readFile(fd, uploads[fd], str)) {
+    if (uploads.find(fd) != uploads.end() && uploads[fd].getType() == "multipart") {
+        if (readFile(uploads[fd], str)) {
             uploads.erase(fd);
         }
     }
+    else if (uploads.find(fd) != uploads.end() && uploads[fd].getType() == "chunked") {
+        if (readChunkedFile(uploads[fd], str)) {
+            uploads.erase(fd);
+        }
+    }
+}
+
+int Request::setupChunkedFile(int fd) {
+    UploadFile file;
+    
+    file.setType("chunked");
+    addUpload(fd, file);
+    return (0);
 }
 
 int Request::setupFile(int fd) {
@@ -160,7 +216,7 @@ int Request::setupFile(int fd) {
     size_t pos = Headers["content-type"].find("boundary=");
     size_t end = Headers["content-type"].find("\r\n", pos);
     std::string boundary = Headers["content-type"].substr(pos + 9, end);
-    // std::cout << "Boundary -> " << boundary << std::endl;
+    file.setType("multipart");
     file.setBoundary(boundary);
     addUpload(fd, file);
     return (0);
@@ -189,6 +245,8 @@ int Request::readRequest(int fd) {
         str.append(buff, received);
         // std::cout << "received: " << str << std::endl;
         readHeaders(fd, str);
+        // if (method == "")
+        //     exit(0);
         // if (method == "POST"
         //     && Headers.find("content-length") != Headers.end()) {
         //     // std::cout << "POST str -> |" << str<< "|\n";
