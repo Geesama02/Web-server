@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/30 12:07:04 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/01/08 16:53:35 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/01/10 14:49:13 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -140,64 +140,106 @@ int Request::hexToInt(std::string str) {
     s >> std::hex >> holder;
     return (holder);
 }
-int Request::readChunkedFile(UploadFile& file, std::string str) {
-    if (file.isFirstRead() && !str.empty()) {
-        file.setFirstRead(false);
-        size_t endPos = str.find("\r\n");
-        if (endPos != std::string::npos) {
-            std::string toRead = str.substr(0, endPos);
-            std::cout << "Hex num -> |" << toRead << '|' << std::endl;
-            // std::cout << "decimal num -> |" << hexToInt(toRead) << '|' << std::endl;
+
+int Request::writeFirstChunk(UploadFile& file, std::string& str) {
+    size_t endPos = str.find("\r\n");
+    if (endPos != std::string::npos) {
+        std::string toRead = str.substr(0, endPos);
+        file.setExpectedBytes(hexToInt(toRead));
+        if (file.getExpectedBytes() == 0) {
+            file.setState(true);
+            return (1);
         }
-        else
-            std::cout << "not found\n";
+        str = str.substr(endPos + 2);
+        if (!file.getFd() && !file.openFile())
+            return (1);
+        if (writeFile(file, str) != 0)
+            return (1);
     }
-    else {
-        size_t startPos = str.find("\r\n");
-        if (startPos != std::string::npos) {
-            startPos = startPos + 2;
-            size_t endPos = str.find("\r\n", startPos);
-            if (endPos != std::string::npos) {
-                std::string toRead = str.substr(startPos, endPos - startPos);
-                std::cout << "found\n";
-                std::cout << "Hex num -> |" << toRead << '|'<< hexToInt(toRead)<< '|' << std::endl;
+    return (0);
+}
+
+int Request::checkChunks(UploadFile& file, std::string& str) {
+    size_t startPos = str.find("\r\n");
+    if (startPos != std::string::npos && file.getExpectedBytes() == 0) {
+        startPos = startPos + 2;
+        size_t endPos = str.find("\r\n", startPos);
+        if (endPos != std::string::npos) {
+            std::string toRead = str.substr(startPos, endPos - startPos);
+            file.setExpectedBytes(hexToInt(toRead));
+            if (file.getExpectedBytes() == 0) {
+                file.setState(true);
+                return (1);
             }
+            str = str.substr(endPos + 2);
         }
+        else 
+            file.setTmpContent(str.substr(startPos)); // if chunk size is cut off
+    }
+    return (0);
+}
+
+int Request::writeFile(UploadFile& file, std::string& str) {
+    std::string toWrite = str.substr(0, file.getExpectedBytes());
+    *file.getFd() << toWrite;
+    file.setExpectedBytes(file.getExpectedBytes() - toWrite.size());
+    if (toWrite.size() < str.size()) {
+        str = str.substr(toWrite.size());
+        if (str == "\r\n0\r\n\r\n") { // all chunks received
+            file.setState(true);
+            return (1);
+        }
+        if (file.getExpectedBytes() == 0) // save the new chunk to handle with next request
+            file.setTmpContent(str);
+    }
+    return (0);
+}
+
+int Request::readChunkedFile(UploadFile& file, std::string str) {
+    if (file.getTmpContent() != "") { // merge saved input with new file binary
+        str = file.getTmpContent() + str;
+        file.setTmpContent("");
+    }
+    if (file.isFirstRead() && !str.empty() && file.getExpectedBytes() == 0) { // get chunk size and write it
+        file.setFirstRead(false);
+        if (writeFirstChunk(file, str) != 0)
+            return (1);
+    }
+    else if (!str.empty()) {
+        if (checkChunks(file, str) != 0 || writeFile(file, str) != 0) // write chunk and check if there's other chunks
+            return (1);
     }
     return (0);
 }
 
 void Request::readHeaders(int fd, std::string& str) {
     size_t stop_p = str.find("\r\n\r\n");
-    // std::cout << "str -> " << str << std::endl;
     if (uploads.find(fd) == uploads.end()
             && stop_p != std::string::npos) {
         if (parse(str))
             std::cerr << "Invalid Request" << std::endl;
         str = str.substr(stop_p + 4);
-        // std::cout << "length -> " << Headers["content-length"] << std::endl;
         if (method == "POST" 
             && Headers.find("content-type") != Headers.end()
             && Headers["content-type"].find("boundary=") != std::string::npos) {
             setupFile(fd);
         }
         else if (method == "POST" 
-            && Headers.find("transfer-encoding") != Headers.end()) {
-                if (Headers["transfer-encoding"] == "chunked") {
-                    setupChunkedFile(fd);
-                }
-                else {
-                    // bad request
-                }
+                && Headers.find("transfer-encoding") != Headers.end()) {
+            if (Headers["transfer-encoding"] == "chunked")
+                setupChunkedFile(fd);
+            else {
+                // bad request
+            }
         }
     }
     if (uploads.find(fd) != uploads.end() && uploads[fd].getType() == "multipart") {
-        if (readFile(uploads[fd], str)) {
+        if (readFile(uploads[fd], str) != 0) {
             uploads.erase(fd);
         }
     }
     else if (uploads.find(fd) != uploads.end() && uploads[fd].getType() == "chunked") {
-        if (readChunkedFile(uploads[fd], str)) {
+        if (readChunkedFile(uploads[fd], str) != 0) {
             uploads.erase(fd);
         }
     }
@@ -234,10 +276,8 @@ int Request::readRequest(int fd) {
     }
     else if (received == 0) {
         std::cout << "Connection closed!" << std::endl;
-        if (uploads.find(fd) != uploads.end()) {
-            std::cout << "Closed"<< std::endl;
+        if (uploads.find(fd) != uploads.end())
             uploads.erase(fd);
-        }
         close(fd);
     }
     else {

@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/03 10:58:22 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/01/08 16:03:58 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/01/10 11:12:46 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,6 +25,7 @@ class UploadFile {
         std::ofstream* fd;
         std::string filename;
         std::string type;
+        std::string tmpContent;
         size_t expectedBytes;
         bool firstRead;
         bool state;
@@ -36,6 +37,8 @@ class UploadFile {
         // Getters
         std::ofstream* getFd();
         std::string getFilename();
+        std::string getTmpContent();
+        size_t getExpectedBytes();
         std::string getType();
         bool isFirstRead();
         bool getState();
@@ -43,6 +46,8 @@ class UploadFile {
 
         // Setters
         void setFilename(std::string name);
+        void setTmpContent(std::string tmp);
+        void setExpectedBytes(size_t bytes);
         void setType(std::string n_type);
         void setState(bool s);
         void setFirstRead(bool s);
