@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/30 12:07:04 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/01/10 14:49:13 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/01/11 16:15:26 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -95,49 +95,75 @@ int Request::parse(std::string buffer) {
     return (0);
 }
 
-int Request::readFile(UploadFile& file, std::string str) {
-    if (str.compare(0, file.getBoundary().size() + 2, "--" + file.getBoundary()) == 0) {
-        size_t namePos = str.find("filename=\"");
-        if (namePos != std::string::npos) {
-            size_t nameStart = namePos + 10;
-            size_t nameEnd = str.find("\"", nameStart);
-            if (nameEnd != std::string::npos) {
-                file.setFilename(str.substr(nameStart, nameEnd - nameStart));
-                // std::cout << "filename -> |" << file.getFilename() <<'|' << std::endl;
-                if (file.getFilename().empty())
+int Request::handleFirstPart(UploadFile& file, std::string& str) {
+    size_t namePos = str.find("filename=\"");
+    if (namePos != std::string::npos) {
+        size_t nameStart = namePos + 10;
+        size_t nameEnd = str.find("\"", nameStart);
+        if (nameEnd != std::string::npos) {
+            file.setFilename(str.substr(nameStart, nameEnd - nameStart));
+            if (file.getFilename().empty())
+                return (1);
+            if (!file.openFile())
+                return (1);
+            size_t stop_p = str.find("\r\n\r\n");
+            if (stop_p != std::string::npos) {
+                file.setExpectedBytes(file.getExpectedBytes() - (stop_p + 4));
+                str = str.substr(stop_p + 4);
+                if (handleFilePart(file, str) != 0)
                     return (1);
-                if (!file.openFile())
-                    return (1);
-                size_t stop_p = str.find("\r\n\r\n");
-                if (stop_p != std::string::npos) {
-                    str = str.substr(stop_p + 4);
-                    *file.getFd() << str;
-                }
             }
         }
     }
-    else {
-        size_t stopPos;
-        // std::cout << "is_open -> |" << file.getFd() <<'|' << std::endl;
-        // std::cout << "is_open -> |" << file.getFd()->is_open() <<'|' << std::endl;
-        if ((stopPos = str.find("\r\n--" + file.getBoundary() + "--")) != std::string::npos) {
-            str.erase(stopPos);
-            *file.getFd() << str;
-            file.setState(true);
-            // std::cout << "FOUND\n";
-            return (1);
+    return (0);
+}
+int Request::handleFilePart(UploadFile& file, std::string& str) {
+    size_t stopPos;
+    if ((stopPos = str.find("\r\n--" + file.getBoundary() + "--")) != std::string::npos) {
+        str.erase(stopPos);
+        *file.getFd() << str;
+        file.setState(true);
+        return (1);
+    }
+    if (!str.empty()) {
+        std::string toWrite = str.substr(0, file.getExpectedBytes() - (file.getBoundary().size() - 6)); // write exactly the file binary length
+        *file.getFd() << toWrite;
+        file.setExpectedBytes(file.getExpectedBytes() - toWrite.size());
+        if (toWrite.size() < str.size()) {
+            str = str.substr(toWrite.size());
+            file.setTmpContent(str);
         }
-        if (!str.empty())
-            *file.getFd() << str;
     }
     return (0);
 }
 
-int Request::hexToInt(std::string str) {
+int Request::readFile(UploadFile& file, std::string str) {
+    if (file.getTmpContent() != "") { // merge saved input with new file binary
+        str = file.getTmpContent() + str;
+        file.setTmpContent("");
+    }
+    if (str.compare(0, file.getBoundary().size() + 2, "--" + file.getBoundary()) == 0) {
+        if (handleFirstPart(file, str) != 0)
+            return (1);
+    }
+    else if (handleFilePart(file, str) != 0)
+        return (1);
+    return (0);
+}
+
+long long Request::hexToDecimal(std::string str) {
     std::stringstream s(str);
-    int holder;
+    long long holder;
     
     s >> std::hex >> holder;
+    return (holder);
+}
+
+long long Request::strToDecimal(std::string str) {
+    std::stringstream s(str);
+    long long holder;
+    
+    s >> holder;
     return (holder);
 }
 
@@ -145,9 +171,10 @@ int Request::writeFirstChunk(UploadFile& file, std::string& str) {
     size_t endPos = str.find("\r\n");
     if (endPos != std::string::npos) {
         std::string toRead = str.substr(0, endPos);
-        file.setExpectedBytes(hexToInt(toRead));
-        if (file.getExpectedBytes() == 0) {
-            file.setState(true);
+        file.setExpectedBytes(hexToDecimal(toRead));
+        if (file.getExpectedBytes() <= 0) {
+            if (file.getExpectedBytes() == 0)
+                file.setState(true);
             return (1);
         }
         str = str.substr(endPos + 2);
@@ -166,9 +193,10 @@ int Request::checkChunks(UploadFile& file, std::string& str) {
         size_t endPos = str.find("\r\n", startPos);
         if (endPos != std::string::npos) {
             std::string toRead = str.substr(startPos, endPos - startPos);
-            file.setExpectedBytes(hexToInt(toRead));
-            if (file.getExpectedBytes() == 0) {
-                file.setState(true);
+            file.setExpectedBytes(hexToDecimal(toRead));
+            if (file.getExpectedBytes() <= 0) {
+                if (file.getExpectedBytes() == 0)
+                    file.setState(true);
                 return (1);
             }
             str = str.substr(endPos + 2);
@@ -232,9 +260,13 @@ void Request::readHeaders(int fd, std::string& str) {
                 // bad request
             }
         }
+        else if (method == "POST") {
+            
+        }
     }
     if (uploads.find(fd) != uploads.end() && uploads[fd].getType() == "multipart") {
         if (readFile(uploads[fd], str) != 0) {
+            std::cout << "out\n";
             uploads.erase(fd);
         }
     }
@@ -255,11 +287,16 @@ int Request::setupChunkedFile(int fd) {
 
 int Request::setupFile(int fd) {
     UploadFile file;
+    if (Headers.find("content-length") != Headers.end()) {
+        file.setExpectedBytes(strToDecimal(Headers["content-length"]));
+        std::cout << "length -> " << file.getExpectedBytes() << std::endl;
+    }
     size_t pos = Headers["content-type"].find("boundary=");
     size_t end = Headers["content-type"].find("\r\n", pos);
     std::string boundary = Headers["content-type"].substr(pos + 9, end);
     file.setType("multipart");
     file.setBoundary(boundary);
+    std::cout << "blength -> " << file.getBoundary().size() << std::endl;
     addUpload(fd, file);
     return (0);
 }

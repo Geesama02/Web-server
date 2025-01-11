@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/03 11:07:50 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/01/10 12:01:26 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/01/11 10:37:55 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,7 +24,7 @@ UploadFile::UploadFile() {
 std::ofstream* UploadFile::getFd() { return (fd); }
 std::string UploadFile::getFilename() { return (filename); }
 std::string UploadFile::getTmpContent() { return (tmpContent); }
-size_t UploadFile::getExpectedBytes() { return (expectedBytes); }
+long long UploadFile::getExpectedBytes() { return (expectedBytes); }
 std::string UploadFile::getType() { return (type); }
 std::string UploadFile::getBoundary() { return (boundary); }
 bool UploadFile::isFirstRead() { return (firstRead); }
@@ -34,7 +34,7 @@ bool UploadFile::getState() { return (state); }
 void UploadFile::setFilename(std::string name) { filename = name; }
 void UploadFile::setTmpContent(std::string tmp) { tmpContent = tmp; }
 void UploadFile::setType(std::string n_type) { type = n_type; }
-void UploadFile::setExpectedBytes(size_t bytes) { expectedBytes = bytes; }
+void UploadFile::setExpectedBytes(long long bytes) { expectedBytes = bytes; }
 void UploadFile::setFirstRead(bool fr) { firstRead = fr; }
 void UploadFile::setState(bool s) { state = s; }
 void UploadFile::setBoundary(std::string name) { boundary = name; }
