@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/22 11:25:38 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/01/06 10:13:46 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/01/14 17:19:38 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -129,6 +129,7 @@ int Config::handleClient(int fd) {
     
     if (request.readRequest(fd))
         return (1);
+    std::cout << "path -> " << request.getPath() << std::endl;
     if (request.getMethod() == "GET") {
         send(fd, response.c_str(), response.size(), 0);
     } 

@@ -6,13 +6,17 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/30 12:07:04 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/01/11 16:15:26 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/01/14 14:03:22 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Request.hpp"
 
 std::map<int, UploadFile> Request::uploads;
+std::map<int, Request> Request::unfinishedReqs;
+
+// Constructor
+Request::Request() : contentLength(0) {}
 
 // Getters
 std::map<std::string, std::string>& Request::getHeaders() { return Headers; }
@@ -240,41 +244,74 @@ int Request::readChunkedFile(UploadFile& file, std::string str) {
     return (0);
 }
 
+int Request::setupPostBody(int fd, std::string str) {
+    contentLength = strToDecimal(Headers["content-length"]);
+    if (contentLength < 0)
+        return (1);
+    std::string toSave = str.substr(0, contentLength);
+    contentLength -= toSave.size();
+    body += toSave;
+    if (contentLength != 0)
+        unfinishedReqs[fd] = *this;
+    return (0);
+}
+
+int Request::continuePostBody(Request& req, std::string str) {
+    std::string toSave = str.substr(0, req.contentLength);
+    req.contentLength -= toSave.size();
+    req.body += toSave;
+    if (req.contentLength == 0)
+        std::cout << "all body -> " << req.body << std::endl;
+    return (0);
+}
+
+void Request::handleFiles(int fd, std::string& str) {
+    if (uploads.find(fd) != uploads.end() && uploads[fd].getType() == "multipart") {
+        if (readFile(uploads[fd], str) != 0)
+            uploads.erase(fd);
+    }
+    else if (uploads.find(fd) != uploads.end() && uploads[fd].getType() == "chunked") {
+        if (readChunkedFile(uploads[fd], str) != 0)
+            uploads.erase(fd);
+    }
+}
+
+void Request::handlePostReq(int fd, std::string& str) {
+    if (method == "POST" 
+        && Headers.find("content-type") != Headers.end()
+        && Headers["content-type"].find("boundary=") != std::string::npos) {
+        setupFile(fd);
+    }
+    else if (method == "POST" 
+            && Headers.find("transfer-encoding") != Headers.end()) {
+        if (Headers["transfer-encoding"] == "chunked")
+            setupChunkedFile(fd);
+        else {
+            // bad request
+        }
+    }
+    else if (method == "POST"
+            && Headers.find("content-length") != Headers.end()) {
+        setupPostBody(fd, str);
+    }
+    else if (method == "POST") {
+        // bad request
+    }
+}
+
 void Request::readHeaders(int fd, std::string& str) {
     size_t stop_p = str.find("\r\n\r\n");
     if (uploads.find(fd) == uploads.end()
-            && stop_p != std::string::npos) {
+        && unfinishedReqs.find(fd) == unfinishedReqs.end()
+        && stop_p != std::string::npos) {
         if (parse(str))
             std::cerr << "Invalid Request" << std::endl;
         str = str.substr(stop_p + 4);
-        if (method == "POST" 
-            && Headers.find("content-type") != Headers.end()
-            && Headers["content-type"].find("boundary=") != std::string::npos) {
-            setupFile(fd);
-        }
-        else if (method == "POST" 
-                && Headers.find("transfer-encoding") != Headers.end()) {
-            if (Headers["transfer-encoding"] == "chunked")
-                setupChunkedFile(fd);
-            else {
-                // bad request
-            }
-        }
-        else if (method == "POST") {
-            
-        }
+        handlePostReq(fd, str);
     }
-    if (uploads.find(fd) != uploads.end() && uploads[fd].getType() == "multipart") {
-        if (readFile(uploads[fd], str) != 0) {
-            std::cout << "out\n";
-            uploads.erase(fd);
-        }
-    }
-    else if (uploads.find(fd) != uploads.end() && uploads[fd].getType() == "chunked") {
-        if (readChunkedFile(uploads[fd], str) != 0) {
-            uploads.erase(fd);
-        }
-    }
+    else if (unfinishedReqs.find(fd) != unfinishedReqs.end())
+        continuePostBody(unfinishedReqs[fd], str);
+    handleFiles(fd, str);
 }
 
 int Request::setupChunkedFile(int fd) {
@@ -296,7 +333,6 @@ int Request::setupFile(int fd) {
     std::string boundary = Headers["content-type"].substr(pos + 9, end);
     file.setType("multipart");
     file.setBoundary(boundary);
-    std::cout << "blength -> " << file.getBoundary().size() << std::endl;
     addUpload(fd, file);
     return (0);
 }
@@ -309,13 +345,15 @@ int Request::readRequest(int fd) {
     if (received < 0) {
         std::cerr << "Failed to read!" << std::endl;
         close(fd);
-        return (1);
     }
     else if (received == 0) {
         std::cout << "Connection closed!" << std::endl;
         if (uploads.find(fd) != uploads.end())
             uploads.erase(fd);
+        else if (unfinishedReqs.find(fd) != unfinishedReqs.end())
+            unfinishedReqs.erase(fd);
         close(fd);
+        // return (1);
     }
     else {
         buff[received] = '\0';

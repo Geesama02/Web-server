@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/30 11:15:32 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/01/11 15:29:23 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/01/14 13:57:28 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,12 +27,17 @@
 class Request {
     private:
         static std::map<int, UploadFile> uploads;
+        static std::map<int, Request> unfinishedReqs;
         std::map<std::string, std::string> Headers;
         std::string method;
+        long long contentLength;
         std::string path;
         std::string version;
         std::string body;
     public:
+        // Constructor
+        Request();
+
         // Getters
         std::map<std::string, std::string>& getHeaders();
         std::string getMethod();
@@ -56,6 +61,8 @@ class Request {
         void readHeaders(int fd, std::string& str);
         int setupFile(int fd);
         int setupChunkedFile(int fd);
+        int setupPostBody(int fd, std::string str);
+        int continuePostBody(Request& req, std::string str);
         int readFile(UploadFile& file, std::string str);
         int readChunkedFile(UploadFile& file, std::string str);
         long long hexToDecimal(std::string str);
@@ -65,6 +72,8 @@ class Request {
         int checkChunks(UploadFile& file, std::string& str);
         int handleFilePart(UploadFile& file, std::string& str);
         int handleFirstPart(UploadFile& file, std::string& str);
+        void handleFiles(int fd, std::string& str);
+        void handlePostReq(int fd, std::string& str);
         
 };
 
