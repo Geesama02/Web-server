@@ -6,13 +6,14 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/14 17:03:53 by maglagal          #+#    #+#             */
-/*   Updated: 2025/01/16 12:06:16 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/01/16 14:19:03 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Response.hpp"
 #include <sys/stat.h>
 #include <sys/socket.h>
+#include <errno.h>
 
 //constructor
 Response::Response() {
@@ -44,13 +45,13 @@ void Response::searchForFile(std::string fileName) {
         return;
     }
     if (!stat(fileName.c_str(), &st)) {
-        if (st.st_mode & S_IFDIR) {
+        if (st.st_mode & S_IFDIR || (!(st.st_mode & S_IRUSR))) {
             statusCode = 403;
             return ;
         }
-        else if (st.st_mode & S_IFREG) {
+        else if ((st.st_mode & S_IFREG) && (st.st_mode & S_IRUSR)) {
             statusCode = 200;
-            return;
+            return ;
         }
     }
     statusCode = 404;
