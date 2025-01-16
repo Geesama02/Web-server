@@ -6,7 +6,7 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/22 11:25:38 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/01/15 15:30:15 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/01/16 12:05:04 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -118,55 +118,14 @@ int Config::acceptConnection(int fd, int epoll_fd, epoll_event& ev) {
 int Config::handleClient(int fd) {
     std::string str;
     Request request;
-    // struct stat fl;
     Response res;
-    std::string successRes = "HTTP/1.1 200 OK\r\n"
-                    "Content-Type: text/html\r\n"
-                    "Content-Length: 147\r\n"
-                    "Connection: keep-alive\r\n"
-                    "\r\n"
-                    "<!DOCTYPE html>"
-                    "<html><head></head><body><form method=\"post\" enctype=\"multipart/form-data\">"
-                        "<input type=\"file\" name=\"file\">"
-                        "<button>Upload</button>"
-                    "</form></body></html>";
-
-    std::string forbiddenRes = "HTTP/1.1 403 Forbidden \r\n"
-                        "Server: webserv\r\n"
-                        "Connection: keep-alive\r\n"
-                        "Content-Type: text/html\r\n"
-                        "\r\n";
-
-    std::string notFoundRes = "HTTP/1.1 404 Not Found \r\n"
-                        "Server: webserv\r\n"
-                        "Connection: keep-alive\r\n"
-                        "Content-Type: text/html\r\n"
-                        "\r\n"
-                        "<!DOCTYPE html>"
-                        "<html><head>"
-                            "<style>"
-                            "h1, p {text-align:center}</style></head><body>"
-                            "<h1>404 Not Found</h1>"
-                            "<hr></hr>"
-                            "<p>Webserv</p>"
-                        "</body></html>";
     
     if (request.readRequest(fd))
         return (1);
 
-    int status = 0;
     if (!request.getPath().empty())
-        status = res.searchForFile(request.getPath());
-    std::cout << status << std::endl;
-    if (status == 200)
-        send(fd, successRes.c_str(), successRes.size(), 0);
-    else if (status == 403)
-        send(fd, forbiddenRes.c_str(), forbiddenRes.size(), 0);
-    else if (status == 404)
-        send(fd, notFoundRes.c_str(), notFoundRes.size(), 0);
-    else if (request.getMethod() == "GET" && request.getPath() == "/") {
-        send(fd, successRes.c_str(), successRes.size(), 0);
-    }
+        res.searchForFile(request.getPath());
+    res.sendResponse(fd);
     return (0);
 }
 

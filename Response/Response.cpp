@@ -6,46 +6,92 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/14 17:03:53 by maglagal          #+#    #+#             */
-/*   Updated: 2025/01/15 15:31:15 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/01/16 12:06:16 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Response.hpp"
 #include <sys/stat.h>
+#include <sys/socket.h>
+
+//constructor
+Response::Response() {
+    Headers["Content-Type"] = "text/html";
+    Headers["Connection"] = "keep-alive";
+    Headers["Server"] = "Webserv";
+    statusMssg = "HTTP/1.1 ";
+    statusCode = 0;
+}
 
 //getters
-std::string Response::getConnection() { return connection; };
-int         Response::getContentLength() { return contentLength; };
-std::string Response::getEtag() { return eTag; };
-std::string Response::getLastModified() { return lastModified; };
-std::string Response::getServer() { return server; };
+int         Response::getStatusCode() { return statusCode; };
+std::string Response::getStatusMssg() { return statusMssg; };
+std::string Response::getHeader( std::string key ) { return (Headers.find(key)->second); };
 
 //setters
-void Response::setConnection(std::string value) { connection = value; };
-void Response::setContentLength(int value) { contentLength = value; }; 
-void Response::setEtag(std::string value) { eTag = value; };
-void Response::setLastModified(std::string value) { lastModified = value; };
-void Response::setServer(std::string value) { server =  value; };
+void Response::setStatusCode(int value) { statusCode = value; };
+void Response::setStatusMssg( std::string value ) { statusMssg = value; };
+void Response::setHeader( std::string key, std::string value ) { Headers.find(key)->second = value; };
 
 //other
-int Response::searchForFile(std::string fileName) {
+void Response::searchForFile(std::string fileName) {
     struct stat st;
 
     if (fileName != "/")
         fileName.erase(0, 1);
-    else
-        return (0);
-    std::cout << fileName << std::endl;
+    else {
+        statusCode = 200;
+        return;
+    }
     if (!stat(fileName.c_str(), &st)) {
-        std::cout << "FOUND!!\n";
         if (st.st_mode & S_IFDIR) {
-            std::cout << "DIR!!!\n";
-            return (403);
+            statusCode = 403;
+            return ;
         }
         else if (st.st_mode & S_IFREG) {
-            std::cout << "file!!!\n";
-            return (200);
+            statusCode = 200;
+            return;
         }
     }
-    return (404);
+    statusCode = 404;
 }
+
+void Response::fillBody() {
+    if (statusCode == 200) {
+        statusMssg += "200 OK\r\n";
+        body = "<!DOCTYPE html>"
+             "<html><head></head><body><form method=\"post\" enctype=\"multipart/form-data\">"
+             "<input type=\"file\" name=\"file\">"
+             "<button>Upload</button>"
+            "</form></body></html>";
+    }
+    else if (statusCode == 404) {
+        statusMssg += "404 Not Found\r\n";
+        body = "<!DOCTYPE html>"
+              "<html><head>"
+              "<style>"
+              "h1, p {text-align:center}</style></head><body>"
+              "<h1>404 Not Found</h1>"
+              "<hr></hr>"
+              "<p>Webserv</p>"
+              "</body></html>";
+    }
+}
+
+void Response::sendResponse(int fd) {
+    std::map<std::string, std::string>::iterator it = Headers.begin();
+    fillBody();
+    if (statusCode == 403)
+        statusMssg += "403 Forbidden\r\n";
+    finalRes += statusMssg;
+    while (it != Headers.end()) {
+        std::string header = it->first + ": " + it->second;
+        finalRes += header + "\r\n";
+        it++;
+    }
+    finalRes += "\r\n";
+    if (!body.empty())
+        finalRes += body;
+    send(fd, finalRes.c_str(), finalRes.size(), 0);
+}
+

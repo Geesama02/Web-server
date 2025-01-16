@@ -6,7 +6,7 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/14 16:55:34 by maglagal          #+#    #+#             */
-/*   Updated: 2025/01/15 15:31:24 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/01/16 12:02:47 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,32 +15,33 @@
 
 #include <iostream>
 #include <dirent.h>
+#include <map>
 
 class Response {
     private:
-        std::string connection;
-        int         contentLength;
-        std::string eTag;
-        std::string lastModified;
-        std::string server;
+        int         statusCode;
+        std::string statusMssg;
+        std::string body;
+        std::string finalRes;
+        std::map<std::string, std::string> Headers;
+        void        fillBody();
     public:
+        //constructor
+        Response();
+
         //getters
-        std::string getConnection();
-        int         getContentLength();
-        std::string getEtag();
-        std::string getLastModified();
-        std::string getServer();
+        int         getStatusCode();
+        std::string getStatusMssg();
+        std::string getHeader( std::string key );
 
         //setters
-        void setConnection(std::string value);
-        void setContentLength(int value);
-        void setEtag(std::string value);
-        void setLastModified(std::string value);
-        void setServer(std::string value);
+        void    setStatusCode(int value);
+        void    setStatusMssg(std::string value);
+        void    setHeader( std::string key, std::string value );
         
         //other
-        int searchForFile(std::string fileName);
-
+        void    searchForFile(std::string fileName);
+        void    sendResponse(int fd);
 };
 
 #endif
