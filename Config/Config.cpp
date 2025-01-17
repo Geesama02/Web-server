@@ -6,7 +6,7 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/22 11:25:38 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/01/16 12:05:04 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/01/17 10:54:39 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -116,16 +116,14 @@ int Config::acceptConnection(int fd, int epoll_fd, epoll_event& ev) {
 }
 
 int Config::handleClient(int fd) {
-    std::string str;
     Request request;
     Response res;
     
     if (request.readRequest(fd))
         return (1);
-
     if (!request.getPath().empty())
         res.searchForFile(request.getPath());
-    res.sendResponse(fd);
+    res.sendResponse(fd, request);
     return (0);
 }
 

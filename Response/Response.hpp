@@ -6,13 +6,14 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/14 16:55:34 by maglagal          #+#    #+#             */
-/*   Updated: 2025/01/16 12:02:47 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/01/17 14:56:11 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #define RESPONSE_HPP
 #ifndef REPONSE_HPP
 
+#include "../Request/Request.hpp"
 #include <iostream>
 #include <dirent.h>
 #include <map>
@@ -24,7 +25,10 @@ class Response {
         std::string body;
         std::string finalRes;
         std::map<std::string, std::string> Headers;
-        void        fillBody();
+        std::map<std::string, std::string> ContentHeader;
+        void        fillBody(Request req);
+        void        initializeContentHeader();
+        void        checkForFileExtension(std::string fileName);
     public:
         //constructor
         Response();
@@ -41,7 +45,7 @@ class Response {
         
         //other
         void    searchForFile(std::string fileName);
-        void    sendResponse(int fd);
+        void    sendResponse(int fd, Request req);
 };
 
 #endif

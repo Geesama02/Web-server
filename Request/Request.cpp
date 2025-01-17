@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Request.cpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
+/*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/30 12:07:04 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/01/14 14:03:22 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/01/17 15:20:59 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -345,6 +345,7 @@ int Request::readRequest(int fd) {
     if (received < 0) {
         std::cerr << "Failed to read!" << std::endl;
         close(fd);
+        return (1);
     }
     else if (received == 0) {
         std::cout << "Connection closed!" << std::endl;
@@ -353,7 +354,7 @@ int Request::readRequest(int fd) {
         else if (unfinishedReqs.find(fd) != unfinishedReqs.end())
             unfinishedReqs.erase(fd);
         close(fd);
-        // return (1);
+        return (1);
     }
     else {
         buff[received] = '\0';
