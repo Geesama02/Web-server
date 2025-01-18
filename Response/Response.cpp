@@ -6,7 +6,7 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/14 17:03:53 by maglagal          #+#    #+#             */
-/*   Updated: 2025/01/17 15:59:13 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/01/18 12:28:48 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,6 +20,7 @@
 //constructor
 Response::Response() {
     initializeContentHeader();
+    Headers["Accept-Ranges"] = "bytes";
     Headers["Content-Type"] = "text/html";
     Headers["Connection"] = "keep-alive";
     Headers["Server"] = "Webserv";
@@ -49,6 +50,7 @@ void Response::initializeContentHeader() {
     ContentHeader[".jpg"] = "image/jpeg";
     ContentHeader[".jpeg"] = "image/jpeg";
     ContentHeader[".mp4"] = "video/mp4";
+    ContentHeader[".mp3"] = "audio/mpeg";
 }
 
 void Response::checkForFileExtension(std::string extension) {
@@ -136,18 +138,39 @@ void Response::fillBody(Request req) {
 
 void Response::sendResponse(int fd, Request req) {
     char buff[150];
+    char buff2[150];
     std::map<std::string, std::string>::iterator it = Headers.begin();
     fillBody(req);
+    std::sprintf(buff, "%ld", body.size());
+    std::sprintf(buff2, "%ld", body.size() - 1);
+    setHeader("Content-Length", buff);
+    std::string sbuff = buff;
+    std::string sbuff2 = buff2;
+    if (req.getHeaders().find("range") != req.getHeaders().end())
+    {
+        std::string range = req.getHeaders()["range"];
+        size_t i = range.find("=");
+        if (i == std::string::npos)
+            return ;
+        range.replace(i, 1, " ");
+        std::cout << range << std::endl;
+        if (getHeader("Content-Type") == "video/mp4")
+        Headers["Content-Range"] = range + sbuff2 + '/' + sbuff;
+        statusMssg = "HTTP/1.1 206 Partial Content\r\n";
+        std::string test = range.substr(i, range.size() - i);
+        long long nc = req.strToDecimal(test);
+        body.erase(0, nc);
+        char buff3[150];
+        sprintf(buff3, "%ld", body.size());
+        setHeader("Content-Length", buff3);
+    }
     finalRes += statusMssg;
     while (it != Headers.end()) {
-        std::sprintf(buff, "%ld", body.size());
-        setHeader("Content-Length", buff);
         std::string header = it->first + ": " + it->second;
         finalRes += header + "\r\n";
         it++;
     }
     finalRes += "\r\n";
-    std::cout << body.size() << std::endl;
     if (!body.empty())
         finalRes += body;
     send(fd, finalRes.c_str(), finalRes.size(), 0);
