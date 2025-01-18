@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/22 11:25:38 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/01/14 17:19:38 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/01/17 15:18:21 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -43,12 +43,12 @@ int Config::startServers() {
                 if (isServerFd(fd))
                     acceptConnection(fd, epoll_fd, ev);
                 else
-                    handleClient(fd);
+                    handleClient(fd, epoll_fd);
             }
             else if (events[i].events & EPOLLERR) {
                 std::cerr << "Socket error on fd: " << events[i].data.fd << std::endl;
                 close(events[i].data.fd);
-                // epoll_ctl(epoll_fd, EPOLL_CTL_DEL, fd, NULL);
+                epoll_ctl(epoll_fd, EPOLL_CTL_DEL, events[i].data.fd, NULL);
             }
             else if (events[i].events & EPOLLOUT)
                 std::cout << "EPOLLOUT\n";
@@ -104,16 +104,20 @@ int Config::acceptConnection(int fd, int epoll_fd, epoll_event& ev) {
         ev.events = EPOLLIN;
         ev.data.fd = new_client;
         fcntl(new_client, F_SETFL, O_NONBLOCK);
+        Server server = getServer(fd);
+        server.setSocket(-1);
+        clientServer[new_client] = server;
         // add client socket to epoll to monitor
         if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, new_client, &ev) != 0) {
             std::cerr << "epoll_ctl error: " << strerror(errno) << std::endl;
+            clientServer.erase(new_client);
             close(new_client);
         }
     }
     return (0);
 }
 
-int Config::handleClient(int fd) {
+int Config::handleClient(int fd, int epoll_fd) {
     std::string str;
     Request request;
     std::string response =     "HTTP/1.1 200 OK\r\n"
@@ -126,10 +130,10 @@ int Config::handleClient(int fd) {
                         "<input type=\"file\" name=\"file\">"
                         "<button>Upload</button>"
                     "</form></body></html>";
-    
-    if (request.readRequest(fd))
-        return (1);
-    std::cout << "path -> " << request.getPath() << std::endl;
+    if (request.readRequest(fd, clientServer[fd])) {
+        epoll_ctl(epoll_fd, EPOLL_CTL_DEL, fd, NULL);
+        clientServer.erase(fd);
+    }
     if (request.getMethod() == "GET") {
         send(fd, response.c_str(), response.size(), 0);
     } 

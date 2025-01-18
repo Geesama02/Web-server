@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/30 12:07:04 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/01/14 14:03:22 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/01/18 13:52:44 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -260,8 +260,9 @@ int Request::continuePostBody(Request& req, std::string str) {
     std::string toSave = str.substr(0, req.contentLength);
     req.contentLength -= toSave.size();
     req.body += toSave;
-    if (req.contentLength == 0)
-        std::cout << "all body -> " << req.body << std::endl;
+    if (req.contentLength == 0) {
+        
+    }
     return (0);
 }
 
@@ -299,7 +300,7 @@ void Request::handlePostReq(int fd, std::string& str) {
     }
 }
 
-void Request::readHeaders(int fd, std::string& str) {
+void Request::readHeaders(int fd, std::string& str, Server server) {
     size_t stop_p = str.find("\r\n\r\n");
     if (uploads.find(fd) == uploads.end()
         && unfinishedReqs.find(fd) == unfinishedReqs.end()
@@ -307,6 +308,11 @@ void Request::readHeaders(int fd, std::string& str) {
         if (parse(str))
             std::cerr << "Invalid Request" << std::endl;
         str = str.substr(stop_p + 4);
+        if (method == "POST"
+            && Headers.find("content-length") != Headers.end()
+            && strToDecimal(Headers["content-length"]) > server.getClientMaxBodySize()) {
+            return;
+        }
         handlePostReq(fd, str);
     }
     else if (unfinishedReqs.find(fd) != unfinishedReqs.end())
@@ -337,7 +343,7 @@ int Request::setupFile(int fd) {
     return (0);
 }
 
-int Request::readRequest(int fd) {
+int Request::readRequest(int fd, Server server) {
     char buff[4096];
     std::string str;
     ssize_t received = recv(fd, buff, sizeof(buff) - 1, 0);
@@ -345,6 +351,7 @@ int Request::readRequest(int fd) {
     if (received < 0) {
         std::cerr << "Failed to read!" << std::endl;
         close(fd);
+        return (1);
     }
     else if (received == 0) {
         std::cout << "Connection closed!" << std::endl;
@@ -353,23 +360,13 @@ int Request::readRequest(int fd) {
         else if (unfinishedReqs.find(fd) != unfinishedReqs.end())
             unfinishedReqs.erase(fd);
         close(fd);
-        // return (1);
+        return (1);
     }
     else {
         buff[received] = '\0';
         str.append(buff, received);
         // std::cout << "received: " << str << std::endl;
-        readHeaders(fd, str);
-        // if (method == "")
-        //     exit(0);
-        // if (method == "POST"
-        //     && Headers.find("content-length") != Headers.end()) {
-        //     // std::cout << "POST str -> |" << str<< "|\n";
-        //     size_t s = atoi(Headers["content-length"].c_str());
-        //     if (str.size() >= s) {
-        //         setBody(str);
-        //     }
-        // }
+        readHeaders(fd, str, server);
     }
     return (0);
 }
