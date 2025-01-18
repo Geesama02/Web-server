@@ -3,14 +3,16 @@
 /*                                                        :::      ::::::::   */
 /*   Config.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
+/*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/22 11:25:38 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/01/17 15:18:21 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/01/17 10:54:39 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Config.hpp"
+#include "../Response/Response.hpp"
+#include <sys/stat.h>
 
 // Getters
 std::vector<Server> Config::getServer() { return Servers; }
@@ -118,25 +120,16 @@ int Config::acceptConnection(int fd, int epoll_fd, epoll_event& ev) {
 }
 
 int Config::handleClient(int fd, int epoll_fd) {
-    std::string str;
     Request request;
-    std::string response =     "HTTP/1.1 200 OK\r\n"
-                    "Content-Type: text/html\r\n"
-                    "Content-Length: 147\r\n"
-                    "Connection: keep-alive\r\n"
-                    "\r\n"
-                    "<!DOCTYPE html>"
-                    "<html><body><form method=\"post\" enctype=\"multipart/form-data\">"
-                        "<input type=\"file\" name=\"file\">"
-                        "<button>Upload</button>"
-                    "</form></body></html>";
+    Response res;
+    
     if (request.readRequest(fd, clientServer[fd])) {
         epoll_ctl(epoll_fd, EPOLL_CTL_DEL, fd, NULL);
         clientServer.erase(fd);
     }
-    if (request.getMethod() == "GET") {
-        send(fd, response.c_str(), response.size(), 0);
-    } 
+    if (!request.getPath().empty())
+        res.searchForFile(request.getPath());
+    res.sendResponse(fd, request);
     return (0);
 }
 
