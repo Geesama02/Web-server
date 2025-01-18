@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/30 11:15:32 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/01/14 13:57:28 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/01/16 11:30:26 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,6 +23,7 @@
 #include <cstring>
 #include <cstdlib>
 #include "UploadFile.hpp"
+#include "../Config/Server.hpp"
 
 class Request {
     private:
@@ -57,8 +58,8 @@ class Request {
         int parse(std::string buffer);
         std::vector<std::string> split(std::string buffer, int full, char del);
         void to_lower(std::string& str);
-        int readRequest(int fd);
-        void readHeaders(int fd, std::string& str);
+        int readRequest(int fd, Server server);
+        void readHeaders(int fd, std::string& str, Server server);
         int setupFile(int fd);
         int setupChunkedFile(int fd);
         int setupPostBody(int fd, std::string str);

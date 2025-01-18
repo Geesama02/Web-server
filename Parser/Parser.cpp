@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/21 14:31:56 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/01/02 12:11:15 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/01/18 15:25:07 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,8 +14,11 @@
 
 int Parser::startParsing(Config &config, char *filename) {
     std::string holder;
-    if (!filename)
-        return (1);
+    if (!filename) {
+        Server defaultServer;
+        config.addServer(defaultServer);
+        return (0);
+    }
     std::ifstream f_read(filename);
 	if (!f_read) {
 		std::cerr << "Failed to open file!\n";
@@ -134,9 +137,7 @@ int Parser::isNumber(std::string& str) {
 }
 
 int Parser::setPortVar(std::vector<std::string>& holder, Server& tmp_server, size_t& index) {
-    // std::cout << "*holder[index].rbegin()" << std::endl;
     index++;
-    // std::cout << str << std::endl;
     if (index < holder.size() && *holder[index].rbegin() == ';') {
         holder[index].erase(holder[index].end() - 1);
         if (!isNumber(holder[index]) || holder[index].empty() || holder[index].size() > 5) {
@@ -146,7 +147,6 @@ int Parser::setPortVar(std::vector<std::string>& holder, Server& tmp_server, siz
         tmp_server.setPort(std::atoi(holder[index].c_str()));
         if (tmp_server.getPort() > 65535 || tmp_server.getPort() == 0)
             return (1);
-        // std::cout << "Port: " << tmp_server.getPort() << std::endl;
         index++;
     }
     else
@@ -154,14 +154,22 @@ int Parser::setPortVar(std::vector<std::string>& holder, Server& tmp_server, siz
     return (0);
 }
 
+long long Parser::strToDecimal(std::string str) {
+    std::stringstream s(str);
+    long long holder;
+    
+    s >> holder;
+    return (holder);
+}
+
 int Parser::setMaxBodyVar(std::vector<std::string>& holder, Server& tmp_server, size_t& index) {
     index++;
     if (index < holder.size() && *holder[index].rbegin() == ';') {
         holder[index].erase(holder[index].end() - 1);
-        if (!isNumber(holder[index]) || holder[index].size() > 10
-            || atol(holder[index].c_str()) > 2147483647 || holder[index].empty())
+        if (!isNumber(holder[index]) || holder[index].size() > 12
+            || strToDecimal(holder[index]) > 107374182400 || holder[index].empty())
             return (1);
-        tmp_server.setClientMaxBodySize(std::atoi(holder[index].c_str()));
+        tmp_server.setClientMaxBodySize(strToDecimal(holder[index]));
         index++;
     }
     else

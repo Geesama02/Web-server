@@ -45,12 +45,12 @@ int Config::startServers() {
                 if (isServerFd(fd))
                     acceptConnection(fd, epoll_fd, ev);
                 else
-                    handleClient(fd);
+                    handleClient(fd, epoll_fd);
             }
             else if (events[i].events & EPOLLERR) {
                 std::cerr << "Socket error on fd: " << events[i].data.fd << std::endl;
                 close(events[i].data.fd);
-                // epoll_ctl(epoll_fd, EPOLL_CTL_DEL, fd, NULL);
+                epoll_ctl(epoll_fd, EPOLL_CTL_DEL, events[i].data.fd, NULL);
             }
             else if (events[i].events & EPOLLOUT)
                 std::cout << "EPOLLOUT\n";
@@ -106,21 +106,27 @@ int Config::acceptConnection(int fd, int epoll_fd, epoll_event& ev) {
         ev.events = EPOLLIN;
         ev.data.fd = new_client;
         fcntl(new_client, F_SETFL, O_NONBLOCK);
+        Server server = getServer(fd);
+        server.setSocket(-1);
+        clientServer[new_client] = server;
         // add client socket to epoll to monitor
         if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, new_client, &ev) != 0) {
             std::cerr << "epoll_ctl error: " << strerror(errno) << std::endl;
+            clientServer.erase(new_client);
             close(new_client);
         }
     }
     return (0);
 }
 
-int Config::handleClient(int fd) {
+int Config::handleClient(int fd, int epoll_fd) {
     Request request;
     Response res;
     
-    if (request.readRequest(fd))
-        return (1);
+    if (request.readRequest(fd, clientServer[fd])) {
+        epoll_ctl(epoll_fd, EPOLL_CTL_DEL, fd, NULL);
+        clientServer.erase(fd);
+    }
     if (!request.getPath().empty())
         res.searchForFile(request.getPath());
     res.sendResponse(fd, request);

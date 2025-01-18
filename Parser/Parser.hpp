@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/23 10:46:14 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/01/02 12:11:15 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/01/16 14:15:08 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,6 +27,7 @@ class Parser {
         void replace(std::string& line, char old_char, char new_char);
         int fillServer(Config& config, std::vector<std::string>& holder, size_t& index);
         int isNumber(std::string& str);
+        long long strToDecimal(std::string str);
         int setPortVar(std::vector<std::string>& holder, Server& tmp_server, size_t& index);
         int setRootVar(std::vector<std::string>& holder, Server& tmp_server, size_t& index);
         int setRootVar(std::vector<std::string>& holder, Location& tmp_location, size_t& index);

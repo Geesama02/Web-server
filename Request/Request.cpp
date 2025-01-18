@@ -260,8 +260,9 @@ int Request::continuePostBody(Request& req, std::string str) {
     std::string toSave = str.substr(0, req.contentLength);
     req.contentLength -= toSave.size();
     req.body += toSave;
-    if (req.contentLength == 0)
-        std::cout << "all body -> " << req.body << std::endl;
+    if (req.contentLength == 0) {
+        
+    }
     return (0);
 }
 
@@ -299,7 +300,7 @@ void Request::handlePostReq(int fd, std::string& str) {
     }
 }
 
-void Request::readHeaders(int fd, std::string& str) {
+void Request::readHeaders(int fd, std::string& str, Server server) {
     size_t stop_p = str.find("\r\n\r\n");
     if (uploads.find(fd) == uploads.end()
         && unfinishedReqs.find(fd) == unfinishedReqs.end()
@@ -307,6 +308,11 @@ void Request::readHeaders(int fd, std::string& str) {
         if (parse(str))
             std::cerr << "Invalid Request" << std::endl;
         str = str.substr(stop_p + 4);
+        if (method == "POST"
+            && Headers.find("content-length") != Headers.end()
+            && strToDecimal(Headers["content-length"]) > server.getClientMaxBodySize()) {
+            return;
+        }
         handlePostReq(fd, str);
     }
     else if (unfinishedReqs.find(fd) != unfinishedReqs.end())
@@ -337,7 +343,7 @@ int Request::setupFile(int fd) {
     return (0);
 }
 
-int Request::readRequest(int fd) {
+int Request::readRequest(int fd, Server server) {
     char buff[4096];
     std::string str;
     ssize_t received = recv(fd, buff, sizeof(buff) - 1, 0);
@@ -360,17 +366,7 @@ int Request::readRequest(int fd) {
         buff[received] = '\0';
         str.append(buff, received);
         // std::cout << "received: " << str << std::endl;
-        readHeaders(fd, str);
-        // if (method == "")
-        //     exit(0);
-        // if (method == "POST"
-        //     && Headers.find("content-length") != Headers.end()) {
-        //     // std::cout << "POST str -> |" << str<< "|\n";
-        //     size_t s = atoi(Headers["content-length"].c_str());
-        //     if (str.size() >= s) {
-        //         setBody(str);
-        //     }
-        // }
+        readHeaders(fd, str, server);
     }
     return (0);
 }
