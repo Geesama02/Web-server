@@ -6,7 +6,7 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/30 12:07:04 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/01/18 11:36:40 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/01/23 16:49:45 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -347,8 +347,9 @@ int Request::readRequest(int fd, Server server) {
     char buff[4096];
     std::string str;
     ssize_t received = recv(fd, buff, sizeof(buff) - 1, 0);
-    // std::cout << "received: " << received << std::endl;
+    std::cout << "received: " << received << std::endl;
     if (received < 0) {
+        std::cout << strerror(errno) << std::endl;
         std::cerr << "Failed to read!" << std::endl;
         close(fd);
         return (1);

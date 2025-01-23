@@ -6,7 +6,7 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/22 11:25:38 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/01/17 10:54:39 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/01/23 15:41:40 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -51,9 +51,14 @@ int Config::startServers() {
                 std::cerr << "Socket error on fd: " << events[i].data.fd << std::endl;
                 close(events[i].data.fd);
                 epoll_ctl(epoll_fd, EPOLL_CTL_DEL, events[i].data.fd, NULL);
+                if (Response::files.find(events[i].data.fd) != Response::files.end()) {
+                    Response::files[events[i].data.fd]->close();
+                    Response::files.erase(events[i].data.fd);
+                }
             }
-            else if (events[i].events & EPOLLOUT)
-                std::cout << "EPOLLOUT\n";
+            else if (events[i].events & EPOLLOUT) {
+                Response::sendBodyBytes(events[i].data.fd);
+            }
         }
     }
     return (0);
@@ -103,7 +108,7 @@ int Config::acceptConnection(int fd, int epoll_fd, epoll_event& ev) {
                 break;
             }
         }
-        ev.events = EPOLLIN;
+        ev.events = EPOLLIN | EPOLLOUT;
         ev.data.fd = new_client;
         fcntl(new_client, F_SETFL, O_NONBLOCK);
         Server server = getServer(fd);
@@ -122,13 +127,17 @@ int Config::acceptConnection(int fd, int epoll_fd, epoll_event& ev) {
 int Config::handleClient(int fd, int epoll_fd) {
     Request request;
     Response res;
-    
+
     if (request.readRequest(fd, clientServer[fd])) {
         epoll_ctl(epoll_fd, EPOLL_CTL_DEL, fd, NULL);
         clientServer.erase(fd);
+        if (Response::files.find(fd) != Response::files.end()) {
+            Response::files[fd]->close();
+            Response::files.erase(fd);
+        }
     }
     if (!request.getPath().empty())
-        res.searchForFile(request.getPath());
+        res.searchForFile(request);
     res.sendResponse(fd, request);
     return (0);
 }

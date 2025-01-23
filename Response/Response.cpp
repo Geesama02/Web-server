@@ -6,7 +6,7 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/14 17:03:53 by maglagal          #+#    #+#             */
-/*   Updated: 2025/01/18 12:28:48 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/01/23 16:50:06 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,10 +17,11 @@
 #include <fcntl.h>
 #include <limits>
 
+std::map<int, std::ifstream *> Response::files;
+
 //constructor
 Response::Response() {
     initializeContentHeader();
-    Headers["Accept-Ranges"] = "bytes";
     Headers["Content-Type"] = "text/html";
     Headers["Connection"] = "keep-alive";
     Headers["Server"] = "Webserv";
@@ -51,6 +52,66 @@ void Response::initializeContentHeader() {
     ContentHeader[".jpeg"] = "image/jpeg";
     ContentHeader[".mp4"] = "video/mp4";
     ContentHeader[".mp3"] = "audio/mpeg";
+    ContentHeader[".json"] = "application/json";
+}
+
+void Response::notFoundResponse() {
+    statusMssg += "404 Not Found\r\n";
+    body = "<!DOCTYPE html>"
+            "<html><head>"
+            "<style>h1, p {text-align:center}</style></head><body>"
+            "<h1>404 Not Found</h1>"
+            "<hr></hr>"
+            "<p>Webserv</p>"
+            "</body></html>";
+    char buff[150];
+    sprintf(buff, "%ld", body.length());
+    Headers["Content-Length"] = buff;
+}
+
+void Response::forbiddenResponse() {
+    statusMssg += "403 Forbidden\r\n";
+    body = "<!DOCTYPE html>"
+            "<html><head>"
+            "<style>h1, p {text-align:center}</style></head><body>"
+            "<h1>403 Forbidden</h1>"
+            "<hr></hr>"
+            "<p>Webserv</p>"
+            "</body></html>";
+    char buff[150];
+    sprintf(buff, "%ld", body.length());
+    Headers["Content-Length"] = buff;
+}
+
+void Response::successResponse(Request req, int fd) {
+    if (files.find(fd) == files.end())
+        files[fd] = new std::ifstream(req.getPath().erase(0, 1).c_str(), std::ios::binary);
+    Headers["Accept-Ranges"] = "bytes";
+}
+
+void Response::handleRangeRequest(Request req, int fd) {
+    if (files.find(fd) == files.end())
+        files[fd] = new std::ifstream(req.getPath().erase(0, 1).c_str(), std::ios::binary);
+    statusMssg = "HTTP/1.1 206 Partial Content\r\n";
+    std::string range = req.getHeaders()["range"];
+    size_t i = range.find("=");
+    if (i == std::string::npos)
+        return ;
+    range.replace(i, 1, " ");
+    if (getHeader("Content-Type") == "video/mp4"
+        || getHeader("Content-Type") == "audio/mpeg") {
+        char buff2[150];
+        size_t length = req.strToDecimal(Headers["Content-Length"]);
+        std::sprintf(buff2, "%ld", length - 1);
+        Headers["Content-Range"] = range + buff2 + '/' + Headers["Content-Length"];
+        std::string test = range.substr(i, range.size() - i);
+        long long nc = req.strToDecimal(test);
+        files[fd]->seekg(nc);
+        size_t len = req.strToDecimal(Headers["Content-Length"]);
+        char buff3[150];
+        sprintf(buff3, "%lld", len - nc);
+        setHeader("Content-Length", buff3);
+    }
 }
 
 void Response::checkForFileExtension(std::string extension) {
@@ -69,8 +130,10 @@ void Response::checkForFileExtension(std::string extension) {
     setHeader("Content-Type", "application/stream-octet");
 }
 
-void Response::searchForFile(std::string fileName) {
+void Response::searchForFile(Request req) {
     struct stat st;
+    std::string fileName = req.getPath();
+    char buff3[150];
 
     if (fileName != "/")
         fileName.erase(0, 1);
@@ -85,7 +148,16 @@ void Response::searchForFile(std::string fileName) {
             return ;
         }
         else if ((st.st_mode & S_IFREG) && (st.st_mode & S_IRUSR)) {
+            if (req.getHeaders().find("range") != req.getHeaders().end()) {
+                statusCode = 206;
+                sprintf(buff3, "%ld", st.st_size);
+                setHeader("Content-Length", buff3);
+                checkForFileExtension(fileName);
+                return ;
+            }
             statusCode = 200;
+            sprintf(buff3, "%ld", st.st_size);
+            setHeader("Content-Length", buff3);
             checkForFileExtension(fileName);
             return ;
         }
@@ -93,7 +165,27 @@ void Response::searchForFile(std::string fileName) {
     statusCode = 404;
 }
 
-void Response::fillBody(Request req) {
+void Response::sendBodyBytes(int fd) {
+    if (files.find(fd) != files.end()) {
+        char buff[1024];
+        files[fd]->read(buff, 1024);
+        if (!*files[fd]) {
+            if (files[fd]->eof()) {
+                int bytesR = files[fd]->gcount();
+                send(fd, buff, bytesR, 0);
+            }
+            std::cout << "an Error occurred" << std::endl;
+            files[fd]->close();
+            delete files[fd];
+            files.erase(fd);
+            return ;
+        }
+        int bytesR = files[fd]->gcount();
+        send(fd, buff, bytesR, 0);
+    }
+}
+
+void Response::fillBody(Request req, int fd) {
     if (statusCode == 200) {
         statusMssg += "200 OK\r\n";
         if (req.getPath() == "/") {
@@ -102,69 +194,25 @@ void Response::fillBody(Request req) {
                 "<input type=\"file\" name=\"file\">"
                 "<button>Upload</button>"
                 "</form></body></html>";
+            char buff[102];
+            std::sprintf(buff, "%ld", body.length());
+            Headers["Content-Length"] = buff;
         }
-        else {
-            std::string buff;
-            std::ifstream index(req.getPath().erase(0, 1).c_str(), std::ios::binary);
-            std::ostringstream buffer;
-            buffer << index.rdbuf(); //read about stream buffer
-            body = buffer.str();
-            index.close();
-        }
+        else
+            successResponse(req, fd);
     }
-    else if (statusCode == 404) {
-        statusMssg += "404 Not Found\r\n";
-        body = "<!DOCTYPE html>"
-              "<html><head>"
-              "<style>"
-              "h1, p {text-align:center}</style></head><body>"
-              "<h1>404 Not Found</h1>"
-              "<hr></hr>"
-              "<p>Webserv</p>"
-              "</body></html>";
-    }
-    else if (statusCode == 403) {
-        statusMssg += "403 Forbidden\r\n";
-        body = "<!DOCTYPE html>"
-              "<html><head>"
-              "<style>"
-              "h1, p {text-align:center}</style></head><body>"
-              "<h1>403 Forbidden</h1>"
-              "<hr></hr>"
-              "<p>Webserv</p>"
-              "</body></html>";
-    }
+    else if (statusCode == 206)
+        handleRangeRequest(req, fd);
+    else if (statusCode == 404)
+        notFoundResponse();
+    else if (statusCode == 403)
+        forbiddenResponse();
 }
 
 void Response::sendResponse(int fd, Request req) {
-    char buff[150];
-    char buff2[150];
-    std::map<std::string, std::string>::iterator it = Headers.begin();
-    fillBody(req);
-    std::sprintf(buff, "%ld", body.size());
-    std::sprintf(buff2, "%ld", body.size() - 1);
-    setHeader("Content-Length", buff);
-    std::string sbuff = buff;
-    std::string sbuff2 = buff2;
-    if (req.getHeaders().find("range") != req.getHeaders().end())
-    {
-        std::string range = req.getHeaders()["range"];
-        size_t i = range.find("=");
-        if (i == std::string::npos)
-            return ;
-        range.replace(i, 1, " ");
-        std::cout << range << std::endl;
-        if (getHeader("Content-Type") == "video/mp4")
-        Headers["Content-Range"] = range + sbuff2 + '/' + sbuff;
-        statusMssg = "HTTP/1.1 206 Partial Content\r\n";
-        std::string test = range.substr(i, range.size() - i);
-        long long nc = req.strToDecimal(test);
-        body.erase(0, nc);
-        char buff3[150];
-        sprintf(buff3, "%ld", body.size());
-        setHeader("Content-Length", buff3);
-    }
+    fillBody(req, fd);
     finalRes += statusMssg;
+    std::map<std::string, std::string>::iterator it = Headers.begin();
     while (it != Headers.end()) {
         std::string header = it->first + ": " + it->second;
         finalRes += header + "\r\n";
@@ -173,6 +221,6 @@ void Response::sendResponse(int fd, Request req) {
     finalRes += "\r\n";
     if (!body.empty())
         finalRes += body;
-    send(fd, finalRes.c_str(), finalRes.size(), 0);
+    send(fd, finalRes.c_str(), finalRes.length(), 0);
 }
 

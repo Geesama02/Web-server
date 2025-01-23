@@ -6,7 +6,7 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/14 16:55:34 by maglagal          #+#    #+#             */
-/*   Updated: 2025/01/17 14:56:11 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/01/23 15:22:28 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,16 +20,17 @@
 
 class Response {
     private:
+        std::map<std::string, std::string> Headers;
+        std::map<std::string, std::string> ContentHeader;
         int         statusCode;
         std::string statusMssg;
         std::string body;
         std::string finalRes;
-        std::map<std::string, std::string> Headers;
-        std::map<std::string, std::string> ContentHeader;
-        void        fillBody(Request req);
+        void        fillBody(Request req, int fd);
         void        initializeContentHeader();
         void        checkForFileExtension(std::string fileName);
     public:
+        static std::map<int, std::ifstream *> files;
         //constructor
         Response();
 
@@ -44,8 +45,13 @@ class Response {
         void    setHeader( std::string key, std::string value );
         
         //other
-        void    searchForFile(std::string fileName);
-        void    sendResponse(int fd, Request req);
+        void            successResponse(Request req, int fd);
+        void            notFoundResponse();
+        void            forbiddenResponse();
+        void            searchForFile(Request Req);
+        void            sendResponse(int fd, Request req);
+        static void     sendBodyBytes(int fd);
+        void            handleRangeRequest(Request req, int fd);
 };
 
 #endif
