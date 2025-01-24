@@ -6,7 +6,7 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/14 17:03:53 by maglagal          #+#    #+#             */
-/*   Updated: 2025/01/23 16:50:06 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/01/24 11:20:29 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -84,9 +84,22 @@ void Response::forbiddenResponse() {
 }
 
 void Response::successResponse(Request req, int fd) {
-    if (files.find(fd) == files.end())
-        files[fd] = new std::ifstream(req.getPath().erase(0, 1).c_str(), std::ios::binary);
-    Headers["Accept-Ranges"] = "bytes";
+    statusMssg += "200 OK\r\n";
+    if (req.getPath() == "/") {
+        body = "<!DOCTYPE html>"
+            "<html><head></head><body><form method=\"post\" enctype=\"multipart/form-data\">"
+            "<input type=\"file\" name=\"file\">"
+            "<button>Upload</button>"
+            "</form></body></html>";
+        char buff[102];
+        std::sprintf(buff, "%ld", body.length());
+        Headers["Content-Length"] = buff;
+    }
+    else {
+        if (files.find(fd) == files.end())
+            files[fd] = new std::ifstream(req.getPath().erase(0, 1).c_str(), std::ios::binary);
+        Headers["Accept-Ranges"] = "bytes";
+    }
 }
 
 void Response::handleRangeRequest(Request req, int fd) {
@@ -186,21 +199,8 @@ void Response::sendBodyBytes(int fd) {
 }
 
 void Response::fillBody(Request req, int fd) {
-    if (statusCode == 200) {
-        statusMssg += "200 OK\r\n";
-        if (req.getPath() == "/") {
-            body = "<!DOCTYPE html>"
-                "<html><head></head><body><form method=\"post\" enctype=\"multipart/form-data\">"
-                "<input type=\"file\" name=\"file\">"
-                "<button>Upload</button>"
-                "</form></body></html>";
-            char buff[102];
-            std::sprintf(buff, "%ld", body.length());
-            Headers["Content-Length"] = buff;
-        }
-        else
+    if (statusCode == 200)
             successResponse(req, fd);
-    }
     else if (statusCode == 206)
         handleRangeRequest(req, fd);
     else if (statusCode == 404)
