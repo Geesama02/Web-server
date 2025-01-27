@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/30 12:07:04 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/01/25 14:31:33 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/01/23 16:49:45 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -389,8 +389,9 @@ int Request::readRequest(int fd, Server& server, std::vector<Server>& Servers) {
     char buff[4096];
     std::string str;
     ssize_t received = recv(fd, buff, sizeof(buff) - 1, 0);
-    // std::cout << "received: " << received << std::endl;
+    std::cout << "received: " << received << std::endl;
     if (received < 0) {
+        std::cout << strerror(errno) << std::endl;
         std::cerr << "Failed to read!" << std::endl;
         close(fd);
         return (1);
