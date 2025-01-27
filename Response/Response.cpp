@@ -6,7 +6,7 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/14 17:03:53 by maglagal          #+#    #+#             */
-/*   Updated: 2025/01/24 11:20:29 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/01/24 17:59:46 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -91,7 +91,7 @@ void Response::successResponse(Request req, int fd) {
             "<input type=\"file\" name=\"file\">"
             "<button>Upload</button>"
             "</form></body></html>";
-        char buff[102];
+        char buff[150];
         std::sprintf(buff, "%ld", body.length());
         Headers["Content-Length"] = buff;
     }
@@ -184,10 +184,10 @@ void Response::sendBodyBytes(int fd) {
         files[fd]->read(buff, 1024);
         if (!*files[fd]) {
             if (files[fd]->eof()) {
+                std::cout << "transmitting bytes finished" << std::endl;
                 int bytesR = files[fd]->gcount();
                 send(fd, buff, bytesR, 0);
             }
-            std::cout << "an Error occurred" << std::endl;
             files[fd]->close();
             delete files[fd];
             files.erase(fd);
@@ -200,7 +200,7 @@ void Response::sendBodyBytes(int fd) {
 
 void Response::fillBody(Request req, int fd) {
     if (statusCode == 200)
-            successResponse(req, fd);
+        successResponse(req, fd);
     else if (statusCode == 206)
         handleRangeRequest(req, fd);
     else if (statusCode == 404)
