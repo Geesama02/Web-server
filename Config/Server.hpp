@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/21 15:09:59 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/01/17 10:49:42 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/01/24 15:40:05 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -56,7 +56,8 @@ class Server {
         void addLocation(Location& new_location);
 
         // Functions
-        int initServer();
+        int initServer(std::vector<Server>& Servers, std::vector<Server>::iterator it);
+        int checkPortDup(std::vector<Server>& Servers, std::vector<Server>::iterator it);
 
         // Destructor
         ~Server();

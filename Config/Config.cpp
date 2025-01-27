@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Config.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
+/*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/22 11:25:38 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/01/17 10:54:39 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/01/25 14:21:13 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -62,7 +62,7 @@ int Config::startServers() {
 int Config::monitorServers(int epoll_fd, epoll_event& ev) {
     ev.events = EPOLLIN | EPOLLOUT | EPOLLERR; // monitor if socket ready to (read | write | error)
     for (std::vector<Server>::iterator it = Servers.begin(); it != Servers.end(); it++) {
-        if (it->initServer())
+        if (it->initServer(Servers,it))
             return (1);
         ev.data.fd = it->getSocket();
         // add server socket to epoll to monitor them
@@ -122,11 +122,15 @@ int Config::acceptConnection(int fd, int epoll_fd, epoll_event& ev) {
 int Config::handleClient(int fd, int epoll_fd) {
     Request request;
     Response res;
+    int status;
     
-    if (request.readRequest(fd, clientServer[fd])) {
-        epoll_ctl(epoll_fd, EPOLL_CTL_DEL, fd, NULL);
-        clientServer.erase(fd);
+    if ((status = request.readRequest(fd, clientServer[fd], Servers)) != 0) {
+        if (status == 1) {
+            epoll_ctl(epoll_fd, EPOLL_CTL_DEL, fd, NULL);
+            clientServer.erase(fd);
+        }
     }
+    std::cout << "host -> " << request.getHeaders()["host"] << std::endl;
     if (!request.getPath().empty())
         res.searchForFile(request.getPath());
     res.sendResponse(fd, request);

@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Request.cpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
+/*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/30 12:07:04 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/01/18 11:36:40 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/01/25 14:31:33 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -246,8 +246,11 @@ int Request::readChunkedFile(UploadFile& file, std::string str) {
 
 int Request::setupPostBody(int fd, std::string str) {
     contentLength = strToDecimal(Headers["content-length"]);
+    // std::cout << "length -> " << contentLength << std::endl;
     if (contentLength < 0)
         return (1);
+    if (str.find("\r\n") != std::string::npos)
+        std::cout << "FOund\n";
     std::string toSave = str.substr(0, contentLength);
     contentLength -= toSave.size();
     body += toSave;
@@ -257,12 +260,12 @@ int Request::setupPostBody(int fd, std::string str) {
 }
 
 int Request::continuePostBody(Request& req, std::string str) {
+    // std::cout << "continuePostBody\n";
     std::string toSave = str.substr(0, req.contentLength);
     req.contentLength -= toSave.size();
     req.body += toSave;
-    if (req.contentLength == 0) {
-        
-    }
+    if (req.contentLength == 0)
+        *this = req;
     return (0);
 }
 
@@ -277,47 +280,84 @@ void Request::handleFiles(int fd, std::string& str) {
     }
 }
 
-void Request::handlePostReq(int fd, std::string& str) {
+int Request::handlePostReq(int fd, std::string& str) {
     if (method == "POST" 
         && Headers.find("content-type") != Headers.end()
         && Headers["content-type"].find("boundary=") != std::string::npos) {
-        setupFile(fd);
+        return (setupFile(fd));
     }
     else if (method == "POST" 
             && Headers.find("transfer-encoding") != Headers.end()) {
         if (Headers["transfer-encoding"] == "chunked")
             setupChunkedFile(fd);
-        else {
-            // bad request
-        }
+        else
+            return (501);
     }
     else if (method == "POST"
             && Headers.find("content-length") != Headers.end()) {
         setupPostBody(fd, str);
     }
     else if (method == "POST") {
-        // bad request
+        return (400);
     }
+    return (0);
 }
 
-void Request::readHeaders(int fd, std::string& str, Server server) {
+int Request::isNumber(std::string& str) {
+    for(std::string::iterator i = str.begin(); i != str.end(); i++) {
+        if (!std::isdigit(*i))
+            return (0);
+    }
+    return (1);
+}
+
+Server Request::getServer(Server& server, std::vector<Server>& Servers) {
+    for (std::vector<Server>::iterator it = Servers.begin(); it != Servers.end(); it++) {
+        if (it->getPort() == server.getPort() && it->getHost() == server.getHost()) {
+            std::string tmp = Headers["host"];
+            size_t pos = tmp.rfind(':');
+            if (pos != std::string::npos)
+                tmp.erase(pos);
+            if (tmp == it->getServerName()) {
+                Server tmp = *it;
+                tmp.setSocket(-1);
+                return (tmp);
+            }
+        }
+    }
+    return (server);
+}
+
+int Request::readHeaders(int fd, std::string& str, Server& server, std::vector<Server>& Servers) {
     size_t stop_p = str.find("\r\n\r\n");
     if (uploads.find(fd) == uploads.end()
         && unfinishedReqs.find(fd) == unfinishedReqs.end()
         && stop_p != std::string::npos) {
         if (parse(str))
             std::cerr << "Invalid Request" << std::endl;
+        if (Headers.find("host") != Headers.end())
+            server = getServer(server, Servers);
+        std::cout << "Server -> " << server.getServerName() << ":" << server.getPort() << std::endl;
         str = str.substr(stop_p + 4);
-        if (method == "POST"
+        std::cout << Headers["content-length"] << std::endl;
+        if (Headers.find("host") == Headers.end() || (method == "POST"
+            && Headers.find("content-length") != Headers.end()
+            && !isNumber(Headers["content-length"]))) {
+            return (400);
+        }
+        else if (method == "POST"
             && Headers.find("content-length") != Headers.end()
             && strToDecimal(Headers["content-length"]) > server.getClientMaxBodySize()) {
-            return;
+            return (413);
         }
-        handlePostReq(fd, str);
+        int res = handlePostReq(fd, str);
+        if (res != 0)
+            return (res);
     }
     else if (unfinishedReqs.find(fd) != unfinishedReqs.end())
         continuePostBody(unfinishedReqs[fd], str);
     handleFiles(fd, str);
+    return (0);
 }
 
 int Request::setupChunkedFile(int fd) {
@@ -330,12 +370,14 @@ int Request::setupChunkedFile(int fd) {
 
 int Request::setupFile(int fd) {
     UploadFile file;
-    if (Headers.find("content-length") != Headers.end()) {
+    if (Headers.find("content-length") != Headers.end())
         file.setExpectedBytes(strToDecimal(Headers["content-length"]));
-        std::cout << "length -> " << file.getExpectedBytes() << std::endl;
-    }
+    else
+        return (411);
     size_t pos = Headers["content-type"].find("boundary=");
     size_t end = Headers["content-type"].find("\r\n", pos);
+    if (end == std::string::npos)
+        return (400);
     std::string boundary = Headers["content-type"].substr(pos + 9, end);
     file.setType("multipart");
     file.setBoundary(boundary);
@@ -343,7 +385,7 @@ int Request::setupFile(int fd) {
     return (0);
 }
 
-int Request::readRequest(int fd, Server server) {
+int Request::readRequest(int fd, Server& server, std::vector<Server>& Servers) {
     char buff[4096];
     std::string str;
     ssize_t received = recv(fd, buff, sizeof(buff) - 1, 0);
@@ -366,7 +408,10 @@ int Request::readRequest(int fd, Server server) {
         buff[received] = '\0';
         str.append(buff, received);
         // std::cout << "received: " << str << std::endl;
-        readHeaders(fd, str, server);
+        return (readHeaders(fd, str, server, Servers));
+        // std::cout << "body: " << body << " size : "<< body.size()<< std::endl;
+        // std::cout << "method: " << method << std::endl;
+        // std::cout << "content-type: " << Headers["content-type"] << std::endl;
     }
     return (0);
 }
