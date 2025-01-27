@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/22 10:25:22 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/01/17 10:50:27 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/01/25 14:36:21 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,7 +16,7 @@
 Server::Server() {
     socket_fd = -1;
     server_name = "Server";
-    host = "127.0.0.1";
+    host = "localhost";
     port = 8080;
     root = "/";
     std::vector<int> err;
@@ -52,7 +52,18 @@ void Server::setRedirect(std::string& page) { redirect = page; }
 void Server::addLocation(Location& new_location) { locations.push_back(new_location); }
 
 // Functions
-int Server::initServer() {
+int Server::checkPortDup(std::vector<Server>& Servers, std::vector<Server>::iterator it) {
+    for (std::vector<Server>::iterator it2 = Servers.begin(); it2 != it; it2++) {
+        if (it2->getPort() == it->getPort() && it2->getHost() == it->getHost()) {
+            if (it2->getServerName() != it->getServerName())
+                return (0);
+            else
+                return (1);
+        }
+    }
+    return (0);
+}
+int Server::initServer(std::vector<Server>& Servers, std::vector<Server>::iterator it) {
     // struct sockaddr_in address;
     struct addrinfo hints, *res;
     char buff[6];
@@ -78,9 +89,9 @@ int Server::initServer() {
         std::cerr << "Setsockopt Error!" << std::endl;
         return (1);
     }
-    if (bind(socket_fd, res->ai_addr, res->ai_addrlen) != 0) {
+    if (bind(socket_fd, res->ai_addr, res->ai_addrlen) != 0 && checkPortDup(Servers, it)) {
         freeaddrinfo(res);
-        std::cerr << "Cannot bind socket!" << std::endl;
+        std::cerr << strerror(errno) << std::endl;
         return (1);
     }
     freeaddrinfo(res);

@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/30 11:15:32 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/01/16 11:30:26 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/01/25 13:45:49 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -56,10 +56,11 @@ class Request {
 
         // Functions
         int parse(std::string buffer);
+        int isNumber(std::string& str);
         std::vector<std::string> split(std::string buffer, int full, char del);
         void to_lower(std::string& str);
-        int readRequest(int fd, Server server);
-        void readHeaders(int fd, std::string& str, Server server);
+        int readRequest(int fd, Server& server, std::vector<Server>& Servers);
+        int readHeaders(int fd, std::string& str, Server& server, std::vector<Server>& Servers);
         int setupFile(int fd);
         int setupChunkedFile(int fd);
         int setupPostBody(int fd, std::string str);
@@ -74,8 +75,8 @@ class Request {
         int handleFilePart(UploadFile& file, std::string& str);
         int handleFirstPart(UploadFile& file, std::string& str);
         void handleFiles(int fd, std::string& str);
-        void handlePostReq(int fd, std::string& str);
-        
+        int handlePostReq(int fd, std::string& str);
+        Server getServer(Server& server, std::vector<Server>& Servers);
 };
 
 #endif
