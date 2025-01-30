@@ -8,7 +8,7 @@
 //     // exit(1);
 // }
 
-int main(int argc, char **argv)
+int main(int argc, char **argv, char **envp)
 {
     if (argc > 2)
     {
@@ -24,7 +24,7 @@ int main(int argc, char **argv)
     // }
     if (parser.startParsing(config, argv[1]))
         return (1);
-    if (config.startServers())
+    if (config.startServers(envp))
         return (1);
     // if (re)
     return (0);

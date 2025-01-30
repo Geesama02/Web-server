@@ -6,7 +6,7 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/22 11:25:38 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/01/23 15:41:40 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/01/28 10:36:06 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,7 +21,7 @@ std::vector<Server> Config::getServer() { return Servers; }
 void Config::addServer(Server new_server) { Servers.push_back(new_server); }
 
 // Functions
-int Config::startServers() {
+int Config::startServers(char **envp) {
     epoll_event ev;
     int epoll_fd = epoll_create(1);
     if (epoll_fd < 0) {
@@ -45,7 +45,7 @@ int Config::startServers() {
                 if (isServerFd(fd))
                     acceptConnection(fd, epoll_fd, ev);
                 else
-                    handleClient(fd, epoll_fd);
+                    handleClient(fd, epoll_fd, envp);
             }
             else if (events[i].events & EPOLLERR) {
                 std::cerr << "Socket error on fd: " << events[i].data.fd << std::endl;
@@ -67,7 +67,7 @@ int Config::startServers() {
 int Config::monitorServers(int epoll_fd, epoll_event& ev) {
     ev.events = EPOLLIN | EPOLLOUT | EPOLLERR; // monitor if socket ready to (read | write | error)
     for (std::vector<Server>::iterator it = Servers.begin(); it != Servers.end(); it++) {
-        if (it->initServer())
+        if (it->initServer(Servers,it))
             return (1);
         ev.data.fd = it->getSocket();
         // add server socket to epoll to monitor them
@@ -124,21 +124,25 @@ int Config::acceptConnection(int fd, int epoll_fd, epoll_event& ev) {
     return (0);
 }
 
-int Config::handleClient(int fd, int epoll_fd) {
+int Config::handleClient(int fd, int epoll_fd, char **envp) {
     Request request;
     Response res;
-
-    if (request.readRequest(fd, clientServer[fd])) {
-        epoll_ctl(epoll_fd, EPOLL_CTL_DEL, fd, NULL);
-        clientServer.erase(fd);
-        if (Response::files.find(fd) != Response::files.end()) {
-            Response::files[fd]->close();
-            Response::files.erase(fd);
+    int status;
+    
+    if ((status = request.readRequest(fd, clientServer[fd], Servers)) != 0) {
+        if (status == 1) {
+            epoll_ctl(epoll_fd, EPOLL_CTL_DEL, fd, NULL);
+            clientServer.erase(fd);
+            if (Response::files.find(fd) != Response::files.end()) {
+                Response::files[fd]->close();
+                Response::files.erase(fd);
+            }
         }
     }
+    std::cout << "host -> " << request.getHeaders()["host"] << std::endl;
     if (!request.getPath().empty())
         res.searchForFile(request);
-    res.sendResponse(fd, request);
+    res.sendResponse(fd, request, envp);
     return (0);
 }
 

@@ -6,7 +6,7 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/21 15:07:06 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/01/22 17:33:11 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/01/28 10:38:06 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,11 +31,11 @@ class Config {
         void addServer(Server new_server);
 
         // Functions
-        int startServers();
+        int startServers(char **envp);
         int monitorServers(int epoll_fd, epoll_event& ev);
         int isServerFd(int fd);
         int acceptConnection(int fd, int epoll_fd, epoll_event& ev);
-        int handleClient(int fd, int epoll_fd);
+        int handleClient(int fd, int epoll_fd, char **envp);
         Server getServer(int fd);
         // int readRequest(int fd, Request& request);
         // void readHeaders(int fd, Request& request, std::string& str);
