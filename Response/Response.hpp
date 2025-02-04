@@ -6,22 +6,32 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/14 16:55:34 by maglagal          #+#    #+#             */
-/*   Updated: 2025/01/30 16:51:19 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/02/04 18:06:18 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
+#ifndef RESPONSE_HPP
 #define RESPONSE_HPP
-#ifndef REPONSE_HPP
 
-#include "../Request/Request.hpp"
 #include <iostream>
 #include <dirent.h>
 #include <map>
+#include <sys/stat.h>
+#include <sys/socket.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <limits>
+#include <filesystem>
+#include <sys/wait.h>
+#include <string>
+#include <sstream>
+
+#include "../Request/Request.hpp"
+#include "../cgi/cgi.hpp"
 
 class Response {
     private:
         std::map<std::string, std::string> Headers;
-        std::map<std::string, std::string> executablePaths;
         std::map<std::string, std::string> ContentHeader;
         int                                statusCode;
         std::string                        statusMssg;
@@ -38,6 +48,7 @@ class Response {
         //getters
         int         getStatusCode();
         std::string getStatusMssg();
+        std::map<std::string, std::string>& getHeadersRes( );
         std::string getHeader( std::string key );
 
         //setters
@@ -53,8 +64,6 @@ class Response {
         void            sendResponse(int fd, Request req, char **envp);
         static void     sendBodyBytes(int fd);
         void            handleRangeRequest(Request req, int fd);
-        void            initializeExecutablePaths();
-        void            execute_cgi_script(int fd, Request req, char **envp);
 };
 
 #endif
