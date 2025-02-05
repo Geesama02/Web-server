@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Response.cpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
+/*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/14 17:03:53 by maglagal          #+#    #+#             */
-/*   Updated: 2025/01/24 11:20:29 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/02/01 15:04:28 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,6 +18,7 @@
 #include <limits>
 
 std::map<int, std::ifstream *> Response::files;
+std::map<std::string, std::string> Response::ContentHeader;
 
 //constructor
 Response::Response() {
@@ -181,6 +182,7 @@ void Response::searchForFile(Request req) {
 void Response::sendBodyBytes(int fd) {
     if (files.find(fd) != files.end()) {
         char buff[1024];
+        Config::clientTimeout[fd] = Config::timeNow();
         files[fd]->read(buff, 1024);
         if (!*files[fd]) {
             if (files[fd]->eof()) {
@@ -200,7 +202,7 @@ void Response::sendBodyBytes(int fd) {
 
 void Response::fillBody(Request req, int fd) {
     if (statusCode == 200)
-            successResponse(req, fd);
+        successResponse(req, fd);
     else if (statusCode == 206)
         handleRangeRequest(req, fd);
     else if (statusCode == 404)

@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/30 11:15:32 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/01/25 13:45:49 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/02/04 11:15:08 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,12 +23,13 @@
 #include <cstring>
 #include <cstdlib>
 #include "UploadFile.hpp"
-#include "../Config/Server.hpp"
+#include "../Config/Config.hpp"
+// #include "../Response/Response.hpp"
+
+class Response;
 
 class Request {
     private:
-        static std::map<int, UploadFile> uploads;
-        static std::map<int, Request> unfinishedReqs;
         std::map<std::string, std::string> Headers;
         std::string method;
         long long contentLength;
@@ -36,6 +37,8 @@ class Request {
         std::string version;
         std::string body;
     public:
+        static std::map<int, UploadFile> uploads;
+        static std::map<int, Request> unfinishedReqs;
         // Constructor
         Request();
 
@@ -67,6 +70,7 @@ class Request {
         int continuePostBody(Request& req, std::string str);
         int readFile(UploadFile& file, std::string str);
         int readChunkedFile(UploadFile& file, std::string str);
+        int readBinaryFile(UploadFile& file, std::string str);
         long long hexToDecimal(std::string str);
         long long strToDecimal(std::string str);
         int writeFile(UploadFile& file, std::string& str);
@@ -74,9 +78,12 @@ class Request {
         int checkChunks(UploadFile& file, std::string& str);
         int handleFilePart(UploadFile& file, std::string& str);
         int handleFirstPart(UploadFile& file, std::string& str);
-        void handleFiles(int fd, std::string& str);
+        int handleFiles(int fd, std::string& str);
         int handlePostReq(int fd, std::string& str);
         Server getServer(Server& server, std::vector<Server>& Servers);
+        int setupBinaryFile(int fd);
+        // int checkType(std::string type);
+        std::string getExtension(std::string type);
 };
 
 #endif
