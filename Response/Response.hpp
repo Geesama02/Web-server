@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Response.hpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
+/*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/14 16:55:34 by maglagal          #+#    #+#             */
-/*   Updated: 2025/02/04 18:06:18 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/02/05 11:14:56 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,7 +32,6 @@
 class Response {
     private:
         std::map<std::string, std::string> Headers;
-        std::map<std::string, std::string> ContentHeader;
         int                                statusCode;
         std::string                        statusMssg;
         std::string                        body;
@@ -41,6 +40,7 @@ class Response {
         void                               initializeContentHeader();
         void                               checkForFileExtension(Request req, std::string fileName);
     public:
+        static std::map<std::string, std::string> ContentHeader;
         static std::map<int, std::ifstream *> files;
         //constructor
         Response();

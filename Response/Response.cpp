@@ -3,16 +3,17 @@
 /*                                                        :::      ::::::::   */
 /*   Response.cpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
+/*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/14 17:03:53 by maglagal          #+#    #+#             */
-/*   Updated: 2025/02/04 18:06:32 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/02/05 11:10:35 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Response.hpp"
 
 std::map<int, std::ifstream *> Response::files;
+std::map<std::string, std::string> Response::ContentHeader;
 
 //constructor
 Response::Response() {
@@ -180,6 +181,7 @@ void Response::searchForFile(Request req) {
 void Response::sendBodyBytes(int fd) {
     if (files.find(fd) != files.end()) {
         char buff[1024];
+        Config::clientTimeout[fd] = Config::timeNow();
         files[fd]->read(buff, 1024);
         if (!*files[fd]) {
             if (files[fd]->eof()) {

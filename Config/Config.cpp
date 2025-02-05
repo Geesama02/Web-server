@@ -3,16 +3,18 @@
 /*                                                        :::      ::::::::   */
 /*   Config.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
+/*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/22 11:25:38 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/01/28 10:36:06 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/02/05 11:15:04 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Config.hpp"
 #include "../Response/Response.hpp"
 #include <sys/stat.h>
+
+std::map<int, long long> Config::clientTimeout;
 
 // Getters
 std::vector<Server> Config::getServer() { return Servers; }
@@ -50,6 +52,10 @@ int Config::startServers(char **envp) {
             else if (events[i].events & EPOLLERR) {
                 std::cerr << "Socket error on fd: " << events[i].data.fd << std::endl;
                 close(events[i].data.fd);
+                if (clientServer.find(events[i].data.fd) != clientServer.end())
+                    clientServer.erase(events[i].data.fd);
+                if (clientTimeout.find(events[i].data.fd) != clientTimeout.end())
+                    clientTimeout.erase(events[i].data.fd);
                 epoll_ctl(epoll_fd, EPOLL_CTL_DEL, events[i].data.fd, NULL);
                 if (Response::files.find(events[i].data.fd) != Response::files.end()) {
                     Response::files[events[i].data.fd]->close();
@@ -60,6 +66,35 @@ int Config::startServers(char **envp) {
                 Response::sendBodyBytes(events[i].data.fd);
             }
         }
+        monitorTimeout(epoll_fd);
+    }
+    return (0);
+}
+
+int Config::monitorTimeout(int epoll_fd) {
+    if (clientTimeout.empty())
+        return (0);
+    long long currTime = timeNow();
+    int timeout = 5;
+    for (std::map<int, long long>::iterator it = clientTimeout.begin(); it != clientTimeout.end(); ) {
+        if (it->second + timeout < currTime) {
+            if (Request::uploads.find(it->first) != Request::uploads.end())
+                Request::uploads.erase(it->first);
+            else if (Request::unfinishedReqs.find(it->first) != Request::unfinishedReqs.end())
+                Request::unfinishedReqs.erase(it->first);
+            if (Response::files.find(it->first) != Response::files.end()) {
+                Response::files[it->first]->close();
+                Response::files.erase(it->first);
+            }
+            epoll_ctl(epoll_fd, EPOLL_CTL_DEL, it->first, NULL);
+            clientServer.erase(it->first);
+            close(it->first);
+            std::map<int, long long>::iterator tmp = it;
+            it++;
+            clientTimeout.erase(tmp->first);
+        }
+        else
+            it++;
     }
     return (0);
 }
@@ -96,6 +131,15 @@ Server Config::getServer(int fd) {
     return (Servers[0]);
 }
 
+long long Config::timeNow() {
+    struct timeval tv;
+    long long time;
+    gettimeofday(&tv, NULL);
+    time = tv.tv_sec;
+    // std::cout << "time -> " << time << std::endl;
+    return (time);
+}
+
 int Config::acceptConnection(int fd, int epoll_fd, epoll_event& ev) {
     // loop until accepting all clients
     while (true) {
@@ -114,10 +158,12 @@ int Config::acceptConnection(int fd, int epoll_fd, epoll_event& ev) {
         Server server = getServer(fd);
         server.setSocket(-1);
         clientServer[new_client] = server;
+        clientTimeout[new_client] = timeNow();
         // add client socket to epoll to monitor
         if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, new_client, &ev) != 0) {
             std::cerr << "epoll_ctl error: " << strerror(errno) << std::endl;
             clientServer.erase(new_client);
+            clientTimeout.erase(new_client);
             close(new_client);
         }
     }
@@ -129,20 +175,31 @@ int Config::handleClient(int fd, int epoll_fd, char **envp) {
     Response res;
     int status;
     
-    if ((status = request.readRequest(fd, clientServer[fd], Servers)) != 0) {
-        if (status == 1) {
-            epoll_ctl(epoll_fd, EPOLL_CTL_DEL, fd, NULL);
-            clientServer.erase(fd);
-            if (Response::files.find(fd) != Response::files.end()) {
-                Response::files[fd]->close();
-                Response::files.erase(fd);
-            }
+    clientTimeout[fd] = timeNow();
+    status = request.readRequest(fd, clientServer[fd], Servers);
+    // std::cout << "status -> " << status << std::endl;
+    if (status == 1) { // connection is closed
+        epoll_ctl(epoll_fd, EPOLL_CTL_DEL, fd, NULL);
+        clientServer.erase(fd);
+        clientTimeout.erase(fd);
+        if (Response::files.find(fd) != Response::files.end()) {
+            Response::files[fd]->close();
+            Response::files.erase(fd);
         }
     }
-    std::cout << "host -> " << request.getHeaders()["host"] << std::endl;
-    if (!request.getPath().empty())
-        res.searchForFile(request);
-    res.sendResponse(fd, request, envp);
+    else if (status == 2) // if file is uploading
+        return (0);
+    else if (status != 0)
+        return (0); // request error handle later
+    else {
+        if (!request.getPath().empty()) {
+            std::cout << clientServer[fd].getServerName() << ':' << clientServer[fd].getPort()
+            << " - " << request.getMethod() << ' ' << request.getPath()
+            << ' ' << request.getVersion() << std::endl;
+            res.searchForFile(request);
+        }
+        res.sendResponse(fd, request, envp);
+    }
     return (0);
 }
 

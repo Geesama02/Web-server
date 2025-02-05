@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/21 14:31:56 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/01/18 15:25:07 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/01/28 11:08:01 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,10 +26,12 @@ int Parser::startParsing(Config &config, char *filename) {
 	}
     if (std::getline(f_read, holder, '\0')) {
         if (handleLines(config, holder)) {
+            f_read.close();
             std::cerr << "Invalid server configuration!\n";
             return (1);
         }
     }
+    f_read.close();
     return (0);
 }
 
@@ -75,10 +77,6 @@ int Parser::fillServer(Config& config, std::vector<std::string>& holder, size_t&
             if (setPortVar(holder, tmp_server, index))
                 return (1);
         }
-        else if (holder[index] == "host") {
-            if (setHostVar(holder, tmp_server, index))
-                return (1);
-        }
         else if (holder[index] == "root") {
             if (setRootVar(holder, tmp_server, index))
                 return (1);
@@ -90,7 +88,6 @@ int Parser::fillServer(Config& config, std::vector<std::string>& holder, size_t&
         else if (holder[index] == "return") {
             if (setRedirectVar(holder, tmp_server, index))
                 return (1);
-            // std::cout << "Redirect -> " << tmp_server.getRedirect() << std::endl;
         }
         else if (holder[index] == "server_name") {
             if (setSnameVar(holder, tmp_server, index))
@@ -99,16 +96,6 @@ int Parser::fillServer(Config& config, std::vector<std::string>& holder, size_t&
         else if (holder[index] == "error_page") {
             if (setErrVar(holder, tmp_server, index))
                 return (1);
-            // for (std::map<std::vector<int>, std::string>::iterator it = tmp_server.getErrorPage().begin(); it != tmp_server.getErrorPage().end(); it++)
-            // {
-            //     std::cout << "{ ";
-            //     for (std::vector<int>::const_iterator it2 = it->first.begin(); it2 != it->first.end(); it2++)
-            //     {
-            //         std::cout << *it2 << ' ';
-            //     }
-            //     std::cout << " }, " << it->second << std::endl;
-            // }
-            
         }
         else if (holder[index] == "client_max_body_size") {
             if (setMaxBodyVar(holder, tmp_server, index))
@@ -138,6 +125,8 @@ int Parser::isNumber(std::string& str) {
 
 int Parser::setPortVar(std::vector<std::string>& holder, Server& tmp_server, size_t& index) {
     index++;
+    if (setHostVar(holder, tmp_server, index))
+        return (1);
     if (index < holder.size() && *holder[index].rbegin() == ';') {
         holder[index].erase(holder[index].end() - 1);
         if (!isNumber(holder[index]) || holder[index].empty() || holder[index].size() > 5) {
@@ -281,17 +270,15 @@ int Parser::setAutoindexVar(std::vector<std::string>& holder, Location& tmp_loca
 }
 
 int Parser::setHostVar(std::vector<std::string>& holder, Server& tmp_server, size_t& index) {
-    // std::cout << "inside" << std::endl;
-    index++;
-    if (index < holder.size() && *holder[index].rbegin() == ';') {
-        holder[index].erase(holder[index].end() - 1);
-        if (holder[index].empty())
+    if (index < holder.size() && *holder[index].rbegin() == ';'
+        && holder[index].find(':') != std::string::npos) {
+        size_t pos = holder[index].find(':');
+        std::string tmp = holder[index].substr(0, pos);
+        holder[index].erase(0, pos + 1);
+        if (tmp.empty())
             return (1);
-        tmp_server.setHost(holder[index]);
-        index++;
+        tmp_server.setHost(tmp);
     }
-    else
-        return (1);
     return (0);
 }
 
