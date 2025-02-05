@@ -6,16 +6,11 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/14 17:03:53 by maglagal          #+#    #+#             */
-/*   Updated: 2025/02/01 15:04:28 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/02/05 11:10:35 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Response.hpp"
-#include <sys/stat.h>
-#include <sys/socket.h>
-#include <errno.h>
-#include <fcntl.h>
-#include <limits>
 
 std::map<int, std::ifstream *> Response::files;
 std::map<std::string, std::string> Response::ContentHeader;
@@ -32,6 +27,7 @@ Response::Response() {
 }
 
 //getters
+std::map<std::string, std::string>& Response::getHeadersRes() { return Headers; }
 int         Response::getStatusCode() { return statusCode; };
 std::string Response::getStatusMssg() { return statusMssg; };
 std::string Response::getHeader( std::string key ) { return (Headers.find(key)->second); };
@@ -92,7 +88,7 @@ void Response::successResponse(Request req, int fd) {
             "<input type=\"file\" name=\"file\">"
             "<button>Upload</button>"
             "</form></body></html>";
-        char buff[102];
+        char buff[150];
         std::sprintf(buff, "%ld", body.length());
         Headers["Content-Length"] = buff;
     }
@@ -128,7 +124,7 @@ void Response::handleRangeRequest(Request req, int fd) {
     }
 }
 
-void Response::checkForFileExtension(std::string extension) {
+void Response::checkForFileExtension(Request req, std::string extension) {
     size_t pos = extension.rfind(".");
     if (pos != std::string::npos) {
         extension.erase(0, pos);
@@ -141,7 +137,10 @@ void Response::checkForFileExtension(std::string extension) {
             it++;
         }
     }
-    setHeader("Content-Type", "application/stream-octet");
+    if (req.getPath().find("/cgi-bin/") != std::string::npos)
+        setHeader("Content-Type", "text/html");
+    else
+        setHeader("Content-Type", "application/stream-octet");
 }
 
 void Response::searchForFile(Request req) {
@@ -166,13 +165,13 @@ void Response::searchForFile(Request req) {
                 statusCode = 206;
                 sprintf(buff3, "%ld", st.st_size);
                 setHeader("Content-Length", buff3);
-                checkForFileExtension(fileName);
+                checkForFileExtension(req, fileName);
                 return ;
             }
             statusCode = 200;
             sprintf(buff3, "%ld", st.st_size);
             setHeader("Content-Length", buff3);
-            checkForFileExtension(fileName);
+            checkForFileExtension(req, fileName);
             return ;
         }
     }
@@ -186,10 +185,10 @@ void Response::sendBodyBytes(int fd) {
         files[fd]->read(buff, 1024);
         if (!*files[fd]) {
             if (files[fd]->eof()) {
+                std::cout << "transmitting bytes finished" << std::endl;
                 int bytesR = files[fd]->gcount();
                 send(fd, buff, bytesR, 0);
             }
-            std::cout << "an Error occurred" << std::endl;
             files[fd]->close();
             delete files[fd];
             files.erase(fd);
@@ -211,7 +210,15 @@ void Response::fillBody(Request req, int fd) {
         forbiddenResponse();
 }
 
-void Response::sendResponse(int fd, Request req) {
+void Response::sendResponse(int fd, Request req, char **envp) {
+    if (req.getPath().find("/cgi-bin/") != std::string::npos) {
+        CGI cgiScript;
+
+        if (statusCode == 200)
+            statusMssg += "200 OK\n";
+        cgiScript.execute_cgi_script(*this, fd, req, envp);
+        return ;
+    }
     fillBody(req, fd);
     finalRes += statusMssg;
     std::map<std::string, std::string>::iterator it = Headers.begin();
@@ -225,4 +232,3 @@ void Response::sendResponse(int fd, Request req) {
         finalRes += body;
     send(fd, finalRes.c_str(), finalRes.length(), 0);
 }
-

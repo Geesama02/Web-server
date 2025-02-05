@@ -6,28 +6,39 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/14 16:55:34 by maglagal          #+#    #+#             */
-/*   Updated: 2025/02/01 14:03:36 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/02/05 11:14:56 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
+#ifndef RESPONSE_HPP
 #define RESPONSE_HPP
-#ifndef REPONSE_HPP
 
-#include "../Request/Request.hpp"
 #include <iostream>
 #include <dirent.h>
 #include <map>
+#include <sys/stat.h>
+#include <sys/socket.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <limits>
+#include <filesystem>
+#include <sys/wait.h>
+#include <string>
+#include <sstream>
+
+#include "../Request/Request.hpp"
+#include "../cgi/cgi.hpp"
 
 class Response {
     private:
         std::map<std::string, std::string> Headers;
-        int         statusCode;
-        std::string statusMssg;
-        std::string body;
-        std::string finalRes;
-        void        fillBody(Request req, int fd);
-        void        initializeContentHeader();
-        void        checkForFileExtension(std::string fileName);
+        int                                statusCode;
+        std::string                        statusMssg;
+        std::string                        body;
+        std::string                        finalRes;
+        void                               fillBody(Request req, int fd);
+        void                               initializeContentHeader();
+        void                               checkForFileExtension(Request req, std::string fileName);
     public:
         static std::map<std::string, std::string> ContentHeader;
         static std::map<int, std::ifstream *> files;
@@ -37,6 +48,7 @@ class Response {
         //getters
         int         getStatusCode();
         std::string getStatusMssg();
+        std::map<std::string, std::string>& getHeadersRes( );
         std::string getHeader( std::string key );
 
         //setters
@@ -49,7 +61,7 @@ class Response {
         void            notFoundResponse();
         void            forbiddenResponse();
         void            searchForFile(Request Req);
-        void            sendResponse(int fd, Request req);
+        void            sendResponse(int fd, Request req, char **envp);
         static void     sendBodyBytes(int fd);
         void            handleRangeRequest(Request req, int fd);
 };
