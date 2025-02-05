@@ -6,7 +6,7 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/30 18:22:44 by maglagal          #+#    #+#             */
-/*   Updated: 2025/02/04 18:10:04 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/02/05 09:53:11 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,8 +20,6 @@ CGI::CGI() {
 CGI::~CGI() {
     for(int i = 0; i < 6; i++)
         delete envs[i];
-    delete[] absoluteFilePath;
-    delete[] executablePathArray;
 }
 
 void CGI::initializeVars(Request req)
@@ -101,7 +99,7 @@ void CGI::sendServerResponse(int fd, Response res)
         cgiRes += header + "\r\n";
         it++;
     }
-    cgiRes += "\r\n";
+    // cgiRes += "\r\n";
     if (ResBody.length() > 0)
         cgiRes += ResBody;
     
@@ -135,8 +133,8 @@ void CGI::execute_cgi_script(Response res, int fd, Request req, char **envp)
         dup2(fds[1], 1);
         close(fds[1]);
         if (execve(executablePathArray, argv, envs) ==-1)
-            std::cerr << "Execve failed!!\n";
-        dup2(save_out, 1);
+            std::cerr << strerror(errno) << std::endl;
+        // dup2(save_out, 1);
         close(save_out);
     }
     close(fds[1]);
