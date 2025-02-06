@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Config.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
+/*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/21 15:07:06 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/02/05 11:09:59 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/02/05 14:42:42 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -33,11 +33,11 @@ class Config {
         void addServer(Server new_server);
 
         // Functions
-        int startServers(char **envp);
+        int startServers();
         int monitorServers(int epoll_fd, epoll_event& ev);
         int isServerFd(int fd);
         int acceptConnection(int fd, int epoll_fd, epoll_event& ev);
-        int handleClient(int fd, int epoll_fd, char **envp);
+        int handleClient(int fd, int epoll_fd);
         Server getServer(int fd);
         static long long timeNow();
         int monitorTimeout(int epoll_fd);

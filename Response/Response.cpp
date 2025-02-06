@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Response.cpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
+/*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/14 17:03:53 by maglagal          #+#    #+#             */
-/*   Updated: 2025/02/05 11:10:35 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/02/06 11:14:31 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,7 +18,7 @@ std::map<std::string, std::string> Response::ContentHeader;
 //constructor
 Response::Response() {
     initializeContentHeader();
-    Headers["Content-Type"] = "text/html";
+    Headers["Content-Type"] = "text/plain";
     Headers["Connection"] = "keep-alive";
     Headers["Server"] = "Webserv";
     Headers["Content-Length"] = "0";
@@ -30,12 +30,12 @@ Response::Response() {
 std::map<std::string, std::string>& Response::getHeadersRes() { return Headers; }
 int         Response::getStatusCode() { return statusCode; };
 std::string Response::getStatusMssg() { return statusMssg; };
-std::string Response::getHeader( std::string key ) { return (Headers.find(key)->second); };
+std::string Response::getHeader( std::string key ) { return Headers[key]; };
 
 //setters
 void Response::setStatusCode(int value) { statusCode = value; };
 void Response::setStatusMssg( std::string value ) { statusMssg = value; };
-void Response::setHeader( std::string key, std::string value ) { Headers.find(key)->second = value; };
+void Response::setHeader( std::string key, std::string value ) { Headers[key] = value; };
 
 //other
 void Response::initializeContentHeader() {
@@ -124,7 +124,7 @@ void Response::handleRangeRequest(Request req, int fd) {
     }
 }
 
-void Response::checkForFileExtension(Request req, std::string extension) {
+void Response::checkForFileExtension(std::string extension) {
     size_t pos = extension.rfind(".");
     if (pos != std::string::npos) {
         extension.erase(0, pos);
@@ -137,10 +137,7 @@ void Response::checkForFileExtension(Request req, std::string extension) {
             it++;
         }
     }
-    if (req.getPath().find("/cgi-bin/") != std::string::npos)
-        setHeader("Content-Type", "text/html");
-    else
-        setHeader("Content-Type", "application/stream-octet");
+    setHeader("Content-Type", "application/stream-octet");
 }
 
 void Response::searchForFile(Request req) {
@@ -165,13 +162,13 @@ void Response::searchForFile(Request req) {
                 statusCode = 206;
                 sprintf(buff3, "%ld", st.st_size);
                 setHeader("Content-Length", buff3);
-                checkForFileExtension(req, fileName);
+                checkForFileExtension(fileName);
                 return ;
             }
             statusCode = 200;
             sprintf(buff3, "%ld", st.st_size);
             setHeader("Content-Length", buff3);
-            checkForFileExtension(req, fileName);
+            checkForFileExtension(fileName);
             return ;
         }
     }
@@ -210,13 +207,12 @@ void Response::fillBody(Request req, int fd) {
         forbiddenResponse();
 }
 
-void Response::sendResponse(int fd, Request req, char **envp) {
+void Response::sendResponse(int fd, Request req) {
     if (req.getPath().find("/cgi-bin/") != std::string::npos) {
         CGI cgiScript;
-
         if (statusCode == 200)
             statusMssg += "200 OK\n";
-        cgiScript.execute_cgi_script(*this, fd, req, envp);
+        cgiScript.execute_cgi_script(*this, fd, req);
         return ;
     }
     fillBody(req, fd);

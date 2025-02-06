@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Config.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
+/*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/22 11:25:38 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/02/05 11:15:04 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/02/05 14:55:06 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,7 +23,7 @@ std::vector<Server> Config::getServer() { return Servers; }
 void Config::addServer(Server new_server) { Servers.push_back(new_server); }
 
 // Functions
-int Config::startServers(char **envp) {
+int Config::startServers() {
     epoll_event ev;
     int epoll_fd = epoll_create(1);
     if (epoll_fd < 0) {
@@ -47,7 +47,7 @@ int Config::startServers(char **envp) {
                 if (isServerFd(fd))
                     acceptConnection(fd, epoll_fd, ev);
                 else
-                    handleClient(fd, epoll_fd, envp);
+                    handleClient(fd, epoll_fd);
             }
             else if (events[i].events & EPOLLERR) {
                 std::cerr << "Socket error on fd: " << events[i].data.fd << std::endl;
@@ -170,7 +170,7 @@ int Config::acceptConnection(int fd, int epoll_fd, epoll_event& ev) {
     return (0);
 }
 
-int Config::handleClient(int fd, int epoll_fd, char **envp) {
+int Config::handleClient(int fd, int epoll_fd) {
     Request request;
     Response res;
     int status;
@@ -198,7 +198,7 @@ int Config::handleClient(int fd, int epoll_fd, char **envp) {
             << ' ' << request.getVersion() << std::endl;
             res.searchForFile(request);
         }
-        res.sendResponse(fd, request, envp);
+        res.sendResponse(fd, request);
     }
     return (0);
 }

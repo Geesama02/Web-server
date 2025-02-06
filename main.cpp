@@ -8,8 +8,10 @@
 //     // exit(1);
 // }
 
-int main(int argc, char **argv, char **envp)
+void f() {system("valgrind --leak-check=yes --log-file=valgrind.txt ./webserv");}
+int main(int argc, char **argv)
 {
+    atexit(f);
     if (argc > 2)
     {
         std::cerr << "Invalid Number of parameters\n";
@@ -24,7 +26,7 @@ int main(int argc, char **argv, char **envp)
     // }
     if (parser.startParsing(config, argv[1]))
         return (1);
-    if (config.startServers(envp))
+    if (config.startServers())
         return (1);
     // if (re)
     return (0);

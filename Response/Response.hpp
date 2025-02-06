@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Response.hpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
+/*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/14 16:55:34 by maglagal          #+#    #+#             */
-/*   Updated: 2025/02/05 11:14:56 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/02/05 16:16:47 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -38,7 +38,7 @@ class Response {
         std::string                        finalRes;
         void                               fillBody(Request req, int fd);
         void                               initializeContentHeader();
-        void                               checkForFileExtension(Request req, std::string fileName);
+        void                               checkForFileExtension(std::string fileName);
     public:
         static std::map<std::string, std::string> ContentHeader;
         static std::map<int, std::ifstream *> files;
@@ -61,7 +61,7 @@ class Response {
         void            notFoundResponse();
         void            forbiddenResponse();
         void            searchForFile(Request Req);
-        void            sendResponse(int fd, Request req, char **envp);
+        void            sendResponse(int fd, Request req);
         static void     sendBodyBytes(int fd);
         void            handleRangeRequest(Request req, int fd);
 };

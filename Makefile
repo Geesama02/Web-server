@@ -1,4 +1,4 @@
-CPP = g++
+CPP = g++-11
 FLAGS = -Wall -Wextra -Werror -std=c++98 -fsanitize=address 
 NAME = webserv
 SRC = main.cpp Parser/Parser.cpp Config/Config.cpp Config/Location.cpp Config/Server.cpp Request/Request.cpp Request/UploadFile.cpp\

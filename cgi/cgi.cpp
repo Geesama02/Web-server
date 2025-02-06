@@ -6,7 +6,7 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/30 18:22:44 by maglagal          #+#    #+#             */
-/*   Updated: 2025/02/05 09:53:11 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/02/06 11:28:01 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,7 +19,17 @@ CGI::CGI() {
 
 CGI::~CGI() {
     for(int i = 0; i < 6; i++)
-        delete envs[i];
+        delete[] envs[i];
+    delete[] executablePathArray;
+    delete[] absoluteFilePath;
+}
+
+void CGI::convertHeaderToCamelCase(std::string& value) {
+    if (value[0] >= 97 && value[0] <= 122) {
+        size_t index = value.find('-');
+        value[0] = value[0] - 32;
+        value[index + 1] = value[index + 1] - 32;
+    }
 }
 
 void CGI::initializeVars(Request req)
@@ -33,6 +43,8 @@ void CGI::setEnvVars(Request req)
     if (req.getBody().length() > 0)
         sprintf(contentLengthStr, "%ld", req.getBody().length());
     std::map<std::string, std::string>storeEnvs;
+
+    
     storeEnvs["REQUEST_METHOD"] = req.getMethod().c_str();
     storeEnvs["SCRIPT_NAME"] = req.getPath().empty() ? "/" : req.getPath().c_str();
     storeEnvs["SERVER_NAME"] = "Webserv";
@@ -88,53 +100,81 @@ void CGI::read_cgi_response(int fd_r)
     }
 }
 
-void CGI::sendServerResponse(int fd, Response res)
+void CGI::findHeadersInsideScript(Request req, Response& res) {
+    int contentLengthFlag = 0;
+
+    std::string headerInScript = ResBody.substr(0, ResBody.find("\n\n"));
+    ResBody.erase(0, ResBody.find("\n\n"));
+    if (headerInScript.find(":") != std::string::npos) {
+        headersInScript = req.split(headerInScript, 0, '\n');
+        std::vector<std::string>::iterator it = headersInScript.begin();
+        while (it != headersInScript.end()) {
+            std::string headerName = (*it).substr(0, (*it).find(':'));
+            std::string headerValue = (*it).substr((*it).find(' ') + 1);
+            convertHeaderToCamelCase(headerName);
+            std::cout << "header name " << headerName << std::endl;
+            if (headerName == "Content-Length")
+                contentLengthFlag = 1;
+            // std::cout << "|" << headerName << "|" << std::endl;
+            res.setHeader(headerName, headerValue);
+            it++;
+        }
+    }
+
+    //define content length
+    if (!contentLengthFlag) {
+        char buff[150];
+        sprintf(buff, "%ld", ResBody.length());
+        res.setHeader("Content-Length", buff);
+    }
+}
+
+void CGI::sendServerResponse(int fd, Response& res, Request req)
 {
     cgiRes += res.getStatusMssg();
+
+    //check if there is already content-type defined
+    findHeadersInsideScript(req, res);
+
     std::map<std::string, std::string>::iterator it = res.getHeadersRes().begin();
     while (it != res.getHeadersRes().end()) {
-        std::cout << it->first << std::endl;
-        std::cout << it->second << std::endl;
         std::string header = it->first + ": " + it->second;
+        std::cout << "header " << header << std::endl;
         cgiRes += header + "\r\n";
         it++;
     }
-    // cgiRes += "\r\n";
+
     if (ResBody.length() > 0)
         cgiRes += ResBody;
-    
-    char buff[120];
-    sprintf(buff, "%ld", cgiRes.length());
-    res.setHeader("Content-Length", buff);
-    // (void)fd;
-    std::cout << "cgi body " << ResBody << std::endl;
-    std::cout << "cgi res " << cgiRes << std::endl;
+
     send(fd, cgiRes.c_str(), cgiRes.length(), 0);
 } 
 
-void CGI::execute_cgi_script(Response res, int fd, Request req, char **envp)
+void CGI::execute_cgi_script(Response& res, int fd, Request req)
 {
-    (void)envp;
-    (void)fd;
     initializeVars(req);
+
+    //set environment variables 
+    setEnvVars(req);
+
+    //find the absolute path of the script
+    findExecutablePath();
+
     int save_out = dup(1);
     int fds[2];
     if (pipe(fds) != 0)
         std::cerr << "pipe failed!!" << std::endl;
     int c_fd = fork();
     if (c_fd == 0) {
-        //set environment variables 
-        setEnvVars(req);
-
-        //find the absolute path of the script
-        findExecutablePath();
-
         close(fds[0]);
         dup2(fds[1], 1);
         close(fds[1]);
-        if (execve(executablePathArray, argv, envs) ==-1)
+        if (execve(executablePathArray, argv, envs) ==-1) {
+            std::cerr << "execve failed!!";
             std::cerr << strerror(errno) << std::endl;
-        // dup2(save_out, 1);
+            return ;
+        }
+        dup2(save_out, 1);
         close(save_out);
     }
     close(fds[1]);
@@ -145,5 +185,5 @@ void CGI::execute_cgi_script(Response res, int fd, Request req, char **envp)
     // read the ouput of the script executed by the cgi
     read_cgi_response(fds[0]);
     close(fds[0]);
-    sendServerResponse(fd, res);
+    sendServerResponse(fd, res, req);
 }
