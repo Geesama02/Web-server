@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/22 11:25:38 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/02/05 11:15:04 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/02/07 14:46:02 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -75,12 +75,12 @@ int Config::monitorTimeout(int epoll_fd) {
     if (clientTimeout.empty())
         return (0);
     long long currTime = timeNow();
-    int timeout = 5;
+    int timeout = 75;
     for (std::map<int, long long>::iterator it = clientTimeout.begin(); it != clientTimeout.end(); ) {
         if (it->second + timeout < currTime) {
             if (Request::uploads.find(it->first) != Request::uploads.end())
                 Request::uploads.erase(it->first);
-            else if (Request::unfinishedReqs.find(it->first) != Request::unfinishedReqs.end())
+            if (Request::unfinishedReqs.find(it->first) != Request::unfinishedReqs.end())
                 Request::unfinishedReqs.erase(it->first);
             if (Response::files.find(it->first) != Response::files.end()) {
                 Response::files[it->first]->close();
@@ -170,6 +170,21 @@ int Config::acceptConnection(int fd, int epoll_fd, epoll_event& ev) {
     return (0);
 }
 
+void Config::closeConnection(int epoll_fd, int fd) {
+    if (Request::uploads.find(fd) != Request::uploads.end())
+        Request::uploads.erase(fd);
+    if (Request::unfinishedReqs.find(fd) != Request::unfinishedReqs.end())
+        Request::unfinishedReqs.erase(fd);
+    epoll_ctl(epoll_fd, EPOLL_CTL_DEL, fd, NULL);
+    clientServer.erase(fd);
+    clientTimeout.erase(fd);
+    if (Response::files.find(fd) != Response::files.end()) {
+        Response::files[fd]->close();
+        Response::files.erase(fd);
+    }
+    close(fd);
+}
+
 int Config::handleClient(int fd, int epoll_fd, char **envp) {
     Request request;
     Response res;
@@ -178,27 +193,26 @@ int Config::handleClient(int fd, int epoll_fd, char **envp) {
     clientTimeout[fd] = timeNow();
     status = request.readRequest(fd, clientServer[fd], Servers);
     // std::cout << "status -> " << status << std::endl;
-    if (status == 1) { // connection is closed
-        epoll_ctl(epoll_fd, EPOLL_CTL_DEL, fd, NULL);
-        clientServer.erase(fd);
-        clientTimeout.erase(fd);
-        if (Response::files.find(fd) != Response::files.end()) {
-            Response::files[fd]->close();
-            Response::files.erase(fd);
-        }
-    }
+    if (status == 1) // connection is closed
+        closeConnection(epoll_fd, fd);
     else if (status == 2) // if file is uploading
         return (0);
-    else if (status != 0)
+    else if (status != 0) {
+        std::string res = request.generateRes(status);
+        // std::cout << res << std::endl;
+        send(fd, res.c_str(), res.size(), 0);
+        // if (status >= 400)
+        //     closeConnection(epoll_fd, fd);
         return (0); // request error handle later
+    }
     else {
         if (!request.getPath().empty()) {
             std::cout << clientServer[fd].getServerName() << ':' << clientServer[fd].getPort()
             << " - " << request.getMethod() << ' ' << request.getPath()
             << ' ' << request.getVersion() << std::endl;
             res.searchForFile(request);
+            res.sendResponse(fd, request, envp);
         }
-        res.sendResponse(fd, request, envp);
     }
     return (0);
 }

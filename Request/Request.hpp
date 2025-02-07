@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/30 11:15:32 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/02/04 11:15:08 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/02/06 15:28:23 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,15 +22,16 @@
 #include <netdb.h>
 #include <cstring>
 #include <cstdlib>
+#include <ctime>
 #include "UploadFile.hpp"
 #include "../Config/Config.hpp"
-// #include "../Response/Response.hpp"
 
 class Response;
 
 class Request {
     private:
         std::map<std::string, std::string> Headers;
+        static std::map<int, std::string> reqStatus;
         std::string method;
         long long contentLength;
         std::string path;
@@ -39,6 +40,7 @@ class Request {
     public:
         static std::map<int, UploadFile> uploads;
         static std::map<int, Request> unfinishedReqs;
+        
         // Constructor
         Request();
 
@@ -66,8 +68,8 @@ class Request {
         int readHeaders(int fd, std::string& str, Server& server, std::vector<Server>& Servers);
         int setupFile(int fd);
         int setupChunkedFile(int fd);
-        int setupPostBody(int fd, std::string str);
-        int continuePostBody(Request& req, std::string str);
+        int setupPostBody(int fd);
+        int continuePostBody(Request& req, int fd, std::string str);
         int readFile(UploadFile& file, std::string str);
         int readChunkedFile(UploadFile& file, std::string str);
         int readBinaryFile(UploadFile& file, std::string str);
@@ -79,11 +81,12 @@ class Request {
         int handleFilePart(UploadFile& file, std::string& str);
         int handleFirstPart(UploadFile& file, std::string& str);
         int handleFiles(int fd, std::string& str);
-        int handlePostReq(int fd, std::string& str);
+        int handlePostReq(int fd);
         Server getServer(Server& server, std::vector<Server>& Servers);
         int setupBinaryFile(int fd);
-        // int checkType(std::string type);
         std::string getExtension(std::string type);
+        std::string generateRes(int status);
+        std::string getDate();
 };
 
 #endif

@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/21 15:07:06 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/02/05 11:09:59 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/02/07 12:30:04 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -41,6 +41,7 @@ class Config {
         Server getServer(int fd);
         static long long timeNow();
         int monitorTimeout(int epoll_fd);
+        void closeConnection(int epoll_fd, int fd);
 };
 
 #endif
