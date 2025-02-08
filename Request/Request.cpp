@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/30 12:07:04 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/02/07 14:47:24 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/02/08 14:12:25 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,7 +18,7 @@ std::map<int, Request> Request::unfinishedReqs;
 std::map<int, std::string> Request::reqStatus;
 
 // Constructor
-Request::Request() : contentLength(0) {
+Request::Request() {
     Request::reqStatus.insert(std::make_pair(201, "Created"));
     Request::reqStatus.insert(std::make_pair(400, "Bad Request"));
     Request::reqStatus.insert(std::make_pair(405, "Method Not Allowed"));
@@ -33,6 +33,7 @@ Request::Request() : contentLength(0) {
 // Getters
 std::map<std::string, std::string>& Request::getHeaders() { return Headers; }
 std::string Request::getMethod() { return method; }
+std::string Request::getFileName() { return fileName; }
 std::string Request::getPath() { return path; }
 std::string Request::getVersion() { return version; }
 std::string Request::getBody() { return body; }
@@ -132,6 +133,7 @@ int Request::handleFilePart(UploadFile& file, std::string& str) {
         str.erase(stopPos);
         *file.getFd() << str;
         file.setState(true);
+        fileName = file.getFilename();
         return (201);
     }
     if (!str.empty()) {
@@ -180,6 +182,7 @@ int Request::writeFirstChunk(UploadFile& file, std::string& str) {
         if (file.getExpectedBytes() <= 0) {
             if (file.getExpectedBytes() == 0) {
                 file.setState(true);
+                fileName = file.getFilename();
                 return (201);
             }
             return (1);
@@ -203,9 +206,9 @@ int Request::checkChunks(UploadFile& file, std::string& str) {
             if (file.getExpectedBytes() <= 0) {
                 if (file.getExpectedBytes() == 0) {
                     file.setState(true);
+                    fileName = file.getFilename();
                     return (201);
                 }
-                std::cout << "last\n";
                 return (1);
             }
             str = str.substr(endPos + 2);
@@ -224,6 +227,7 @@ int Request::writeFile(UploadFile& file, std::string& str) {
         str = str.substr(toWrite.size());
         if (str == "\r\n0\r\n\r\n") { // all chunks received
             file.setState(true);
+            fileName = file.getFilename();
             return (201);
         }
         if (file.getExpectedBytes() == 0) // save the new chunk to handle with next request
@@ -244,6 +248,7 @@ int Request::readBinaryFile(UploadFile& file, std::string str) {
     file.setExpectedBytes(file.getExpectedBytes() - toWrite.size());
     if (file.getExpectedBytes() <= 0) {
         file.setState(true);
+        fileName = file.getFilename();
         return (201);
     }
     return (0);
@@ -281,13 +286,16 @@ int Request::setupPostBody(int fd) {
 int Request::continuePostBody(Request& req, int fd, std::string str) {
     int status = 0;
     status = readBinaryFile(uploads[fd], str);
-    if (status != 0)
+    if (status != 0) {
+        if (status == 201) {
+            status = 0;
+            *this = req;
+            fileName = uploads[fd].getFilename();
+        }
         uploads.erase(fd);
+    }
     else
         return (2);
-    if (status == 201) {
-        *this = req;
-    }
     unfinishedReqs.erase(fd);
     return (status);
 }
@@ -451,8 +459,8 @@ std::string Request::generateRes(int status) {
                         "</body>"
                         "</html>";
     std::string res = "HTTP/1.1 " + std::string(statusBuff) + " " + reqStatus[status] + "\r\n";
-    // if (status == 201)
-    //     return (res + "\r\n");
+    if (status == 201)
+        res += "Location: " + fileName + "\r\n";
     res += "Server: webserv\r\n";
     res += "Date: " + getDate() + "\r\n";
     res += "Content-Type: text/html\r\n";
@@ -482,7 +490,6 @@ int Request::readRequest(int fd, Server& server, std::vector<Server>& Servers) {
     char buff[4096];
     std::string str;
     ssize_t received = recv(fd, buff, sizeof(buff) - 1, 0);
-    // std::cout << "received: " << received << std::endl;
     if (received <= 0)
         return (1);
     else {

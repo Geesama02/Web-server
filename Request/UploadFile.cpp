@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/03 11:07:50 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/02/06 15:49:32 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/02/08 15:04:52 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -70,7 +70,7 @@ int UploadFile::openFile() {
 // Destructor
 UploadFile::~UploadFile() {
     // std::cout << "Destroyed file -> |" << filename << "|\n";
-    if (fd) {
+    if (fd && fd->is_open()) {
         if (!state) { // delete file if connection closed before full file uploaded
             int status = remove(filename.c_str());
             if (status != 0)

@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/30 11:15:32 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/02/06 15:28:23 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/02/08 11:38:37 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -33,7 +33,7 @@ class Request {
         std::map<std::string, std::string> Headers;
         static std::map<int, std::string> reqStatus;
         std::string method;
-        long long contentLength;
+        std::string fileName;
         std::string path;
         std::string version;
         std::string body;
@@ -47,6 +47,7 @@ class Request {
         // Getters
         std::map<std::string, std::string>& getHeaders();
         std::string getMethod();
+        std::string getFileName();
         std::string getPath();
         std::string getVersion();
         std::string getBody();

@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   cgi.cpp                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
+/*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/30 18:22:44 by maglagal          #+#    #+#             */
-/*   Updated: 2025/02/05 09:53:11 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/02/08 15:14:18 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -91,6 +91,11 @@ void CGI::read_cgi_response(int fd_r)
 void CGI::sendServerResponse(int fd, Response res)
 {
     cgiRes += res.getStatusMssg();
+    
+    char buff[120];
+    sprintf(buff, "%ld", ResBody.length());
+    res.setHeader("Content-Length", buff);
+
     std::map<std::string, std::string>::iterator it = res.getHeadersRes().begin();
     while (it != res.getHeadersRes().end()) {
         std::cout << it->first << std::endl;
@@ -103,13 +108,10 @@ void CGI::sendServerResponse(int fd, Response res)
     if (ResBody.length() > 0)
         cgiRes += ResBody;
     
-    char buff[120];
-    sprintf(buff, "%ld", cgiRes.length());
-    res.setHeader("Content-Length", buff);
     // (void)fd;
     std::cout << "cgi body " << ResBody << std::endl;
     std::cout << "cgi res " << cgiRes << std::endl;
-    send(fd, cgiRes.c_str(), cgiRes.length(), 0);
+    std::cout << send(fd, cgiRes.c_str(), cgiRes.size(), 0)<<std::endl;
 } 
 
 void CGI::execute_cgi_script(Response res, int fd, Request req, char **envp)
