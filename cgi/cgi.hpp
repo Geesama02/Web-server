@@ -6,7 +6,7 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/30 18:22:52 by maglagal          #+#    #+#             */
-/*   Updated: 2025/02/05 19:26:54 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/02/08 17:47:10 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,7 +32,7 @@ class CGI {
     private :
         std::map<std::string, std::string> executablePaths;
         std::vector<std::string>headersInScript;
-        char *envs[7];
+        char *envs[8];
         char *argv[3];
         std::string scriptRelativePath;
         std::string scriptFileName;
@@ -45,13 +45,14 @@ class CGI {
         CGI();
         ~CGI();
         void execute_cgi_script(Response& res, int fd, Request req);
-        void initializeVars(Request req);
-        void setEnvVars(Request req);
+        void initializeVars(Response& res, Request req);
+        void setEnvVars(Request req, Response& res);
         void findExecutablePath();
         void read_cgi_response(int fd_r);
         void sendServerResponse(int fd, Response& res, Request req);
         void findHeadersInsideScript(Request req, Response& res);
         void convertHeaderToCamelCase(std::string& value);
+        void defineResponseStatusMssg(Response& res);
 };
 
 #endif

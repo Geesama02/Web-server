@@ -6,7 +6,7 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/14 17:03:53 by maglagal          #+#    #+#             */
-/*   Updated: 2025/02/06 11:14:31 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/02/08 17:40:02 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,7 +18,7 @@ std::map<std::string, std::string> Response::ContentHeader;
 //constructor
 Response::Response() {
     initializeContentHeader();
-    Headers["Content-Type"] = "text/plain";
+    Headers["Content-Type"] = "text/html";
     Headers["Connection"] = "keep-alive";
     Headers["Server"] = "Webserv";
     Headers["Content-Length"] = "0";
@@ -28,11 +28,13 @@ Response::Response() {
 
 //getters
 std::map<std::string, std::string>& Response::getHeadersRes() { return Headers; }
+std::string Response::getQueryString() { return queryString; }
 int         Response::getStatusCode() { return statusCode; };
 std::string Response::getStatusMssg() { return statusMssg; };
 std::string Response::getHeader( std::string key ) { return Headers[key]; };
 
 //setters
+void Response::setQueryString( std::string value ) { queryString = value; }
 void Response::setStatusCode(int value) { statusCode = value; };
 void Response::setStatusMssg( std::string value ) { statusMssg = value; };
 void Response::setHeader( std::string key, std::string value ) { Headers[key] = value; };
@@ -140,10 +142,21 @@ void Response::checkForFileExtension(std::string extension) {
     setHeader("Content-Type", "application/stream-octet");
 }
 
+void Response::checkForQueryString(std::string& fileName) {
+    size_t index = fileName.find("?");
+    if (index != std::string::npos) {
+        queryString = fileName.substr(index + 1);
+        fileName.erase(index);
+    }
+}
+
 void Response::searchForFile(Request req) {
     struct stat st;
     std::string fileName = req.getPath();
     char buff3[150];
+
+    //seperating filename from querystring
+    checkForQueryString(fileName);
 
     if (fileName != "/")
         fileName.erase(0, 1);
@@ -208,10 +221,8 @@ void Response::fillBody(Request req, int fd) {
 }
 
 void Response::sendResponse(int fd, Request req) {
-    if (req.getPath().find("/cgi-bin/") != std::string::npos) {
+    if (req.getPath().find("/cgi-bin/") != std::string::npos && statusCode == 200) {
         CGI cgiScript;
-        if (statusCode == 200)
-            statusMssg += "200 OK\n";
         cgiScript.execute_cgi_script(*this, fd, req);
         return ;
     }
@@ -226,5 +237,6 @@ void Response::sendResponse(int fd, Request req) {
     finalRes += "\r\n";
     if (!body.empty())
         finalRes += body;
+
     send(fd, finalRes.c_str(), finalRes.length(), 0);
 }

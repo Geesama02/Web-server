@@ -6,7 +6,7 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/30 18:22:44 by maglagal          #+#    #+#             */
-/*   Updated: 2025/02/06 11:28:01 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/02/08 18:03:02 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,6 +24,14 @@ CGI::~CGI() {
     delete[] absoluteFilePath;
 }
 
+void CGI::defineResponseStatusMssg(Response& res) {  
+    std::cout << "getStatus code " << res.getStatusCode() << std::endl;
+    if (res.getStatusCode() == 200)
+        res.setStatusMssg("HTTP/1.1 200 OK\n");
+    else if (res.getStatusCode() == 404)
+        res.setStatusMssg("HTTP/1.1 404 Not Found\n");
+}
+
 void CGI::convertHeaderToCamelCase(std::string& value) {
     if (value[0] >= 97 && value[0] <= 122) {
         size_t index = value.find('-');
@@ -32,12 +40,18 @@ void CGI::convertHeaderToCamelCase(std::string& value) {
     }
 }
 
-void CGI::initializeVars(Request req)
+void CGI::initializeVars(Response& res, Request req)
 {
-    scriptRelativePath = req.getPath().empty() ? "/" : req.getPath().c_str();
+    std::string reqPath = req.getPath();
+    if (!reqPath.empty()) {
+        res.checkForQueryString(reqPath);
+        scriptRelativePath = reqPath.c_str();
+    }
+    else
+        scriptRelativePath = "/";
 }
 
-void CGI::setEnvVars(Request req)
+void CGI::setEnvVars(Request req, Response& res)
 {
     char contentLengthStr[150];
     if (req.getBody().length() > 0)
@@ -51,29 +65,36 @@ void CGI::setEnvVars(Request req)
     storeEnvs["SERVER_PROTOCOL"] = "HTTP 1.1";
     storeEnvs["CONTENT_LENGTH"] = req.getBody().length() > 0 ? contentLengthStr : "";
     storeEnvs["CONTENT_TYPE"] = req.getHeaders()["content-type"].c_str();
+    storeEnvs["QUERY_STRING"] = (res.getQueryString()).c_str();
 
     std::map<std::string, std::string>::iterator it = storeEnvs.begin();
-    for (int i = 0; i < 6; i++) {
+    for (int i = 0; i < 7; i++) {
         std::string env = it->first + "=" + it->second;
         envs[i] = new char[env.length() + 1];
         std::strcpy(envs[i], env.c_str());
         it++;
     }
-    envs[6] = NULL;
+    envs[7] = NULL;
 }
 
 void CGI::findExecutablePath() 
 {
-    int index = scriptRelativePath.rfind(".");
-    int index2 = scriptRelativePath.rfind("/");
+    size_t index = scriptRelativePath.rfind("."); //you need some error handling here
+    size_t index2 = scriptRelativePath.rfind("/"); //you need some error handling here
     std::string tmp = scriptRelativePath;
-    extensionFile = tmp.erase(0, index);
+    if (index != std::string::npos)
+        extensionFile = tmp.erase(0, index);
     tmp = scriptRelativePath;
-    scriptFileName = tmp.erase(0, index2);
+    if (index2 != std::string::npos)
+        scriptFileName = tmp.erase(0, index2);
     scriptFileName.erase(0, 1);
     std::map<std::string, std::string>::iterator it = executablePaths.begin();
     while (it->first != extensionFile)
         it++;
+    if (it == executablePaths.end()) {
+        std::cerr << "Extension file not found" << std::endl;
+        exit(1);
+    }
     std::string executablePath = it->second;
     char buff[120];
     getcwd(buff, 120);
@@ -102,60 +123,81 @@ void CGI::read_cgi_response(int fd_r)
 
 void CGI::findHeadersInsideScript(Request req, Response& res) {
     int contentLengthFlag = 0;
+    int contentTypeFlag = 0;
+    std::string headerInScript;
+    std::string headerName;
+    std::string headerValue;
 
-    std::string headerInScript = ResBody.substr(0, ResBody.find("\n\n"));
-    ResBody.erase(0, ResBody.find("\n\n"));
-    if (headerInScript.find(":") != std::string::npos) {
-        headersInScript = req.split(headerInScript, 0, '\n');
-        std::vector<std::string>::iterator it = headersInScript.begin();
-        while (it != headersInScript.end()) {
-            std::string headerName = (*it).substr(0, (*it).find(':'));
-            std::string headerValue = (*it).substr((*it).find(' ') + 1);
-            convertHeaderToCamelCase(headerName);
-            std::cout << "header name " << headerName << std::endl;
-            if (headerName == "Content-Length")
-                contentLengthFlag = 1;
-            // std::cout << "|" << headerName << "|" << std::endl;
-            res.setHeader(headerName, headerValue);
-            it++;
+    size_t i = ResBody.find("\n\n");
+    if (i != std::string::npos) {
+        headerInScript = ResBody.substr(0, i);
+        ResBody.erase(0, i + 1);
+    }
+    if (headerInScript.length() > 0) {
+        if (headerInScript.find(":") != std::string::npos) {
+            headersInScript = req.split(headerInScript, 0, '\n');
+            std::vector<std::string>::iterator it = headersInScript.begin();
+            while (it != headersInScript.end()) {
+                headerName = (*it).substr(0, (*it).find(':'));
+                headerValue = (*it).substr((*it).find(' ') + 1);
+                convertHeaderToCamelCase(headerName);
+                if (headerName == "Content-Length")
+                    contentLengthFlag = 1;
+                if (headerName == "Content-Type")
+                    contentTypeFlag = 1;
+                res.setHeader(headerName, headerValue);
+                it++;
+            }
         }
     }
 
-    //define content length
+    //remove leading empty newlines
+    while(ResBody[0] == '\n')
+        ResBody.erase(0, 1);
+
+    //define content length and content-type in case not defined in the script
     if (!contentLengthFlag) {
         char buff[150];
         sprintf(buff, "%ld", ResBody.length());
         res.setHeader("Content-Length", buff);
     }
+    if (!contentTypeFlag)
+        res.setHeader("Content-Type", "text/html");
 }
 
 void CGI::sendServerResponse(int fd, Response& res, Request req)
 {
     cgiRes += res.getStatusMssg();
-
-    //check if there is already content-type defined
+    
+    //check if there is already some http headers defined inside the script
     findHeadersInsideScript(req, res);
 
     std::map<std::string, std::string>::iterator it = res.getHeadersRes().begin();
     while (it != res.getHeadersRes().end()) {
         std::string header = it->first + ": " + it->second;
-        std::cout << "header " << header << std::endl;
         cgiRes += header + "\r\n";
         it++;
     }
 
+    cgiRes += "\r\n";
+
     if (ResBody.length() > 0)
         cgiRes += ResBody;
 
+    // std::cout << "length including headers " << cgiRes.length() << std::endl;
+    // std::cout << "length not including headers " << ResBody.length() << std::endl;
     send(fd, cgiRes.c_str(), cgiRes.length(), 0);
 } 
 
 void CGI::execute_cgi_script(Response& res, int fd, Request req)
-{
-    initializeVars(req);
+{    
+    //set status mssg
+    defineResponseStatusMssg(res);
+
+    initializeVars(res, req);
 
     //set environment variables 
-    setEnvVars(req);
+    setEnvVars(req, res);
 
     //find the absolute path of the script
     findExecutablePath();
@@ -170,7 +212,7 @@ void CGI::execute_cgi_script(Response& res, int fd, Request req)
         dup2(fds[1], 1);
         close(fds[1]);
         if (execve(executablePathArray, argv, envs) ==-1) {
-            std::cerr << "execve failed!!";
+            std::cerr << "execve failed!!" << std::endl;
             std::cerr << strerror(errno) << std::endl;
             return ;
         }
