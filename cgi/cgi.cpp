@@ -6,7 +6,7 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/30 18:22:44 by maglagal          #+#    #+#             */
-/*   Updated: 2025/02/08 18:03:02 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/02/08 18:09:18 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,7 +25,6 @@ CGI::~CGI() {
 }
 
 void CGI::defineResponseStatusMssg(Response& res) {  
-    std::cout << "getStatus code " << res.getStatusCode() << std::endl;
     if (res.getStatusCode() == 200)
         res.setStatusMssg("HTTP/1.1 200 OK\n");
     else if (res.getStatusCode() == 404)
@@ -214,7 +213,7 @@ void CGI::execute_cgi_script(Response& res, int fd, Request req)
         if (execve(executablePathArray, argv, envs) ==-1) {
             std::cerr << "execve failed!!" << std::endl;
             std::cerr << strerror(errno) << std::endl;
-            return ;
+            exit(1);
         }
         dup2(save_out, 1);
         close(save_out);

@@ -2,7 +2,7 @@ CPP = g++
 FLAGS = -Wall -Wextra -Werror -std=c++98 -g -fsanitize=address 
 NAME = webserv
 SRC = main.cpp Parser/Parser.cpp Config/Config.cpp Config/Location.cpp Config/Server.cpp Request/Request.cpp Request/UploadFile.cpp\
-	Response/Response.cpp cgi/cgi.cpp
+	Response/Response.cpp cgi/cgi.cpp Response/DirectoryResolver.cpp
 OBJ = ${SRC:.cpp=.o}
 
 all: ${NAME}

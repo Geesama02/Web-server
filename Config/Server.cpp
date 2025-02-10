@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
+/*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/22 10:25:22 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/01/25 14:36:21 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/02/09 13:20:59 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -37,7 +37,7 @@ std::map<std::vector<int>, std::string>& Server::getErrorPage() { return error_p
 long long Server::getClientMaxBodySize() { return client_max_body_size; }
 std::string Server::getIndex() { return index; }
 std::string Server::getRedirect() { return redirect; }
-std::vector<Location> Server::getLocations() { return locations; }
+std::vector<Location>& Server::getLocations() { return locations; }
 
 // Setters
 void Server::setSocket(int s) { socket_fd = s; }

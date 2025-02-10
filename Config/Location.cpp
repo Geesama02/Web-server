@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Location.cpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
+/*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/22 11:17:32 by oait-laa          #+#    #+#             */
-/*   Updated: 2024/12/25 15:47:46 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/02/09 14:40:09 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -39,7 +39,7 @@ std::vector<std::string>& Location::getCgiPath() { return cgi_path; }
 std::vector<std::string>& Location::getCgiExt() { return cgi_ext; }
 
 // Setters
-void Location::setURI(std::string& n_URI) { root = n_URI; }
+void Location::setURI(std::string& n_URI) { URI = n_URI; }
 void Location::setRoot(std::string& n_root) { root = n_root; }
 void Location::setErrorPage(std::map<std::vector<int>, std::string>& n_ep) { error_page = n_ep; }
 void Location::setIndex(std::string& str) { index = str; }

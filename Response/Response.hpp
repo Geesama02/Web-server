@@ -6,7 +6,7 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/14 16:55:34 by maglagal          #+#    #+#             */
-/*   Updated: 2025/02/06 15:13:32 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/02/10 15:37:12 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,6 +25,7 @@
 #include <sys/wait.h>
 #include <string>
 #include <sstream>
+#include <sys/types.h>
 
 #include "../Request/Request.hpp"
 #include "../cgi/cgi.hpp"
@@ -32,19 +33,30 @@
 class Response {
     private:
         std::map<std::string, std::string> Headers;
+        int                                clientFd;
         int                                statusCode;
         std::string                        statusMssg;
         std::string                        body;
         std::string                        finalRes;
         std::string                        queryString;
-        void                               fillBody(Request req, int fd);
+        std::string                        currentDirAbsolutePath;
+        void                               fillBody(Config& config, Request req);
         void                               initializeContentHeader();
         void                               checkForFileExtension(std::string fileName);
+        void                               matchReqPathWithLocation(Location loc, std::string reqPath);
+        void                               returnDefinedPage(std::string fileName);
+        void                               checkDefinedPage(Config& config, Request req);
+        void                               checkAutoIndex(Config& config, Request req);
+        void                               listDirectories(std::string locationPath, std::string dirName);
+        void                               showIndexFile(std::string indexFilePath);
     public:
         static std::map<std::string, std::string> ContentHeader;
         static std::map<int, std::ifstream *> files;
+        static std::map<int, Response> Responses;
+
         //constructor
         Response();
+        ~Response();
 
         //getters
         int         getStatusCode();
@@ -60,14 +72,14 @@ class Response {
         void    setHeader( std::string key, std::string value );
         
         //other
-        void            successResponse(Request req, int fd);
+        void            checkForQueryString(std::string& fileName);
+        void            successResponse(Request req);
         void            notFoundResponse();
         void            forbiddenResponse();
         void            searchForFile(Request Req);
-        void            sendResponse(int fd, Request req);
-        static void     sendBodyBytes(int fd);
-        void            handleRangeRequest(Request req, int fd);
-        void            checkForQueryString(std::string& fileName);
+        void            sendResponse(Config& config, Request req, int fd);
+        void            sendBodyBytes();
+        void            handleRangeRequest(Request req);
 };
 
 #endif

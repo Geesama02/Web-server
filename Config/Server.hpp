@@ -6,7 +6,7 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/21 15:09:59 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/02/05 11:38:57 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/02/09 13:21:09 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -41,7 +41,7 @@ class Server {
         long long getClientMaxBodySize();
         std::string getIndex();
         std::string getRedirect();
-        std::vector<Location> getLocations();
+        std::vector<Location>& getLocations();
 
         // Setters
         void setSocket(int s);

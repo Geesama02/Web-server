@@ -6,7 +6,7 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/22 11:25:38 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/02/08 11:33:31 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/02/10 13:47:34 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,7 +17,8 @@
 std::map<int, long long> Config::clientTimeout;
 
 // Getters
-std::vector<Server> Config::getServer() { return Servers; }
+std::vector<Server> Config::getServers() { return Servers; }
+std::map<int, Server>& Config::getClientServer() { return clientServer; }
 
 // Setters
 void Config::addServer(Server new_server) { Servers.push_back(new_server); }
@@ -62,9 +63,8 @@ int Config::startServers() {
                     Response::files.erase(events[i].data.fd);
                 }
             }
-            else if (events[i].events & EPOLLOUT) {
-                Response::sendBodyBytes(events[i].data.fd);
-            }
+            else if (events[i].events & EPOLLOUT)
+                Response::Responses[events[i].data.fd].sendBodyBytes();
         }
         monitorTimeout(epoll_fd);
     }
@@ -198,7 +198,7 @@ int Config::handleClient(int fd, int epoll_fd) {
             << ' ' << request.getVersion() << std::endl;
             res.searchForFile(request);
         }
-        res.sendResponse(fd, request);
+        res.sendResponse(*this, request, fd);
     }
     return (0);
 }

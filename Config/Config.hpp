@@ -6,7 +6,7 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/21 15:07:06 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/02/05 14:42:42 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/02/09 11:23:22 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,7 +27,8 @@ class Config {
         static std::map<int, long long> clientTimeout;
         
         // Getters
-        std::vector<Server> getServer();
+        std::vector<Server> getServers();
+        std::map<int, Server>& getClientServer();
 
         // Setters
         void addServer(Server new_server);
