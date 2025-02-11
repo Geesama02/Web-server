@@ -6,7 +6,7 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/14 17:03:53 by maglagal          #+#    #+#             */
-/*   Updated: 2025/02/10 16:33:15 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/02/11 18:07:00 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -63,11 +63,15 @@ void Response::initializeContentHeader() {
     ContentHeader[".json"] = "application/json";
 }
 
+void    Response::fromIntTochar(int number, char **buff) {
+    sprintf(*buff, "%d", number);
+}
+
 void Response::notFoundResponse() {
     statusMssg += "404 Not Found\r\n";
     if (body.empty()) {
         body = "<!DOCTYPE html>"
-                "<html><head>"
+                "<html><head><title>404 Not Found</title>"
                 "<style>h1, p {text-align:center}</style></head><body>"
                 "<h1>404 Not Found</h1>"
                 "<hr></hr>"
@@ -83,7 +87,7 @@ void Response::forbiddenResponse() {
     statusMssg += "403 Forbidden\r\n";
     if (body.empty()) {
         body = "<!DOCTYPE html>"
-            "<html><head>"
+            "<html><head><title>403 Forbidden</title>"
             "<style>h1, p {text-align:center}</style></head><body>"
             "<h1>403 Forbidden</h1>"
             "<hr></hr>"
@@ -117,6 +121,21 @@ void Response::successResponse(Request req) {
             files[clientFd] = new std::ifstream(req.getPath().erase(0, 1).c_str(), std::ios::binary);
         Headers["Accept-Ranges"] = "bytes";
     }
+}
+
+void    Response::redirectionResponse(Request req, Config& config) {
+    statusMssg += "301 Moved Permanently\r\n";
+    int port = config.getClientServer()[clientFd].getPort(); 
+    // char buff[120];
+    // sprintf(buff, "%d", port);
+    char portChar[120];
+    sprintf(portChar, "%d", port);
+    // fromIntTochar(port, &portChar);
+    std::string host = config.getClientServer()[clientFd].getHost() + ":" + portChar;
+    std::string location =  req.getPath() + "/";
+    std::string locationHeader = "http://" + host + location;
+    setHeader("Location", locationHeader);
+    setHeader("Content-Length", "169");
 }
 
 void Response::handleRangeRequest(Request req) {
@@ -168,6 +187,12 @@ void Response::checkForQueryString(std::string& fileName) {
     }
 }
 
+void Response::vertifyDirectorySlash(std::string fileName) {
+    size_t i = fileName.rfind("/");
+    if (i != fileName.length() - 1)
+        statusCode = 301;
+}
+
 void Response::searchForFile(Request req) {
     struct stat st;
     std::string fileName = req.getPath();
@@ -186,6 +211,7 @@ void Response::searchForFile(Request req) {
     if (!stat(fileName.c_str(), &st)) {
         if (st.st_mode & S_IFDIR || (!(st.st_mode & S_IRUSR))) {
             statusCode = 403;
+            vertifyDirectorySlash(fileName);
             return ;
         }
         else if ((st.st_mode & S_IFREG) && (st.st_mode & S_IRUSR)) {
@@ -199,6 +225,8 @@ void Response::searchForFile(Request req) {
             statusCode = 200;
             sprintf(buff3, "%ld", st.st_size);
             setHeader("Content-Length", buff3);
+            if (st.st_mode & S_IFDIR)
+                vertifyDirectorySlash(fileName);
             checkForFileExtension(fileName);
             return ;
         }
@@ -228,11 +256,14 @@ void Response::sendBodyBytes() {
 }
 
 void Response::fillBody(Config& config, Request req) {
-    checkDefinedPage(config, req);
+    if (statusCode != 301)
+        checkDefinedPage(config, req);
     if (statusCode == 200)
         successResponse(req);
     else if (statusCode == 206)
         handleRangeRequest(req);
+    else if (statusCode == 301)
+        redirectionResponse(req, config);
     else if (statusCode == 404)
         notFoundResponse();
     else if (statusCode == 403)

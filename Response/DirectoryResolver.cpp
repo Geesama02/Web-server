@@ -6,7 +6,7 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/09 09:49:11 by maglagal          #+#    #+#             */
-/*   Updated: 2025/02/10 16:49:26 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/02/11 18:13:34 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,6 +22,15 @@
 //4- if not index.html is there check autoindex on or off
 //5- if not index.html and not autoindex = 404 not found
 
+int    Response::comparingReqWithLocation(std::string locationPath, std::string reqPath) {
+    std::cout << locationPath << std::endl;
+    std::cout << reqPath << std::endl;
+    size_t i = locationPath.find(reqPath);
+    std::string rest = locationPath.substr(i);
+    std::cout << "rest : " << rest << std::endl;
+    return (0);
+}
+
 void    Response::showIndexFile(std::string indexFilePath) {
     std::ifstream indexFile(indexFilePath.c_str());
     std::string buff;
@@ -33,22 +42,31 @@ void    Response::showIndexFile(std::string indexFilePath) {
 void Response::listDirectories(std::string locationPath, std::string dirName) {
     std::string dirAsbolute = currentDirAbsolutePath + dirName;
     struct dirent *stDir;
+    struct stat st;
     std::string row;
+    std::string direntName;
+    std::string direntPath;
 
     setStatusCode(200);
     DIR *dir = opendir(dirAsbolute.c_str());
     std::string lDirectoriesPage = "<!DOCTYPE html>"
                 "<html>"
                 "<head>"
-                    "<style>h1, p {text-align:left}</style>"
+                    "<style>p {text-align:left;font-size: small} h1 {text-align: left; font-size: large}</style>"
                 "</head>"
                 "<body>"
                 "<h1>Webserv</h1>"
                 "<hr></hr>";
     
     while ((stDir = readdir(dir))) {
-        std::string direntName = stDir->d_name;
-        std::string direntPath = locationPath + "/" + direntName;
+        direntName = stDir->d_name;
+        direntPath = locationPath + direntName;
+        std::string absoluteDirentPath = currentDirAbsolutePath + direntPath;
+        stat(absoluteDirentPath.c_str(), &st);
+        if (st.st_mode & S_IFDIR) {
+            direntPath += "/";
+            direntName += "/";
+        }
         row = "<a href=" + direntPath + ">" + "<p>" + direntName;
         row += "</p></a>";
         lDirectoriesPage += row;
@@ -58,48 +76,65 @@ void Response::listDirectories(std::string locationPath, std::string dirName) {
     lDirectoriesPage += "</html>";
     
     body = lDirectoriesPage;
-    
 }
 
-void Response::matchReqPathWithLocation(Location loc, std::string reqPath) {
+void Response::matchReqPathWithLocation(Location loc, std::string reqPath, std::string toMatch) {
     struct stat st;
-    std::string locationPath = loc.getURI();
+    struct stat reqPathCheck;
+    std::string locationPath = loc.getURI();    
 
-    std::cout << "location path " << locationPath << std::endl;
+    std::cout << "location path " << toMatch << std::endl;
     std::cout << "request path " << reqPath << std::endl;
     
-    std::string indexFile = locationPath + "/" + loc.getIndex();
+    std::string indexFile = reqPath + loc.getIndex();
     std::string aIndexFile = currentDirAbsolutePath + indexFile;
-    std::cout << "index file" << aIndexFile << std::endl;
 
-    std::cout << "index" << loc.getIndex()<<std::endl;
+    std::cout << "index file " << aIndexFile << std::endl;
+    std::cout << "index " << loc.getIndex() << std::endl;
+    std::string reqPathAsbsolute = currentDirAbsolutePath + reqPath;
+    stat(reqPathAsbsolute.c_str(), &reqPathCheck);
     int res = stat(aIndexFile.c_str(), &st);
-    std::cout << "comparing of 2 strs" <<strcmp(locationPath.c_str(), reqPath.c_str())<< std::endl;
-    if (!strcmp(locationPath.c_str(), reqPath.c_str()) ) {
+
+    size_t pos = toMatch.rfind("/");
+    std::cout << "comparing of 2 strs" <<strncmp(toMatch.c_str(), reqPath.c_str(), pos + 1)<< std::endl;
+
+    // comparingReqWithLocation(locationPath, reqPath);
+    if (!strncmp(toMatch.c_str(), reqPath.c_str(), pos + 1) && (reqPathCheck.st_mode & S_IFDIR)) {
         if (loc.getAutoindex()) {
             if (!res && st.st_mode & S_IFREG)
                 showIndexFile(aIndexFile);
             else
                 listDirectories(locationPath, reqPath);
         }
-        else if (!res && st.st_mode & S_IFREG)    
-                showIndexFile(aIndexFile);
-        else if (res && errno == ENOENT)
-            statusCode = 404;
+        else if (!res && st.st_mode & S_IFREG)
+            showIndexFile(aIndexFile);
     }
+    //check server params
+    // else {
+    //     config.getClientServer()[clientFd].get
+    // }
 }
 
 void Response::checkAutoIndex(Config& config, Request req) {
     std::string root;
     std::string uri;
+    std::string nUri;
     std::string pathMatch;
     std::vector<Location>::iterator itLocations = config.getClientServer()[clientFd].getLocations().begin();
+
     while (itLocations != config.getClientServer()[clientFd].getLocations().end()) {
         uri = (*itLocations).getURI();
+        if (uri.rfind("/") == 0 && uri.length() != 1) {
+            uri = uri + "/";
+            (*itLocations).setURI(uri);
+        }
         root = (*itLocations).getRoot();
-        pathMatch = root + uri;
+        if (root != "/")
+            pathMatch = root + uri;
+        else
+            pathMatch = uri;
         if (uri.length() > 0 && uri[0] == '/') //dir should have a leading slash
-            matchReqPathWithLocation(*itLocations, req.getPath());
+            matchReqPathWithLocation(*itLocations, req.getPath(), pathMatch);
         itLocations++;
     }
 }

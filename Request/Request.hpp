@@ -6,7 +6,7 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/30 11:15:32 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/02/10 12:55:05 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/02/11 12:00:34 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,25 +31,25 @@ class Response;
 class Request {
     private:
         std::map<std::string, std::string> Headers;
-        std::string method;
-        long long contentLength;
-        std::string path;
-        std::string version;
-        std::string body;
+        std::string                        method;
+        long long                          contentLength;
+        std::string                        path;
+        std::string                        version;
+        std::string                        body;
     public:
-        static std::map<int, UploadFile> uploads;
-        static std::map<int, Request> unfinishedReqs;
+        static std::map<int, UploadFile>   uploads;
+        static std::map<int, Request>      unfinishedReqs;
 
         // Constructor
         Request();
 
         // Getters
         std::map<std::string, std::string>& getHeaders();
-        std::string getMethod();
-        std::string getPath();
-        std::string getVersion();
-        std::string getBody();
-        std::map<int, UploadFile>& getUploads();
+        std::string                         getMethod();
+        std::string                         getPath();
+        std::string                         getVersion();
+        std::string                         getBody();
+        std::map<int, UploadFile>&          getUploads();
 
         // Setters
         void setMethod(std::string& m);
