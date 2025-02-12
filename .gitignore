@@ -3,3 +3,5 @@ large.jpeg
 small.png
 todo.txt
 .vscode/
+valgrind.txt
+.gitignore

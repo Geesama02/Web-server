@@ -4,8 +4,11 @@ import os
 import time
 
 # CGI script to generate a simple HTML response
-print("Content-Type: text/html")  # HTTP header
-print()  # Blank line indicating end of headers
+print("")
+print("content-type: text/html")
+print("")
+print("")
+print("")
 
 # HTML content
 print("<html>")

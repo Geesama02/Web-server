@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/21 15:07:06 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/02/07 12:30:04 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/02/12 14:19:00 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,17 +27,18 @@ class Config {
         static std::map<int, long long> clientTimeout;
         
         // Getters
-        std::vector<Server> getServer();
+        std::vector<Server> getServers();
+        std::map<int, Server>& getClientServer();
 
         // Setters
         void addServer(Server new_server);
 
         // Functions
-        int startServers(char **envp);
+        int startServers();
         int monitorServers(int epoll_fd, epoll_event& ev);
         int isServerFd(int fd);
         int acceptConnection(int fd, int epoll_fd, epoll_event& ev);
-        int handleClient(int fd, int epoll_fd, char **envp);
+        int handleClient(int fd, int epoll_fd);
         Server getServer(int fd);
         static long long timeNow();
         int monitorTimeout(int epoll_fd);

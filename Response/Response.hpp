@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Response.hpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
+/*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/14 16:55:34 by maglagal          #+#    #+#             */
-/*   Updated: 2025/02/05 11:14:56 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/02/11 16:36:32 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,45 +25,65 @@
 #include <sys/wait.h>
 #include <string>
 #include <sstream>
+#include <sys/types.h>
 
 #include "../Request/Request.hpp"
-#include "../cgi/cgi.hpp"
+#include "../Cgi/Cgi.hpp"
 
 class Response {
     private:
         std::map<std::string, std::string> Headers;
+        int                                clientFd;
         int                                statusCode;
         std::string                        statusMssg;
         std::string                        body;
         std::string                        finalRes;
-        void                               fillBody(Request req, int fd);
+        std::string                        queryString;
+        std::string                        currentDirAbsolutePath;
+        void                               fillBody(Config& config, Request req);
         void                               initializeContentHeader();
-        void                               checkForFileExtension(Request req, std::string fileName);
+        void                               checkForFileExtension(std::string fileName);
+        void                               matchReqPathWithLocation(Location loc, std::string reqPath, std::string toMatch);
+        void                               returnDefinedPage(std::string fileName);
+        void                               checkDefinedPage(Config& config, Request req);
+        void                               checkAutoIndex(Config& config, Request req);
+        void                               listDirectories(std::string locationPath, std::string dirName);
+        void                               showIndexFile(std::string indexFilePath);
+        int                                comparingReqWithLocation(std::string locationPath, std::string reqPath);
+        void                               vertifyDirectorySlash(std::string fileName);
+        void                               fromIntTochar(int number, char **buff);
     public:
         static std::map<std::string, std::string> ContentHeader;
         static std::map<int, std::ifstream *> files;
+        static std::map<int, Response> Responses;
+
         //constructor
         Response();
+        ~Response();
 
         //getters
-        int         getStatusCode();
-        std::string getStatusMssg();
+        int                                 getStatusCode();
+        std::string                         getQueryString();
+        std::string                         getStatusMssg();
         std::map<std::string, std::string>& getHeadersRes( );
-        std::string getHeader( std::string key );
+        std::string                         getHeader( std::string key );
 
         //setters
-        void    setStatusCode(int value);
-        void    setStatusMssg(std::string value);
-        void    setHeader( std::string key, std::string value );
+        void            setStatusCode(int value);
+        void            setQueryString(std::string value);
+        void            setStatusMssg(std::string value);
+        void            setHeader( std::string key, std::string value );
         
         //other
-        void            successResponse(Request req, int fd);
+        void            checkForQueryString(std::string& fileName);
+        void            successResponse(Request req);
         void            notFoundResponse();
         void            forbiddenResponse();
+        void            redirectionResponse(Request req, Config& config);
         void            searchForFile(Request Req);
-        void            sendResponse(int fd, Request req, char **envp);
-        static void     sendBodyBytes(int fd);
-        void            handleRangeRequest(Request req, int fd);
+        void            sendResponse(Config& config, Request req, int fd);
+        void            sendBodyBytes();
+        void            handleRangeRequest(Request req);
 };
 
 #endif

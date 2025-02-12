@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/22 11:25:38 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/02/10 12:03:16 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/02/12 14:24:29 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,13 +17,14 @@
 std::map<int, long long> Config::clientTimeout;
 
 // Getters
-std::vector<Server> Config::getServer() { return Servers; }
+std::vector<Server> Config::getServers() { return Servers; }
+std::map<int, Server>& Config::getClientServer() { return clientServer; }
 
 // Setters
 void Config::addServer(Server new_server) { Servers.push_back(new_server); }
 
 // Functions
-int Config::startServers(char **envp) {
+int Config::startServers() {
     epoll_event ev;
     int epoll_fd = epoll_create(1);
     if (epoll_fd < 0) {
@@ -47,7 +48,7 @@ int Config::startServers(char **envp) {
                 if (isServerFd(fd))
                     acceptConnection(fd, epoll_fd, ev);
                 else
-                    handleClient(fd, epoll_fd, envp);
+                    handleClient(fd, epoll_fd);
             }
             else if (events[i].events & EPOLLERR) {
                 std::cerr << "Socket error on fd: " << events[i].data.fd << std::endl;
@@ -62,9 +63,8 @@ int Config::startServers(char **envp) {
                     Response::files.erase(events[i].data.fd);
                 }
             }
-            else if (events[i].events & EPOLLOUT) {
-                Response::sendBodyBytes(events[i].data.fd);
-            }
+            else if (events[i].events & EPOLLOUT)
+                Response::Responses[events[i].data.fd].sendBodyBytes();
         }
         monitorTimeout(epoll_fd);
     }
@@ -185,7 +185,7 @@ void Config::closeConnection(int epoll_fd, int fd) {
     close(fd);
 }
 
-int Config::handleClient(int fd, int epoll_fd, char **envp) {
+int Config::handleClient(int fd, int epoll_fd) {
     Request request;
     Response res;
     int status;
@@ -211,8 +211,8 @@ int Config::handleClient(int fd, int epoll_fd, char **envp) {
             << " - " << request.getMethod() << ' ' << request.getPath()
             << ' ' << request.getVersion() << std::endl;
             res.searchForFile(request);
-            res.sendResponse(fd, request, envp);
         }
+        res.sendResponse(*this, request, fd);
     }
     return (0);
 }

@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/30 11:15:32 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/02/08 11:38:37 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/02/12 14:28:05 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,27 +31,28 @@ class Response;
 class Request {
     private:
         std::map<std::string, std::string> Headers;
-        static std::map<int, std::string> reqStatus;
-        std::string method;
-        std::string fileName;
-        std::string path;
-        std::string version;
-        std::string body;
+        static std::map<int, std::string>  reqStatus;
+        std::string                        fileName;
+        std::string                        method;
+        long long                          contentLength;
+        std::string                        path;
+        std::string                        version;
+        std::string                        body;
     public:
-        static std::map<int, UploadFile> uploads;
-        static std::map<int, Request> unfinishedReqs;
-        
+        static std::map<int, UploadFile>   uploads;
+        static std::map<int, Request>      unfinishedReqs;
+
         // Constructor
         Request();
 
         // Getters
         std::map<std::string, std::string>& getHeaders();
-        std::string getMethod();
-        std::string getFileName();
-        std::string getPath();
-        std::string getVersion();
-        std::string getBody();
-        std::map<int, UploadFile>& getUploads();
+        std::string                         getMethod();
+        std::string                         getFileName();
+        std::string                         getPath();
+        std::string                         getVersion();
+        std::string                         getBody();
+        std::map<int, UploadFile>&          getUploads();
 
         // Setters
         void setMethod(std::string& m);
