@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/03 11:07:50 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/01/30 11:12:12 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/02/08 15:04:52 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -46,7 +46,7 @@ void UploadFile::newFilename() {
     gettimeofday(&tv, NULL);
     time << (tv.tv_sec * 1000000) + tv.tv_usec;
     size_t pointPos = filename.rfind('.');
-    if (pointPos != std::string::npos)
+    if (pointPos != std::string::npos && filename != ".tmp")
         filename.insert(pointPos, "_" + time.str());
     else
         filename.insert(filename.size(), "_" + time.str());
@@ -54,9 +54,10 @@ void UploadFile::newFilename() {
 
 int UploadFile::openFile() {
     newFilename();
-    fd = new std::ofstream(("../../goinfre/" + filename).c_str());
+    filename = "../../goinfre/" + filename;
+    fd = new std::ofstream(filename.c_str());
     if (fd->is_open()) {
-        std::cout << "file created for " << filename << std::endl;
+        // std::cout << "file created for " << filename << std::endl;
         return (1);
     }
     else {
@@ -68,10 +69,10 @@ int UploadFile::openFile() {
 
 // Destructor
 UploadFile::~UploadFile() {
-    std::cout << "Destroyed file -> |" << filename << "|\n";
-    if (fd) {
+    // std::cout << "Destroyed file -> |" << filename << "|\n";
+    if (fd && fd->is_open()) {
         if (!state) { // delete file if connection closed before full file uploaded
-            int status = remove(("../../goinfre/" + filename).c_str());
+            int status = remove(filename.c_str());
             if (status != 0)
                 std::cerr << "Error removing file: " << strerror(errno) << std::endl;
         }

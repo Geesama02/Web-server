@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
+/*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/22 10:25:22 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/02/09 13:20:59 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/02/12 14:19:11 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,9 +19,10 @@ Server::Server() {
     host = "localhost";
     port = 8080;
     root = "/";
-    std::vector<int> err;
-    err.push_back(404);
-    error_page.insert(std::pair<std::vector<int>, std::string>(err, "/Error_pages/404.html"));
+    autoindex = false;
+    // std::vector<int> err;
+    // err.push_back(404);
+    // error_page.insert(std::pair<std::vector<int>, std::string>(err, "/Error_pages/404.html"));
     client_max_body_size = 1024;
     index = "index.html";
     redirect = "";
@@ -33,7 +34,8 @@ std::string Server::getServerName() { return server_name; }
 std::string Server::getHost() { return host; }
 int Server::getPort() { return port; }
 std::string Server::getRoot() { return root; }
-std::map<std::vector<int>, std::string>& Server::getErrorPage() { return error_page; }
+bool Server::getAutoindex() { return autoindex; }
+std::map<int, std::string>& Server::getErrorPage() { return error_page; }
 long long Server::getClientMaxBodySize() { return client_max_body_size; }
 std::string Server::getIndex() { return index; }
 std::string Server::getRedirect() { return redirect; }
@@ -45,7 +47,12 @@ void Server::setServerName(std::string& name) { server_name = name; }
 void Server::setHost(std::string& new_host) { host = new_host; }
 void Server::setPort(int n_port) { port = n_port; }
 void Server::setRoot(std::string& n_root) { root = n_root; }
-void Server::setErrorPage(std::map<std::vector<int>, std::string>& n_ep) { error_page = n_ep; }
+void Server::setAutoindex(bool n_autoindex) { autoindex = n_autoindex; }
+void Server::setErrorPage(std::map<int, std::string>& n_ep) { error_page = n_ep; }
+void Server::addErrorPage(int code, std::string path) {
+    if (error_page.find(code) == error_page.end())
+        error_page[code] = path;
+}
 void Server::setClientMaxBodySize(long long size) { client_max_body_size = size; }
 void Server::setIndex(std::string& str) { index = str; }
 void Server::setRedirect(std::string& page) { redirect = page; }

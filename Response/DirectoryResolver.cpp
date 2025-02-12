@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   DirectoryResolver.cpp                              :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
+/*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/09 09:49:11 by maglagal          #+#    #+#             */
-/*   Updated: 2025/02/12 11:02:08 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/02/12 14:29:23 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -136,27 +136,27 @@ void Response::checkAutoIndex(Config& config, Request req) {
 
 void    Response::checkDefinedPage(Config& config, Request req) {
     checkAutoIndex(config, req);
-    std::map<std::vector<int>, std::string>::iterator it = config.getClientServer()[clientFd].getErrorPage().begin();
-    while (it != config.getClientServer()[clientFd].getErrorPage().end()) {
-        std::vector<int>::const_iterator it2 = (it->first).begin();
-        while (it2 != (it->first).end()) {
-            if (*it2 == statusCode)
-                return returnDefinedPage(it->second);
-            it2++;
-        }
-        it++;
-    }
+    // std::map<std::vector<int>, std::string>::iterator it = config.getClientServer()[clientFd].getErrorPage().begin();
+    // while (it != config.getClientServer()[clientFd].getErrorPage().end()) {
+    //     std::vector<int>::const_iterator it2 = (it->first).begin();
+    //     while (it2 != (it->first).end()) {
+    //         if (*it2 == statusCode)
+    //             return returnDefinedPage(it->second);
+    //         it2++;
+    //     }
+    //     it++;
+    // }
 }
 
-void    Response::returnDefinedPage(std::string fileName) {
-    std::string buffer;
-    std::string absolutePath = currentDirAbsolutePath + "/" + fileName;
-    std::ifstream definedPage(absolutePath.c_str());
-    if (!definedPage.is_open()) {
-        std::cerr << "Failed to open defined file " << absolutePath << std::endl;
-        return ;
-    }
-    while (std::getline(definedPage, buffer))
-        body += buffer;
-}
+// void    Response::returnDefinedPage(std::string fileName) {
+//     std::string buffer;
+//     std::string absolutePath = currentDirAbsolutePath + "/" + fileName;
+//     std::ifstream definedPage(absolutePath.c_str());
+//     if (!definedPage.is_open()) {
+//         std::cerr << "Failed to open defined file " << absolutePath << std::endl;
+//         return ;
+//     }
+//     while (std::getline(definedPage, buffer))
+//         body += buffer;
+// }
 

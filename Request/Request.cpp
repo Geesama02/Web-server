@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/30 12:07:04 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/02/05 11:10:24 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/02/12 14:01:26 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,13 +15,25 @@
 
 std::map<int, UploadFile> Request::uploads;
 std::map<int, Request> Request::unfinishedReqs;
+std::map<int, std::string> Request::reqStatus;
 
 // Constructor
-Request::Request() : contentLength(0) {}
+Request::Request() {
+    Request::reqStatus.insert(std::make_pair(201, "Created"));
+    Request::reqStatus.insert(std::make_pair(400, "Bad Request"));
+    Request::reqStatus.insert(std::make_pair(405, "Method Not Allowed"));
+    Request::reqStatus.insert(std::make_pair(411, "Length Required"));
+    Request::reqStatus.insert(std::make_pair(413, "Content Too Large"));
+    Request::reqStatus.insert(std::make_pair(414, "URI Too Long"));
+    Request::reqStatus.insert(std::make_pair(500, "Internal Server Error"));
+    Request::reqStatus.insert(std::make_pair(501, "Not Implemented"));
+    Request::reqStatus.insert(std::make_pair(505, "HTTP Version Not Supported"));
+}
 
 // Getters
 std::map<std::string, std::string>& Request::getHeaders() { return Headers; }
 std::string Request::getMethod() { return method; }
+std::string Request::getFileName() { return fileName; }
 std::string Request::getPath() { return path; }
 std::string Request::getVersion() { return version; }
 std::string Request::getBody() { return body; }
@@ -91,12 +103,6 @@ int Request::parse(std::string buffer) {
         Headers[holder[0]] = holder[1];
         // std::cout << holder[0] << " ==> " << holder[1] << std::endl;
     }
-    // print headers
-    // std::map<std::string, std::string>::iterator it;
-    // for (std::map<std::string, std::string>::iterator it = Headers.begin(); it != Headers.end(); it++) {
-    //     std::cout << "{ " << it->first << " = " << it->second
-    //         << " }" << std::endl;
-    // }
     return (0);
 }
 
@@ -115,8 +121,7 @@ int Request::handleFirstPart(UploadFile& file, std::string& str) {
             if (stop_p != std::string::npos) {
                 file.setExpectedBytes(file.getExpectedBytes() - (stop_p + 4));
                 str = str.substr(stop_p + 4);
-                if (handleFilePart(file, str) != 0)
-                    return (1);
+                return (handleFilePart(file, str));
             }
         }
     }
@@ -128,6 +133,7 @@ int Request::handleFilePart(UploadFile& file, std::string& str) {
         str.erase(stopPos);
         *file.getFd() << str;
         file.setState(true);
+        fileName = file.getFilename();
         return (201);
     }
     if (!str.empty()) {
@@ -148,7 +154,7 @@ int Request::readFile(UploadFile& file, std::string str) {
         file.setTmpContent("");
     }
     if (str.compare(0, file.getBoundary().size() + 2, "--" + file.getBoundary()) == 0)
-        return (handleFirstPart(file, str) != 0);
+        return (handleFirstPart(file, str));
     return (handleFilePart(file, str));
 }
 
@@ -176,6 +182,7 @@ int Request::writeFirstChunk(UploadFile& file, std::string& str) {
         if (file.getExpectedBytes() <= 0) {
             if (file.getExpectedBytes() == 0) {
                 file.setState(true);
+                fileName = file.getFilename();
                 return (201);
             }
             return (1);
@@ -199,9 +206,9 @@ int Request::checkChunks(UploadFile& file, std::string& str) {
             if (file.getExpectedBytes() <= 0) {
                 if (file.getExpectedBytes() == 0) {
                     file.setState(true);
+                    fileName = file.getFilename();
                     return (201);
                 }
-                std::cout << "last\n";
                 return (1);
             }
             str = str.substr(endPos + 2);
@@ -220,6 +227,7 @@ int Request::writeFile(UploadFile& file, std::string& str) {
         str = str.substr(toWrite.size());
         if (str == "\r\n0\r\n\r\n") { // all chunks received
             file.setState(true);
+            fileName = file.getFilename();
             return (201);
         }
         if (file.getExpectedBytes() == 0) // save the new chunk to handle with next request
@@ -231,7 +239,7 @@ int Request::writeFile(UploadFile& file, std::string& str) {
 int Request::readBinaryFile(UploadFile& file, std::string str) {
     if (file.isFirstRead()) {
         file.setFirstRead(false);
-        file.setFilename(getExtension(Headers["content-type"]));
+        file.setFilename(file.getFilename() + getExtension(Headers["content-type"]));
         if (!file.openFile())
             return (500);
     }
@@ -240,6 +248,7 @@ int Request::readBinaryFile(UploadFile& file, std::string str) {
     file.setExpectedBytes(file.getExpectedBytes() - toWrite.size());
     if (file.getExpectedBytes() <= 0) {
         file.setState(true);
+        fileName = file.getFilename();
         return (201);
     }
     return (0);
@@ -255,36 +264,40 @@ int Request::readChunkedFile(UploadFile& file, std::string str) {
     }
     else if (!str.empty()) {
         int status = 0;
-        if ((status = checkChunks(file, str)) != 0
-            || (status = writeFile(file, str)) != 0) { // write chunk and check if there's other chunks
-            std::cout << "status before " << status << std::endl;
+        if ((status = checkChunks(file, str)) != 0 || (status = writeFile(file, str)) != 0) // write chunk and check if there's other chunks
             return (status);
-        } 
     }
     return (0);
 }
 
-int Request::setupPostBody(int fd, std::string str) {
-    contentLength = strToDecimal(Headers["content-length"]);
-    // std::cout << "length -> " << contentLength << std::endl;
-    if (contentLength < 0)
-        return (1);
-    std::string toSave = str.substr(0, contentLength);
-    contentLength -= toSave.size();
-    body += toSave;
-    if (contentLength != 0)
-        unfinishedReqs[fd] = *this;
+int Request::setupPostBody(int fd) {
+    UploadFile file;
+    if (Headers.find("content-length") != Headers.end())
+        file.setExpectedBytes(strToDecimal(Headers["content-length"]));
+    else
+        return (411); // Missing Content-length
+    file.setType("binary");
+    file.setFilename(".tmp");
+    addUpload(fd, file);
+    unfinishedReqs[fd] = *this;
     return (0);
 }
 
-int Request::continuePostBody(Request& req, std::string str) {
-    // std::cout << "continuePostBody\n";
-    std::string toSave = str.substr(0, req.contentLength);
-    req.contentLength -= toSave.size();
-    req.body += toSave;
-    if (req.contentLength == 0)
-        *this = req;
-    return (0);
+int Request::continuePostBody(Request& req, int fd, std::string str) {
+    int status = 0;
+    status = readBinaryFile(uploads[fd], str);
+    if (status != 0) {
+        if (status == 201) {
+            status = 0;
+            *this = req;
+            fileName = uploads[fd].getFilename();
+        }
+        uploads.erase(fd);
+    }
+    else
+        return (2);
+    unfinishedReqs.erase(fd);
+    return (status);
 }
 
 int Request::handleFiles(int fd, std::string& str) {
@@ -323,7 +336,6 @@ std::string Request::getExtension(std::string type) {
 
 int Request::setupBinaryFile(int fd) {
     UploadFile file;
-    std::cout << "inside\n";
     if (Headers.find("content-length") != Headers.end())
         file.setExpectedBytes(strToDecimal(Headers["content-length"]));
     else
@@ -333,7 +345,7 @@ int Request::setupBinaryFile(int fd) {
     return (0);
 }
 
-int Request::handlePostReq(int fd, std::string& str) {
+int Request::handlePostReq(int fd) {
     if (method == "POST" 
         && Headers.find("content-type") != Headers.end()
         && Headers["content-type"].find("boundary=") != std::string::npos) {
@@ -353,7 +365,7 @@ int Request::handlePostReq(int fd, std::string& str) {
     }
     else if (method == "POST"
             && Headers.find("content-length") != Headers.end()) {
-        setupPostBody(fd, str);
+        return (setupPostBody(fd));
     }
     else if (method == "POST") {
         return (400);
@@ -405,13 +417,14 @@ int Request::readHeaders(int fd, std::string& str, Server& server, std::vector<S
             && Headers.find("content-length") != Headers.end()
             && strToDecimal(Headers["content-length"]) > server.getClientMaxBodySize())
             return (413); // Request Too Big
-        int res = handlePostReq(fd, str);
+        int res = handlePostReq(fd);
         if (res != 0)
             return (res);
     }
-    else if (unfinishedReqs.find(fd) != unfinishedReqs.end())
-        continuePostBody(unfinishedReqs[fd], str);
-    return (handleFiles(fd, str));
+    if (unfinishedReqs.find(fd) != unfinishedReqs.end())
+        return (continuePostBody(unfinishedReqs[fd], fd, str));
+    else
+        return (handleFiles(fd, str));
 }
 
 int Request::setupChunkedFile(int fd) {
@@ -420,6 +433,41 @@ int Request::setupChunkedFile(int fd) {
     file.setType("chunked");
     addUpload(fd, file);
     return (0);
+}
+
+std::string Request::getDate() {
+    time_t timestamp = time(NULL);
+    struct tm datetime = *gmtime(&timestamp);
+    char now[50];
+
+    strftime(now, 50, "%a, %d %b %Y %H:%M:%S GMT", &datetime);
+    std::string res = now;
+    return (res);
+}
+
+std::string Request::generateRes(int status) {
+    char statusBuff[4];
+    char bodySizeBuff[10];
+    std::sprintf(statusBuff, "%d", status);
+    std::string resBody = "<!DOCTYPE html>"
+                        "<html>"
+                        "<head><title>" + std::string(statusBuff) + " " + reqStatus[status] + "</title></head>"
+                        "<body>"
+                        "<center><h1>" + std::string(statusBuff) + " " + reqStatus[status] + "</h1></center>"
+                        "<hr><center>Webserv</center>"
+                        "</body>"
+                        "</html>";
+    std::string res = "HTTP/1.1 " + std::string(statusBuff) + " " + reqStatus[status] + "\r\n";
+    if (status == 201)
+        res += "Location: " + fileName + "\r\n";
+    res += "Server: webserv\r\n";
+    res += "Date: " + getDate() + "\r\n";
+    res += "Content-Type: text/html\r\n";
+    std::sprintf(bodySizeBuff, "%zu", resBody.size());
+    res += "Content-Length: " + std::string(bodySizeBuff) + "\r\n";
+    res += "Connection: close\r\n\r\n";
+    res += resBody;
+    return (res);
 }
 
 int Request::setupFile(int fd) {
@@ -441,16 +489,8 @@ int Request::readRequest(int fd, Server& server, std::vector<Server>& Servers) {
     char buff[4096];
     std::string str;
     ssize_t received = recv(fd, buff, sizeof(buff) - 1, 0);
-    // std::cout << "received: " << received << std::endl;
-    if (received <= 0) {
-        std::cout << "Connection closed!" << std::endl;
-        if (uploads.find(fd) != uploads.end())
-            uploads.erase(fd);
-        else if (unfinishedReqs.find(fd) != unfinishedReqs.end())
-            unfinishedReqs.erase(fd);
-        close(fd);
+    if (received <= 0)
         return (1);
-    }
     else {
         buff[received] = '\0';
         str.append(buff, received);
