@@ -6,7 +6,7 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/09 09:49:11 by maglagal          #+#    #+#             */
-/*   Updated: 2025/02/11 18:13:34 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/02/12 11:02:08 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,7 +27,6 @@ int    Response::comparingReqWithLocation(std::string locationPath, std::string 
     std::cout << reqPath << std::endl;
     size_t i = locationPath.find(reqPath);
     std::string rest = locationPath.substr(i);
-    std::cout << "rest : " << rest << std::endl;
     return (0);
 }
 
@@ -109,10 +108,6 @@ void Response::matchReqPathWithLocation(Location loc, std::string reqPath, std::
         else if (!res && st.st_mode & S_IFREG)
             showIndexFile(aIndexFile);
     }
-    //check server params
-    // else {
-    //     config.getClientServer()[clientFd].get
-    // }
 }
 
 void Response::checkAutoIndex(Config& config, Request req) {

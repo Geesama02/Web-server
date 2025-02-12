@@ -6,7 +6,7 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/14 17:03:53 by maglagal          #+#    #+#             */
-/*   Updated: 2025/02/11 18:07:00 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/02/12 10:45:59 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -291,9 +291,6 @@ void Response::sendResponse(Config& config, Request req, int fd) {
         finalRes += body;
 
     Responses[clientFd] = *this;
-
-    std::cout << "body---------------------------" << std::endl;
-    std::cout << finalRes << std::endl;
 
     send(clientFd, finalRes.c_str(), finalRes.length(), 0);
 }
