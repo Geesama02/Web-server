@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/21 16:52:32 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/01/04 14:48:55 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/02/12 11:40:50 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,11 +28,13 @@
 #include <cerrno>
 #include <fcntl.h>
 
+class Server;
+
 class Location {
     private:
         std::string URI;
         std::string root;
-        std::map<std::vector<int>, std::string> error_page;
+        std::map<int, std::string> error_page;
         std::vector<std::string> allowed_methods;
         std::string index;
         bool autoindex;
@@ -42,11 +44,12 @@ class Location {
     public:
         // Constructor
         Location();
+        Location(Server& copy);
 
         // Getters
         std::string getURI();
         std::string getRoot();
-        std::map<std::vector<int>, std::string>& getErrorPage();
+        std::map<int, std::string>& getErrorPage();
         std::string getIndex();
         bool getAutoindex();
         std::vector<std::string>& getAllowedMethods();
@@ -57,7 +60,8 @@ class Location {
         // Setters
         void setURI(std::string& name);
         void setRoot(std::string& name);
-        void setErrorPage(std::map<std::vector<int>, std::string>& n_ep);
+        void setErrorPage(std::map<int, std::string>& n_ep);
+        void addErrorPage(int code, std::string path);
         void setIndex(std::string& str);
         void setAutoindex(bool n_autoindex);
         void setAllowedMethods(std::vector<std::string>& methods);

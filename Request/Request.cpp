@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/30 12:07:04 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/02/08 14:12:25 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/02/12 14:01:26 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -336,7 +336,6 @@ std::string Request::getExtension(std::string type) {
 
 int Request::setupBinaryFile(int fd) {
     UploadFile file;
-    std::cout << "inside\n";
     if (Headers.find("content-length") != Headers.end())
         file.setExpectedBytes(strToDecimal(Headers["content-length"]));
     else

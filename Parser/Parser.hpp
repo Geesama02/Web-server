@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/23 10:46:14 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/01/28 11:29:05 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/02/12 12:56:08 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,6 +26,7 @@ class Parser {
         int handleLines(Config& config, std::string& line);
         void replace(std::string& line, char old_char, char new_char);
         int fillServer(Config& config, std::vector<std::string>& holder, size_t& index);
+        int parseLocation(std::vector<std::string>& holder, Server& tmp_server, size_t& index);
         int isNumber(std::string& str);
         long long strToDecimal(std::string str);
         int setPortVar(std::vector<std::string>& holder, Server& tmp_server, size_t& index);
@@ -36,6 +37,7 @@ class Parser {
         int setIndexVar(std::vector<std::string>& holder, Location& tmp_location, size_t& index);
         int setRedirectVar(std::vector<std::string>& holder, Server& tmp_server, size_t& index);
         int setRedirectVar(std::vector<std::string>& holder, Location& tmp_location, size_t& index);
+        int setAutoindexVar(std::vector<std::string>& holder, Server& tmp_server, size_t& index);
         int setAutoindexVar(std::vector<std::string>& holder, Location& tmp_location, size_t& index);
         int setSnameVar(std::vector<std::string>& holder, Server& tmp_server, size_t& index);
         int setErrVar(std::vector<std::string>& holder, Server& tmp_server, size_t& index);
@@ -45,6 +47,8 @@ class Parser {
         int setCgiPathVar(std::vector<std::string>& holder, Location& tmp_location, size_t& index);
         int setCgiExtVar(std::vector<std::string>& holder, Location& tmp_location, size_t& index);
         int handleLocation(std::vector<std::string>& holder, Server& tmp_server, size_t& index);
+        int skipLocation(std::vector<std::string>& holder, size_t& index);
+        int checkErrVar(std::vector<std::string>& holder, size_t index);
 };
 
 #endif

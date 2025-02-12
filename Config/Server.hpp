@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/21 15:09:59 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/01/24 15:40:05 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/02/12 13:50:55 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,7 +22,8 @@ class Server {
         std::string host;
         int port;
         std::string root;
-        std::map<std::vector<int>, std::string> error_page;
+        bool autoindex;
+        std::map<int, std::string> error_page;
         long long client_max_body_size;
         std::string index;
         std::string redirect;
@@ -37,11 +38,12 @@ class Server {
         std::string getHost();
         int getPort();
         std::string getRoot();
-        std::map<std::vector<int>, std::string>& getErrorPage();
+        std::map<int, std::string>& getErrorPage();
         long long getClientMaxBodySize();
         std::string getIndex();
+        bool getAutoindex();
         std::string getRedirect();
-        std::vector<Location> getLocations();
+        std::vector<Location>& getLocations();
 
         // Setters
         void setSocket(int s);
@@ -49,7 +51,9 @@ class Server {
         void setHost(std::string& new_host);
         void setPort(int n_port);
         void setRoot(std::string& n_root);
-        void setErrorPage(std::map<std::vector<int>, std::string>& n_ep);
+        void setAutoindex(bool n_autoindex);
+        void setErrorPage(std::map<int, std::string>& n_ep);
+        void addErrorPage(int code, std::string path);
         void setClientMaxBodySize(long long size);
         void setIndex(std::string& str);
         void setRedirect(std::string& page);
