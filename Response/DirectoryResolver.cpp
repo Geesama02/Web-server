@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/09 09:49:11 by maglagal          #+#    #+#             */
-/*   Updated: 2025/02/12 14:29:23 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/02/14 14:09:35 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -82,20 +82,20 @@ void Response::matchReqPathWithLocation(Location loc, std::string reqPath, std::
     struct stat reqPathCheck;
     std::string locationPath = loc.getURI();    
 
-    std::cout << "location path " << toMatch << std::endl;
-    std::cout << "request path " << reqPath << std::endl;
+    // std::cout << "location path " << toMatch << std::endl;
+    // std::cout << "request path " << reqPath << std::endl;
     
     std::string indexFile = reqPath + loc.getIndex();
     std::string aIndexFile = currentDirAbsolutePath + indexFile;
 
-    std::cout << "index file " << aIndexFile << std::endl;
-    std::cout << "index " << loc.getIndex() << std::endl;
+    // std::cout << "index file " << aIndexFile << std::endl;
+    // std::cout << "index " << loc.getIndex() << std::endl;
     std::string reqPathAsbsolute = currentDirAbsolutePath + reqPath;
     stat(reqPathAsbsolute.c_str(), &reqPathCheck);
     int res = stat(aIndexFile.c_str(), &st);
 
     size_t pos = toMatch.rfind("/");
-    std::cout << "comparing of 2 strs" <<strncmp(toMatch.c_str(), reqPath.c_str(), pos + 1)<< std::endl;
+    // std::cout << "comparing of 2 strs" <<strncmp(toMatch.c_str(), reqPath.c_str(), pos + 1)<< std::endl;
 
     // comparingReqWithLocation(locationPath, reqPath);
     if (!strncmp(toMatch.c_str(), reqPath.c_str(), pos + 1) && (reqPathCheck.st_mode & S_IFDIR)) {

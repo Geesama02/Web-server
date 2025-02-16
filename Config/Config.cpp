@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/22 11:25:38 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/02/12 14:24:29 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/02/16 10:43:19 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -201,13 +201,18 @@ int Config::handleClient(int fd, int epoll_fd) {
         std::string res = request.generateRes(status);
         // std::cout << res << std::endl;
         send(fd, res.c_str(), res.size(), 0);
-        // if (status >= 400)
-        //     closeConnection(epoll_fd, fd);
+        if (status >= 400)
+            closeConnection(epoll_fd, fd);
         return (0); // request error handle later
     }
     else {
         if (!request.getPath().empty()) {
-            std::cout << clientServer[fd].getServerName() << ':' << clientServer[fd].getPort()
+            // std::cout << "path -> " << request.getPath() << std::endl;
+            std::string tmp = request.getHeaders()["host"];
+            size_t pos = tmp.rfind(':');
+            if (pos != std::string::npos)
+                tmp.erase(pos);
+            std::cout << clientServer[fd].whichServerName(tmp) << ':' << clientServer[fd].getPort()
             << " - " << request.getMethod() << ' ' << request.getPath()
             << ' ' << request.getVersion() << std::endl;
             res.searchForFile(request);

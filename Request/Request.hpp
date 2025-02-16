@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/30 11:15:32 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/02/12 14:28:05 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/02/14 14:26:24 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -62,7 +62,7 @@ class Request {
         void addUpload(int fd, UploadFile& new_upload);
 
         // Functions
-        int parse(std::string buffer);
+        int parse(std::string buffer, size_t stop_p);
         int isNumber(std::string& str);
         std::vector<std::string> split(std::string buffer, int full, char del);
         void to_lower(std::string& str);
@@ -89,6 +89,7 @@ class Request {
         std::string getExtension(std::string type);
         std::string generateRes(int status);
         std::string getDate();
+        int checkMethod(std::string str);
 };
 
 #endif

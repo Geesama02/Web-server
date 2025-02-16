@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/22 10:25:22 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/02/12 14:19:11 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/02/16 10:58:25 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,7 +15,7 @@
 // Constructor
 Server::Server() {
     socket_fd = -1;
-    server_name = "Server";
+    server_name.push_back("Server");
     host = "localhost";
     port = 8080;
     root = "/";
@@ -25,12 +25,18 @@ Server::Server() {
     // error_page.insert(std::pair<std::vector<int>, std::string>(err, "/Error_pages/404.html"));
     client_max_body_size = 1024;
     index = "index.html";
-    redirect = "";
 }
 
 // Getters
 int Server::getSocket() { return socket_fd; }
-std::string Server::getServerName() { return server_name; }
+std::vector<std::string>& Server::getServerName() { return server_name; }
+std::string Server::whichServerName(std::string str) {
+    for(std::vector<std::string>::iterator it = server_name.begin(); it != server_name.end(); it++) {
+        if (str == *it)
+            return (*it);
+    }
+    return host;
+}
 std::string Server::getHost() { return host; }
 int Server::getPort() { return port; }
 std::string Server::getRoot() { return root; }
@@ -38,12 +44,12 @@ bool Server::getAutoindex() { return autoindex; }
 std::map<int, std::string>& Server::getErrorPage() { return error_page; }
 long long Server::getClientMaxBodySize() { return client_max_body_size; }
 std::string Server::getIndex() { return index; }
-std::string Server::getRedirect() { return redirect; }
+std::map<int, std::string> Server::getRedirect() { return redirect; }
 std::vector<Location>& Server::getLocations() { return locations; }
 
 // Setters
 void Server::setSocket(int s) { socket_fd = s; }
-void Server::setServerName(std::string& name) { server_name = name; }
+void Server::setServerName(std::string& name) { server_name.push_back(name); }
 void Server::setHost(std::string& new_host) { host = new_host; }
 void Server::setPort(int n_port) { port = n_port; }
 void Server::setRoot(std::string& n_root) { root = n_root; }
@@ -55,7 +61,10 @@ void Server::addErrorPage(int code, std::string path) {
 }
 void Server::setClientMaxBodySize(long long size) { client_max_body_size = size; }
 void Server::setIndex(std::string& str) { index = str; }
-void Server::setRedirect(std::string& page) { redirect = page; }
+void Server::setRedirect(int code, std::string page) {
+    if (redirect.size() == 0)
+        redirect[code] = page;
+}
 void Server::addLocation(Location& new_location) { locations.push_back(new_location); }
 
 // Functions
@@ -107,7 +116,9 @@ int Server::initServer(std::vector<Server>& Servers, std::vector<Server>::iterat
         return (1);
     }
     fcntl(socket_fd, F_SETFL, O_NONBLOCK);
-    std::cout << server_name << ": listening to port " << port << "...\n";
+    for(std::vector<std::string>::iterator it = server_name.begin(); it != server_name.end(); it++) {
+        std::cout << *it << ": listening to port " << port << "...\n";
+    }
     return (0);
 }
 

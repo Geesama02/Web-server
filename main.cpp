@@ -5,13 +5,13 @@
 // void handle_signal(int sig) {
 //     (void)sig;
 //     std::cout << "Server Terminated!" << std::endl;
-//     // exit(1);
+//     exit(1);
 // }
 
 void f() {system("valgrind --leak-check=yes --log-file=valgrind.txt ./webserv");}
 int main(int argc, char **argv)
 {
-    atexit(f);
+    // atexit(f);
     if (argc > 2)
     {
         std::cerr << "Invalid Number of parameters\n";
@@ -19,7 +19,7 @@ int main(int argc, char **argv)
     }
     Config config;
     Parser parser;
-    // Request req;
+    Request req;
     // if (signal(SIGINT, handle_signal) == SIG_ERR) {
     //     std::cerr << "Error setting signal handler\n";
     //     return (1);

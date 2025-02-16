@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/30 12:07:04 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/02/12 14:01:26 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/02/16 10:28:56 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -80,29 +80,41 @@ void Request::to_lower(std::string& str) {
     }
 }
 
-int Request::parse(std::string buffer) {
+int Request::checkMethod(std::string str) {
+    for(std::string::iterator i = str.begin(); i != str.end(); i++) {
+        if (!isupper(*i))
+            return (0);
+    }
+    return (1);
+}
+
+int Request::parse(std::string buffer, size_t stop_p) {
     std::stringstream s(buffer);
     std::string line;
-    // std::cout <<"Buffer  -> " << buffer << '\n';
     if (std::getline(s, line)) {
         std::vector<std::string> holder;
         holder = split(line, 1, ' ');
-        // std::cout << line << " -> " << holder.size() << '\n';
-        if (holder.size() != 3)
-            return (1);
+        // std::cout << "size-> " << holder.size() << std::endl;
+        if (holder.size() == 2) {
+            if (!checkMethod(holder[0]))
+                return (400);
+            if (holder[1].size() > 2048)
+                return (414);
+        }
+        else if (holder.size() != 3 || stop_p == std::string::npos || (holder.size() >=1 && !checkMethod(holder[0])))
+            return (400);
         setMethod(holder[0]);
         setPath(holder[1]);
         setVersion(holder[2]);
     }
     while (std::getline(s, line) && line != "\r") {
-        // std::cout << line << std::endl;
         std::vector<std::string> holder = split(line, 0, ':');
-        // std::cout << line << " -> " << holder.size() << '\n';
         if (holder.size() != 2)
-            return (1);
+            return (400);
         Headers[holder[0]] = holder[1];
-        // std::cout << holder[0] << " ==> " << holder[1] << std::endl;
     }
+    if (stop_p == std::string::npos)
+        return (400);
     return (0);
 }
 
@@ -388,10 +400,12 @@ Server Request::getServer(Server& server, std::vector<Server>& Servers) {
             size_t pos = tmp.rfind(':');
             if (pos != std::string::npos)
                 tmp.erase(pos);
-            if (tmp == it->getServerName()) {
-                Server tmp = *it;
-                tmp.setSocket(-1);
-                return (tmp);
+            for(std::vector<std::string>::iterator it2 = it->getServerName().begin(); it2 != it->getServerName().end(); it2++) {
+                if (tmp == *it2) {
+                    Server tmp_server = *it;
+                    tmp_server.setSocket(-1);
+                    return (tmp_server);
+                }
             }
         }
     }
@@ -399,12 +413,12 @@ Server Request::getServer(Server& server, std::vector<Server>& Servers) {
 }
 
 int Request::readHeaders(int fd, std::string& str, Server& server, std::vector<Server>& Servers) {
-    size_t stop_p = str.find("\r\n\r\n");
     if (uploads.find(fd) == uploads.end()
-        && unfinishedReqs.find(fd) == unfinishedReqs.end()
-        && stop_p != std::string::npos) {
-        if (parse(str))
-            return (400);
+        && unfinishedReqs.find(fd) == unfinishedReqs.end()) {
+        int status;
+        size_t stop_p = str.find("\r\n\r\n");
+        if ((status = parse(str, stop_p)) != 0)
+            return (status);
         if (Headers.find("host") != Headers.end())
             server = getServer(server, Servers);
         str = str.substr(stop_p + 4);

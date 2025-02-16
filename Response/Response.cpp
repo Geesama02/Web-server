@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Response.cpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
+/*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/14 17:03:53 by maglagal          #+#    #+#             */
-/*   Updated: 2025/02/12 10:45:59 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/02/14 14:09:49 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,7 +32,7 @@ Response::Response() {
 
 //Destructor
 Response::~Response() {
-    std::cout << "Response destuctor!!" << std::endl;
+    // std::cout << "Response destuctor!!" << std::endl;
 }
 
 //getters
