@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/21 15:07:06 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/02/12 14:19:00 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/02/17 16:35:52 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,19 +16,21 @@
 #include "Server.hpp"
 #include <sys/stat.h>
 #include <arpa/inet.h>
-#include "../Request/Request.hpp"
+#include "../Client/Client.hpp"
+// #include "../Request/Request.hpp"
 #define MAX_EVENTS 10
 
 class Config {
     private:
         std::vector<Server> Servers;
-        std::map<int, Server> clientServer;
+        // std::map<int, Server> clientServer;
+        std::map<int, Client> Clients;
     public:
         static std::map<int, long long> clientTimeout;
         
         // Getters
         std::vector<Server> getServers();
-        std::map<int, Server>& getClientServer();
+        std::map<int, Client>& getClients();
 
         // Setters
         void addServer(Server new_server);

@@ -6,11 +6,12 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/09 09:49:11 by maglagal          #+#    #+#             */
-/*   Updated: 2025/02/14 14:09:35 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/02/17 16:39:20 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Response.hpp"
+#include "../Config/Config.hpp"
 //error pages
 //if an error is not matched you should use a default
 //you should match the error pages in root
@@ -115,9 +116,9 @@ void Response::checkAutoIndex(Config& config, Request req) {
     std::string uri;
     std::string nUri;
     std::string pathMatch;
-    std::vector<Location>::iterator itLocations = config.getClientServer()[clientFd].getLocations().begin();
+    std::vector<Location>::iterator itLocations = config.getClients()[clientFd].getServer().getLocations().begin();
 
-    while (itLocations != config.getClientServer()[clientFd].getLocations().end()) {
+    while (itLocations != config.getClients()[clientFd].getServer().getLocations().end()) {
         uri = (*itLocations).getURI();
         if (uri.rfind("/") == 0 && uri.length() != 1) {
             uri = uri + "/";
@@ -136,8 +137,8 @@ void Response::checkAutoIndex(Config& config, Request req) {
 
 void    Response::checkDefinedPage(Config& config, Request req) {
     checkAutoIndex(config, req);
-    // std::map<std::vector<int>, std::string>::iterator it = config.getClientServer()[clientFd].getErrorPage().begin();
-    // while (it != config.getClientServer()[clientFd].getErrorPage().end()) {
+    // std::map<std::vector<int>, std::string>::iterator it = config.getClients()[clientFd].getErrorPage().begin();
+    // while (it != config.getClients()[clientFd].getErrorPage().end()) {
     //     std::vector<int>::const_iterator it2 = (it->first).begin();
     //     while (it2 != (it->first).end()) {
     //         if (*it2 == statusCode)

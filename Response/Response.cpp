@@ -6,11 +6,12 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/14 17:03:53 by maglagal          #+#    #+#             */
-/*   Updated: 2025/02/14 14:09:49 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/02/17 16:38:54 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Response.hpp"
+#include "../Config/Config.hpp"
 
 std::map<int, std::ifstream *> Response::files;
 std::map<std::string, std::string> Response::ContentHeader;
@@ -125,13 +126,13 @@ void Response::successResponse(Request req) {
 
 void    Response::redirectionResponse(Request req, Config& config) {
     statusMssg += "301 Moved Permanently\r\n";
-    int port = config.getClientServer()[clientFd].getPort(); 
+    int port = config.getClients()[clientFd].getServer().getPort(); 
     // char buff[120];
     // sprintf(buff, "%d", port);
     char portChar[120];
     sprintf(portChar, "%d", port);
     // fromIntTochar(port, &portChar);
-    std::string host = config.getClientServer()[clientFd].getHost() + ":" + portChar;
+    std::string host = config.getClients()[clientFd].getServer().getHost() + ":" + portChar;
     std::string location =  req.getPath() + "/";
     std::string locationHeader = "http://" + host + location;
     setHeader("Location", locationHeader);

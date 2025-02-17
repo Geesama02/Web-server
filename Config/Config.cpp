@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/22 11:25:38 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/02/16 10:43:19 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/02/17 16:43:12 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,7 +18,7 @@ std::map<int, long long> Config::clientTimeout;
 
 // Getters
 std::vector<Server> Config::getServers() { return Servers; }
-std::map<int, Server>& Config::getClientServer() { return clientServer; }
+std::map<int, Client>& Config::getClients() { return Clients; }
 
 // Setters
 void Config::addServer(Server new_server) { Servers.push_back(new_server); }
@@ -53,8 +53,6 @@ int Config::startServers() {
             else if (events[i].events & EPOLLERR) {
                 std::cerr << "Socket error on fd: " << events[i].data.fd << std::endl;
                 close(events[i].data.fd);
-                if (clientServer.find(events[i].data.fd) != clientServer.end())
-                    clientServer.erase(events[i].data.fd);
                 if (clientTimeout.find(events[i].data.fd) != clientTimeout.end())
                     clientTimeout.erase(events[i].data.fd);
                 epoll_ctl(epoll_fd, EPOLL_CTL_DEL, events[i].data.fd, NULL);
@@ -78,16 +76,11 @@ int Config::monitorTimeout(int epoll_fd) {
     int timeout = 75;
     for (std::map<int, long long>::iterator it = clientTimeout.begin(); it != clientTimeout.end(); ) {
         if (it->second + timeout < currTime) {
-            if (Request::uploads.find(it->first) != Request::uploads.end())
-                Request::uploads.erase(it->first);
-            if (Request::unfinishedReqs.find(it->first) != Request::unfinishedReqs.end())
-                Request::unfinishedReqs.erase(it->first);
             if (Response::files.find(it->first) != Response::files.end()) {
                 Response::files[it->first]->close();
                 Response::files.erase(it->first);
             }
             epoll_ctl(epoll_fd, EPOLL_CTL_DEL, it->first, NULL);
-            clientServer.erase(it->first);
             close(it->first);
             std::map<int, long long>::iterator tmp = it;
             it++;
@@ -156,13 +149,15 @@ int Config::acceptConnection(int fd, int epoll_fd, epoll_event& ev) {
         ev.data.fd = new_client;
         fcntl(new_client, F_SETFL, O_NONBLOCK);
         Server server = getServer(fd);
+        Client client;
         server.setSocket(-1);
-        clientServer[new_client] = server;
+        client.setServer(server);
+        Clients[new_client] = client;
         clientTimeout[new_client] = timeNow();
         // add client socket to epoll to monitor
         if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, new_client, &ev) != 0) {
             std::cerr << "epoll_ctl error: " << strerror(errno) << std::endl;
-            clientServer.erase(new_client);
+            Clients.erase(new_client);
             clientTimeout.erase(new_client);
             close(new_client);
         }
@@ -171,13 +166,10 @@ int Config::acceptConnection(int fd, int epoll_fd, epoll_event& ev) {
 }
 
 void Config::closeConnection(int epoll_fd, int fd) {
-    if (Request::uploads.find(fd) != Request::uploads.end())
-        Request::uploads.erase(fd);
-    if (Request::unfinishedReqs.find(fd) != Request::unfinishedReqs.end())
-        Request::unfinishedReqs.erase(fd);
     epoll_ctl(epoll_fd, EPOLL_CTL_DEL, fd, NULL);
-    clientServer.erase(fd);
     clientTimeout.erase(fd);
+    std::cout << "closed\n";
+    Clients.erase(fd);
     if (Response::files.find(fd) != Response::files.end()) {
         Response::files[fd]->close();
         Response::files.erase(fd);
@@ -186,19 +178,19 @@ void Config::closeConnection(int epoll_fd, int fd) {
 }
 
 int Config::handleClient(int fd, int epoll_fd) {
-    Request request;
+    // Request request;
     Response res;
     int status;
     
     clientTimeout[fd] = timeNow();
-    status = request.readRequest(fd, clientServer[fd], Servers);
+    status = Clients[fd].getRequest().readRequest(fd, Clients[fd].getServer(), Servers);
     // std::cout << "status -> " << status << std::endl;
     if (status == 1) // connection is closed
         closeConnection(epoll_fd, fd);
     else if (status == 2) // if file is uploading
         return (0);
     else if (status != 0) {
-        std::string res = request.generateRes(status);
+        std::string res = Clients[fd].getRequest().generateRes(status);
         // std::cout << res << std::endl;
         send(fd, res.c_str(), res.size(), 0);
         if (status >= 400)
@@ -206,18 +198,18 @@ int Config::handleClient(int fd, int epoll_fd) {
         return (0); // request error handle later
     }
     else {
-        if (!request.getPath().empty()) {
+        if (!Clients[fd].getRequest().getPath().empty()) {
             // std::cout << "path -> " << request.getPath() << std::endl;
-            std::string tmp = request.getHeaders()["host"];
+            std::string tmp = Clients[fd].getRequest().getHeaders()["host"];
             size_t pos = tmp.rfind(':');
             if (pos != std::string::npos)
                 tmp.erase(pos);
-            std::cout << clientServer[fd].whichServerName(tmp) << ':' << clientServer[fd].getPort()
-            << " - " << request.getMethod() << ' ' << request.getPath()
-            << ' ' << request.getVersion() << std::endl;
-            res.searchForFile(request);
+            std::cout << Clients[fd].getServer().whichServerName(tmp) << ':' << Clients[fd].getServer().getPort()
+            << " - " << Clients[fd].getRequest().getMethod() << ' ' << Clients[fd].getRequest().getPath()
+            << ' ' << Clients[fd].getRequest().getVersion() << std::endl;
+            res.searchForFile(Clients[fd].getRequest());
         }
-        res.sendResponse(*this, request, fd);
+        res.sendResponse(*this, Clients[fd].getRequest(), fd);
     }
     return (0);
 }

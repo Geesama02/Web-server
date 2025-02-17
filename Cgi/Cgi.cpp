@@ -3,14 +3,16 @@
 /*                                                        :::      ::::::::   */
 /*   Cgi.cpp                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
+/*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/30 18:22:44 by maglagal          #+#    #+#             */
-/*   Updated: 2025/02/11 15:43:53 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/02/17 12:06:12 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Cgi.hpp"
+#include "../Response/Response.hpp"
+#include "../Request/Request.hpp"
 
 CGI::CGI() {
     executablePaths[".py"] = "/usr/bin/python3";
