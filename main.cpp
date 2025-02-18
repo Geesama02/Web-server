@@ -19,7 +19,6 @@ int main(int argc, char **argv)
     }
     Config config;
     Parser parser;
-    Request req;
     // if (signal(SIGINT, handle_signal) == SIG_ERR) {
     //     std::cerr << "Error setting signal handler\n";
     //     return (1);

@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/30 11:15:32 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/02/17 16:19:06 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/02/18 12:52:48 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -33,17 +33,13 @@ class Request {
     private:
         std::map<std::string, std::string> Headers;
         static std::map<int, std::string>  reqStatus;
-        bool                               isUploading;
         UploadFile                         *file;
         std::string                        fileName;
         std::string                        method;
-        long long                          contentLength;
         std::string                        path;
         std::string                        version;
         std::string                        body;
     public:
-        // static std::map<int, UploadFile>   uploads;
-        // static std::map<int, Request>      unfinishedReqs;
 
         // Constructor
         Request();
@@ -55,7 +51,6 @@ class Request {
         std::string                         getPath();
         std::string                         getVersion();
         std::string                         getBody();
-        // std::map<int, UploadFile>&          getUploads();
 
         // Setters
         void setMethod(std::string& m);
@@ -93,6 +88,7 @@ class Request {
         std::string generateRes(int status);
         std::string getDate();
         int checkMethod(std::string str);
+        void clear();
 
         // Destructor
         ~Request();

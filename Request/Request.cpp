@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/30 12:07:04 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/02/17 16:53:51 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/02/18 10:31:26 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -45,8 +45,8 @@ void Request::setMethod(std::string& m) { method = m; }
 void Request::setPath(std::string& p) { path = p; }
 void Request::setVersion(std::string& v) { version = v; }
 void Request::setBody(std::string& b) { body = b; }
-void Request::addUpload(UploadFile& new_upload) { 
-    isUploading = true;
+void Request::addUpload(UploadFile& new_upload) {
+    // isUploading = true;
     file = new UploadFile;
     *file = new_upload;
 }
@@ -315,7 +315,6 @@ int Request::continuePostBody(std::string str) {
             status = 0;
             fileName = file->getFilename();
         }
-        isUploading = false;
         delete file;
         file = NULL;
     }
@@ -327,7 +326,7 @@ int Request::continuePostBody(std::string str) {
 
 int Request::handleFiles(std::string& str) {
     int status = 0;
-    if (isUploading == false)
+    if (!file)
         return (status);
     if (file->getType() == "multipart") {
         status = readFile(*file, str);
@@ -425,9 +424,18 @@ Server Request::getServer(Server& server, std::vector<Server>& Servers) {
     return (server);
 }
 
+void Request::clear() {
+    Headers.clear();
+    fileName.clear();
+    method.clear();
+    path.clear();
+    version.clear();
+}
+
 int Request::readHeaders(std::string& str, Server& server, std::vector<Server>& Servers) {
-    if (isUploading == false) {
+    if (!file) {
         int status;
+        clear();
         size_t stop_p = str.find("\r\n\r\n");
         if ((status = parse(str, stop_p)) != 0)
             return (status);
@@ -443,11 +451,12 @@ int Request::readHeaders(std::string& str, Server& server, std::vector<Server>& 
             && Headers.find("content-length") != Headers.end()
             && strToDecimal(Headers["content-length"]) > server.getClientMaxBodySize())
             return (413); // Request Too Big
+        // std::cout << "inside\n";
         int res = handlePostReq();
         if (res != 0)
             return (res);
     }
-    if (isUploading && file->getType() == "post")
+    if (file && file->getType() == "post")
         return (continuePostBody(str));
     else
         return (handleFiles(str));

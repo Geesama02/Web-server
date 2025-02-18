@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/14 17:03:53 by maglagal          #+#    #+#             */
-/*   Updated: 2025/02/17 16:38:54 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/02/18 11:02:47 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -239,7 +239,7 @@ void Response::sendBodyBytes() {
     int bytesR = 0;
     if (files.find(clientFd) != files.end()) {
         char buff[1024];
-        Config::clientTimeout[clientFd] = Config::timeNow();
+        // if marouan updates, update timeout of client here ---------
         files[clientFd]->read(buff, 1024);
         if (!*files[clientFd]) {
             if (files[clientFd]->eof()) {
