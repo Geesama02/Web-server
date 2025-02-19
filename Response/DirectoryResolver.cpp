@@ -6,7 +6,7 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/09 09:49:11 by maglagal          #+#    #+#             */
-/*   Updated: 2025/02/16 09:58:59 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/02/17 16:39:20 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -114,9 +114,9 @@ void Response::checkAutoIndex(Config& config, Request req) {
     std::string uri;
     std::string nUri;
     std::string pathMatch;
-    std::vector<Location>::iterator itLocations = config.getClientServer()[clientFd].getLocations().begin();
+    std::vector<Location>::iterator itLocations = config.getClients()[clientFd].getServer().getLocations().begin();
 
-    while (itLocations != config.getClientServer()[clientFd].getLocations().end()) {
+    while (itLocations != config.getClients()[clientFd].getServer().getLocations().end()) {
         uri = (*itLocations).getURI();
         if (uri.rfind("/") == 0 && uri.length() != 1) {
             uri = uri + "/";

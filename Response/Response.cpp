@@ -3,7 +3,7 @@
 /*                                                        :::      ::::::::   */
 /*   Response.cpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
+/*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/14 17:03:53 by maglagal          #+#    #+#             */
 /*   Updated: 2025/02/16 16:09:32 by maglagal         ###   ########.fr       */
@@ -127,13 +127,13 @@ void Response::successResponse(Request req) {
 
 void    Response::redirectionResponse(Request req, Config& config) {
     statusMssg += "301 Moved Permanently\r\n";
-    int port = config.getClientServer()[clientFd].getPort(); 
+    int port = config.getClients()[clientFd].getServer().getPort(); 
     // char buff[120];
     // sprintf(buff, "%d", port);
     char portChar[120];
     sprintf(portChar, "%d", port);
     // fromIntTochar(port, &portChar);
-    std::string host = config.getClientServer()[clientFd].getHost() + ":" + portChar;
+    std::string host = config.getClients()[clientFd].getServer().getHost() + ":" + portChar;
     std::string location =  req.getPath() + "/";
     std::string locationHeader = "http://" + host + location;
     setHeader("Location", locationHeader);
@@ -240,7 +240,7 @@ void Response::sendBodyBytes() {
     int bytesR = 0;
     if (files.find(clientFd) != files.end()) {
         char buff[1024];
-        Config::clientTimeout[clientFd] = Config::timeNow();
+        // if marouan updates, update timeout of client here ---------
         files[clientFd]->read(buff, 1024);
         if (!*files[clientFd]) {
             if (files[clientFd]->eof()) {

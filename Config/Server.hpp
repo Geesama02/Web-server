@@ -6,7 +6,7 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/21 15:09:59 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/02/15 17:21:57 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/02/16 10:57:04 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,7 +18,7 @@
 class Server {
     private:
         int socket_fd;
-        std::string server_name;
+        std::vector<std::string> server_name;
         std::string host;
         int port;
         std::string root;
@@ -26,7 +26,7 @@ class Server {
         std::map<int, std::string> error_page;
         long long client_max_body_size;
         std::string index;
-        std::string redirect;
+        std::map<int, std::string> redirect;
         std::vector<Location> locations;
     public:
         // Contructor
@@ -34,7 +34,8 @@ class Server {
 
         // Getters
         int getSocket();
-        std::string getServerName();
+        std::vector<std::string>& getServerName();
+        std::string whichServerName(std::string str);
         std::string getHost();
         int getPort();
         std::string getRoot();
@@ -42,7 +43,7 @@ class Server {
         long long getClientMaxBodySize();
         std::string getIndex();
         bool getAutoindex();
-        std::string getRedirect();
+        std::map<int, std::string> getRedirect();
         std::vector<Location>& getLocations();
 
         // Setters
@@ -56,7 +57,7 @@ class Server {
         void addErrorPage(int code, std::string path);
         void setClientMaxBodySize(long long size);
         void setIndex(std::string& str);
-        void setRedirect(std::string& page);
+        void setRedirect(int code, std::string page);
         void addLocation(Location& new_location);
 
         // Functions

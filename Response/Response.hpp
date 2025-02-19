@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Response.hpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
+/*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/14 16:55:34 by maglagal          #+#    #+#             */
-/*   Updated: 2025/02/16 14:01:34 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/02/17 12:09:19 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,13 +28,13 @@
 #include <sys/types.h>
 #include <fstream>
 
+// #include "../Request/Request.hpp"
 // #include "../Config/Config.hpp"
-#include "../Request/Request.hpp"
+#include "../Cgi/Cgi.hpp"
 
 class Config;
-// class Request;
-
-#include "../Config/Location.hpp"
+class Location;
+class Request;
 
 class Response {
     private:

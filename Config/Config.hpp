@@ -6,7 +6,7 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/21 15:07:06 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/02/16 16:34:33 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/02/18 12:50:03 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,8 +17,8 @@
 #include <sys/stat.h>
 #include <arpa/inet.h>
 
-#include "../Cgi/Cgi.hpp"
-
+#include "../Client/Client.hpp"
+// #include "../Request/Request.hpp"
 #define MAX_EVENTS 10
 
 class Request;
@@ -26,19 +26,20 @@ class Response;
 
 class Config {
     private:
-        std::vector<Server>   Servers;
-        std::map<int, Server> clientServer;
         std::map<int, CGI>    cgiScriptContainer;
-        bool                  timeoutResponseFlag;
+        bool                  timeoutResponseFlag;       
+        std::vector<Server> Servers;
+        std::map<int, Client> Clients;
     public:
-        static std::map<int, long long> clientTimeout;
         static std::map<int, Response>  Responses;
         
         // Getters
         std::map<int, CGI>&    getCgiScripts();
         std::vector<Server>    getServers();
-        std::map<int, Server>& getClientServer();
         bool                   getTimeoutResponseFlag();
+        // Getters
+        std::vector<Server> getServers();
+        std::map<int, Client>& getClients();
 
         // Setters
         void setCgiScripts(int fd, const CGI& newCgiScript);

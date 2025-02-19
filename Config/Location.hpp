@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/21 16:52:32 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/02/12 11:40:50 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/02/15 14:06:15 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -38,7 +38,7 @@ class Location {
         std::vector<std::string> allowed_methods;
         std::string index;
         bool autoindex;
-        std::string redirect;
+        std::map<int, std::string> redirect;
         std::vector<std::string> cgi_path;
         std::vector<std::string> cgi_ext;
     public:
@@ -53,7 +53,7 @@ class Location {
         std::string getIndex();
         bool getAutoindex();
         std::vector<std::string>& getAllowedMethods();
-        std::string getRedirect();
+        std::map<int, std::string> getRedirect();
         std::vector<std::string>& getCgiPath();
         std::vector<std::string>& getCgiExt();
         
@@ -65,7 +65,7 @@ class Location {
         void setIndex(std::string& str);
         void setAutoindex(bool n_autoindex);
         void setAllowedMethods(std::vector<std::string>& methods);
-        void setRedirect(std::string& page);
+        void setRedirect(int code, std::string page);
         void addCgiPath(std::string path);
         void addCgiExt(std::string ext);
 };

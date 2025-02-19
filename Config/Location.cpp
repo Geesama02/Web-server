@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/22 11:17:32 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/02/12 14:19:05 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/02/15 14:06:53 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,7 +22,6 @@ Location::Location() {
     allowed_methods.push_back("POST");
     allowed_methods.push_back("GET");
     allowed_methods.push_back("DELETE");
-    redirect = "";
 }
 
 Location::Location(Server& copy) {
@@ -34,7 +33,7 @@ Location::Location(Server& copy) {
     allowed_methods.push_back("POST");
     allowed_methods.push_back("GET");
     allowed_methods.push_back("DELETE");
-    redirect = "";
+    redirect = copy.getRedirect();
 }
 
 // Getters
@@ -44,7 +43,7 @@ std::map<int, std::string>& Location::getErrorPage() { return error_page; }
 std::string Location::getIndex() { return index; }
 bool Location::getAutoindex() { return autoindex; }
 std::vector<std::string>& Location::getAllowedMethods() { return allowed_methods; }
-std::string Location::getRedirect() { return redirect; }
+std::map<int, std::string> Location::getRedirect() { return redirect; }
 std::vector<std::string>& Location::getCgiPath() { return cgi_path; }
 std::vector<std::string>& Location::getCgiExt() { return cgi_ext; }
 
@@ -59,6 +58,9 @@ void Location::addErrorPage(int code, std::string path) {
 void Location::setIndex(std::string& str) { index = str; }
 void Location::setAutoindex(bool n_autoindex) { autoindex = n_autoindex; }
 void Location::setAllowedMethods(std::vector<std::string>& methods) { allowed_methods = methods; }
-void Location::setRedirect(std::string& page) { redirect = page; }
+void Location::setRedirect(int code, std::string page) { 
+    if (redirect.size() == 0)
+        redirect[code] = page;
+}
 void Location::addCgiPath(std::string path) { cgi_path.push_back(path); }
 void Location::addCgiExt(std::string ext) { cgi_ext.push_back(ext); }
