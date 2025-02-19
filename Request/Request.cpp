@@ -6,7 +6,7 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/30 12:07:04 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/02/18 10:31:26 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/02/19 16:21:59 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,6 +20,7 @@ std::map<int, std::string> Request::reqStatus;
 
 // Constructor
 Request::Request() {
+    std::cout << "request constructed!!"<<std::endl;
     Request::reqStatus.insert(std::make_pair(201, "Created"));
     Request::reqStatus.insert(std::make_pair(400, "Bad Request"));
     Request::reqStatus.insert(std::make_pair(405, "Method Not Allowed"));

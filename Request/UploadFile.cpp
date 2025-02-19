@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   UploadFile.cpp                                     :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
+/*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/03 11:07:50 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/02/17 15:54:56 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/02/19 16:41:29 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -55,6 +55,7 @@ void UploadFile::newFilename() {
 int UploadFile::openFile() {
     newFilename();
     filename = "../../goinfre/" + filename;
+    std::cout << "file allocated!!" << std::endl;
     fd = new std::ofstream(filename.c_str());
     if (fd->is_open()) {
         // std::cout << "file created for " << filename << std::endl;
@@ -63,13 +64,14 @@ int UploadFile::openFile() {
     else {
         std::cerr << "Error opening file: " << strerror(errno) << std::endl;
         delete fd;
+        fd = NULL;
     }
     return (0);
 }
 
 // Destructor
 UploadFile::~UploadFile() {
-    std::cout << "Destroyed file -> |" << filename << "|\n";
+    // std::cout << "Destroyed file -> |" << filename << "|\n";
     if (fd && fd->is_open()) {
         if (!state) { // delete file if connection closed before full file uploaded
             int status = remove(filename.c_str());

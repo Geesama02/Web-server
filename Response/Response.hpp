@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Response.hpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
+/*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/14 16:55:34 by maglagal          #+#    #+#             */
-/*   Updated: 2025/02/17 12:09:19 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/02/19 15:13:14 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -38,6 +38,7 @@ class Request;
 
 class Response {
     private:
+        std::ifstream *file;
         std::map<std::string, std::string> Headers;
         int                                clientFd;
         int                                statusCode;
@@ -58,9 +59,11 @@ class Response {
         void                               vertifyDirectorySlash(std::string fileName);
         void                               fromIntTochar(int number, char **buff);
     public:
-        std::string                        body;
+        // std::map<int, std::ifstream *>     files;
+        size_t                                    totalBytesSent;
+        size_t                                    bytesToSend;
+        std::string                               body;
         static std::map<std::string, std::string> ContentHeader;
-        static std::map<int, std::ifstream *>     files;
 
         //constructor
         Response();
@@ -82,6 +85,7 @@ class Response {
         void            setHeader( std::string key, std::string value );
         
         //other
+        void            clearResponse();
         void            timeoutResponse(int fd);
         void            checkForQueryString(std::string& fileName);
         void            successResponse(Request req);

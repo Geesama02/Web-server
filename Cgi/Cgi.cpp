@@ -6,7 +6,7 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/30 18:22:44 by maglagal          #+#    #+#             */
-/*   Updated: 2025/02/19 10:34:57 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/02/19 11:47:35 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,6 +14,11 @@
 #include "../Config/Config.hpp"
 
 CGI::CGI() {
+    for(int i = 0; i < 7; i++)
+        envs[i] = NULL;
+    executablePathArray = NULL;
+    absoluteFilePath = NULL;
+    std::cout << "cgi script constructed!!"<<std::endl;
     timeout = 5000;
     executablePaths[".py"] = "/home/maglagal/Desktop/webserv/cgi-bin/myenv/bin/python";
     executablePaths[".php"] = "/usr/bin/php";
@@ -21,6 +26,14 @@ CGI::CGI() {
 
 CGI::~CGI() {
     std::cout << "cgi destructor called"<<std::endl;
+    for(int i = 0; i < 7; i++) {
+        if (envs[i])
+            delete[] envs[i];
+    }
+    if (absoluteFilePath)
+        delete[] absoluteFilePath;
+    if (executablePathArray)
+        delete[] executablePathArray;
 }
 
 //getters
@@ -223,15 +236,15 @@ void CGI::findHeadersInsideScript(Response& res) {
         res.setHeader("Content-Type", "text/html");
 }
 
-void CGI::sendServerResponse(int fd, Response& res)
+void CGI::sendServerResponse(int fd, Config& config)
 {
-    cgiRes += res.getStatusMssg();
+    cgiRes += config.getClients()[fd].getResponse().getStatusMssg();
     
     //check if there is already some http headers defined inside the script
-    findHeadersInsideScript(res);
+    findHeadersInsideScript(config.getClients()[fd].getResponse());
 
-    std::map<std::string, std::string>::iterator it = res.getHeadersRes().begin();
-    while (it != res.getHeadersRes().end()) {
+    std::map<std::string, std::string>::iterator it = config.getClients()[fd].getResponse().getHeadersRes().begin();
+    while (it != config.getClients()[fd].getResponse().getHeadersRes().end()) {
         std::string header = it->first + ": " + it->second;
         cgiRes += header + "\r\n";
         it++;
@@ -264,7 +277,7 @@ void CGI::execute_cgi_script(Config& config, Response& res, int fd, Request req)
     findExecutablePath();
 
     int fds[2];
-    if (config.getCgiScripts().empty()) {
+    if (config.getTimeoutResponseFlag()) {
         int save_out = dup(1);
         if (pipe(fds) != 0)
             std::cerr << "pipe failed!!" << std::endl;
@@ -294,11 +307,7 @@ void CGI::execute_cgi_script(Config& config, Response& res, int fd, Request req)
         }
         close(fds[1]);
         close(save_out);
-        for(int i = 0; i < 7; i++) {
-            delete[] envs[i];
-        }
-        delete[] absoluteFilePath;
-        delete[] executablePathArray;
+
 
 
         //set child variables and check child status

@@ -3,21 +3,23 @@
 /*                                                        :::      ::::::::   */
 /*   Response.cpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
+/*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/14 17:03:53 by maglagal          #+#    #+#             */
-/*   Updated: 2025/02/16 16:09:32 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/02/19 16:44:59 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Response.hpp"
 #include "../Config/Config.hpp"
 
-std::map<int, std::ifstream *> Response::files;
+// std::map<int, std::ifstream *> Response::files;
 std::map<std::string, std::string> Response::ContentHeader;
 
 //constructor
 Response::Response() {
+    std::cout << "response constructed!!"<<std::endl;
+    file = NULL;
     initializeContentHeader();
     Headers["Content-Type"] = "text/html";
     Headers["Connection"] = "keep-alive";
@@ -25,6 +27,7 @@ Response::Response() {
     Headers["Content-Length"] = "0";
     statusMssg = "HTTP/1.1 ";
     statusCode = 0;
+    totalBytesSent = 0;
     char curr_dirChar[120];
     getcwd(curr_dirChar, 120);
     currentDirAbsolutePath = curr_dirChar;
@@ -33,15 +36,20 @@ Response::Response() {
 //Destructor
 Response::~Response() {
     std::cout << "Response destuctor client " <<clientFd<< std::endl;
+    std::cout << "total bytes sent " << totalBytesSent<< std::endl;
+    if (file) {
+        file->close();
+        delete file;
+    }
 }
 
 //getters
 std::map<std::string, std::string>& Response::getHeadersRes() { return Headers; }
 int                                 Response::getClientFd() { return clientFd; }
-std::string Response::getQueryString() { return queryString; }
-int         Response::getStatusCode() { return statusCode; };
-std::string Response::getStatusMssg() { return statusMssg; };
-std::string Response::getHeader( std::string key ) { return Headers[key]; };
+std::string                         Response::getQueryString() { return queryString; }
+int                                 Response::getStatusCode() { return statusCode; };
+std::string                         Response::getStatusMssg() { return statusMssg; };
+std::string                         Response::getHeader( std::string key ) { return Headers[key]; };
 
 //setters
 void Response::setClientFd( int nFd ) { clientFd = nFd; }
@@ -69,6 +77,16 @@ void    Response::fromIntTochar(int number, char **buff) {
     sprintf(*buff, "%d", number);
 }
 
+void    Response::clearResponse() {
+    Headers["Connection"] = "keep-alive";
+    Headers["Content-Length"] = "0";
+    statusMssg = "HTTP/1.1 ";
+    statusCode = 0;
+    totalBytesSent = 0;
+    body.clear();
+    finalRes.clear();
+}
+
 void Response::notFoundResponse() {
     statusMssg += "404 Not Found\r\n";
     if (body.empty()) {
@@ -83,6 +101,7 @@ void Response::notFoundResponse() {
     char buff[150];
     sprintf(buff, "%ld", body.length());
     Headers["Content-Length"] = buff;
+    bytesToSend = body.length();
 }
 
 void Response::forbiddenResponse() {
@@ -99,6 +118,7 @@ void Response::forbiddenResponse() {
     char buff[150];
     sprintf(buff, "%ld", body.length());
     Headers["Content-Length"] = buff;
+    bytesToSend = body.length();
 }
 
 void Response::successResponse(Request req) {
@@ -119,8 +139,10 @@ void Response::successResponse(Request req) {
             std::sprintf(buff, "%ld", body.length());
             Headers["Content-Length"] = buff;
         }
-        if (files.find(clientFd) == files.end())
-            files[clientFd] = new std::ifstream(req.getPath().erase(0, 1).c_str(), std::ios::binary);
+        if (!file) {
+            std::cout << "success response!!" << std::endl;
+            file = new std::ifstream(req.getPath().erase(0, 1).c_str(), std::ios::binary);
+        }
         Headers["Accept-Ranges"] = "bytes";
     }
 }
@@ -141,8 +163,8 @@ void    Response::redirectionResponse(Request req, Config& config) {
 }
 
 void Response::handleRangeRequest(Request req) {
-    if (files.find(clientFd) == files.end())
-        files[clientFd] = new std::ifstream(req.getPath().erase(0, 1).c_str(), std::ios::binary);
+    if (!file)
+        file = new std::ifstream(req.getPath().erase(0, 1).c_str(), std::ios::binary);
     statusMssg = "HTTP/1.1 206 Partial Content\r\n";
     std::string range = req.getHeaders()["range"];
     size_t i = range.find("=");
@@ -157,7 +179,7 @@ void Response::handleRangeRequest(Request req) {
         Headers["Content-Range"] = range + buff2 + '/' + Headers["Content-Length"];
         std::string test = range.substr(i, range.size() - i);
         long long nc = req.strToDecimal(test);
-        files[clientFd]->seekg(nc);
+        file->seekg(nc);
         size_t len = req.strToDecimal(Headers["Content-Length"]);
         char buff3[150];
         sprintf(buff3, "%lld", len - nc);
@@ -213,6 +235,7 @@ void Response::searchForFile(Request req) {
     if (!stat(fileName.c_str(), &st)) {
         if (st.st_mode & S_IFDIR || (!(st.st_mode & S_IRUSR))) {
             statusCode = 403;
+            bytesToSend = st.st_size;
             vertifyDirectorySlash(fileName);
             return ;
         }
@@ -221,11 +244,13 @@ void Response::searchForFile(Request req) {
                 statusCode = 206;
                 sprintf(buff3, "%ld", st.st_size);
                 setHeader("Content-Length", buff3);
+                bytesToSend = st.st_size;
                 checkForFileExtension(fileName);
                 return ;
             }
             statusCode = 200;
             sprintf(buff3, "%ld", st.st_size);
+            bytesToSend = st.st_size;
             setHeader("Content-Length", buff3);
             if (st.st_mode & S_IFDIR)
                 vertifyDirectorySlash(fileName);
@@ -238,29 +263,35 @@ void Response::searchForFile(Request req) {
 
 void Response::sendBodyBytes() {
     int bytesR = 0;
-    if (files.find(clientFd) != files.end()) {
+    if (clientFd != 0 && totalBytesSent == bytesToSend)
+        clearResponse();
+    else if (file) {
         char buff[1024];
         // if marouan updates, update timeout of client here ---------
-        files[clientFd]->read(buff, 1024);
-        if (!*files[clientFd]) {
-            if (files[clientFd]->eof()) {
-                bytesR = files[clientFd]->gcount();
-                send(clientFd, buff, bytesR, 0);
-            }
-            files[clientFd]->close();
-            delete files[clientFd];
-            files.erase(clientFd);
+        // std::cout << "send response" << std::endl;
+        file->read(buff, 1024);
+        if (file->eof()) 
+        {
+            bytesR = file->gcount();
+            totalBytesSent += bytesR;
+            send(clientFd, buff, bytesR, 0);
+            file->close();
+            delete file;
+            file = NULL;
             return ;
         }
-        bytesR = files[clientFd]->gcount();
+        bytesR = file->gcount();
+        totalBytesSent += bytesR;
         send(clientFd, buff, bytesR, 0);
     }
+    // std::cout << "bytes to send " << bytesToSend<<std::endl;
+    // std::cout << "total to send " << totalBytesSent<<std::endl;
+    // exit(1);
 }
 
 void Response::fillBody(Config& config, Request req) {
     if (statusCode != 301)
         checkAutoIndex(config, req);
-
     
     //when matching a location should not enter here!!
     if (statusCode == 200)
@@ -279,14 +310,12 @@ void Response::sendResponse(Config& config, Request req, int fd) {
     clientFd = fd;
 
     if (req.getPath().find("/cgi-bin/") != std::string::npos && statusCode == 200) {
-        CGI cgiScript;
-        cgiScript.execute_cgi_script(config, *this, clientFd, req);
-        config.setCgiScripts(fd, cgiScript);
+        config.getClients()[fd].getCGI().execute_cgi_script(config, *this, clientFd, req);
+        // config.setCgiScripts(fd, cgiScript);
         // std::cout << "main child created " << cgiScript.getCpid()<<std::endl;
         // std::cout << "child in config class "<< config.getCgiScripts()[fd].getCpid()<<std::endl;
-        Config::Responses[clientFd] = *this;
-        config.checkCgiScriptExecution(fd);
-        config.checkScriptTimeOut(fd);
+        // config.checkCgiScriptExecution(fd);
+        // config.checkScriptTimeOut(fd);
         return ;
     }
     fillBody(config, req);
@@ -301,13 +330,11 @@ void Response::sendResponse(Config& config, Request req, int fd) {
     }
     finalRes += "\r\n";
 
+    // sendBodyBytes();
     if (!body.empty())
         finalRes += body;
 
-    Config::Responses[clientFd] = *this;
-
-    std::cout << "----------------------------"<<std::endl;
+    std::cout << "--------------- body -------------"<<std::endl;
     std::cout << finalRes<<std::endl;
-
     send(clientFd, finalRes.c_str(), finalRes.length(), 0);
 }

@@ -1,0 +1,75 @@
+test.localhost: listening to port 8001...
+test2.localhost: listening to port 8001...
+test2.localhost: listening to port 8002...
+request constructed!!
+response constructed!!
+cgi script constructed!!
+client constructed!!
+request constructed!!
+response constructed!!
+cgi script constructed!!
+client constructed!!
+Client Destructor
+cgi destructor called
+Response destuctor client 0
+total bytes sent 0
+Client Destructor
+cgi destructor called
+Response destuctor client 0
+total bytes sent 0
+client connection fd 6!!!!
+Client Destructor
+cgi destructor called
+Response destuctor client 0
+total bytes sent 0
+Client size 1
+request sent!! client 6
+response constructed!!
+localhost:8001 - GET /assets/videoplayback.mp4 HTTP/1.1
+bytes to send!!20973586
+/assets/
+./cgi-bin
+no location matched!!
+success response!!
+--------------- body -------------
+HTTP/1.1 200 OK
+Accept-Ranges: bytes
+Connection: keep-alive
+Content-Length: 20973586
+Content-Type: video/mp4
+Server: Webserv
+
+
+Response destuctor client 0
+total bytes sent 0
+Client size 1
+request sent!! client 6
+response constructed!!
+closed
+Client Destructor
+cgi destructor called
+Response destuctor client 6
+total bytes sent 10644480
+Response destuctor client 0
+total bytes sent 0
+request constructed!!
+response constructed!!
+cgi script constructed!!
+client constructed!!
+request constructed!!
+response constructed!!
+cgi script constructed!!
+client constructed!!
+Client Destructor
+cgi destructor called
+Response destuctor client 0
+total bytes sent 0
+Client Destructor
+cgi destructor called
+Response destuctor client 0
+total bytes sent 0
+client connection fd 6!!!!
+Client Destructor
+cgi destructor called
+Response destuctor client 221775478
+total bytes sent 0
