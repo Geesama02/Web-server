@@ -6,7 +6,7 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/09 09:49:11 by maglagal          #+#    #+#             */
-/*   Updated: 2025/02/17 16:39:20 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/02/19 10:36:39 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -98,15 +98,15 @@ void Response::matchReqPathWithLocation(Config& config, Location loc, std::strin
         }
         else if (!stat(aIndexFile.c_str(), &st) && st.st_mode & S_IFREG)
             showIndexFile(aIndexFile);
-        else if (checkDefinedErrorPage(config.getClientServer()[clientFd].getRoot(),
+        else if (checkDefinedErrorPage(config.getClients()[clientFd].getServer().getRoot(),
             loc.getErrorPage())) // should not enter just when not found
         {
             std::cerr << "error page location!!!" << std::endl;
             return ;
         }
     }
-    checkDefinedErrorPage(config.getClientServer()[clientFd].getRoot(),
-        config.getClientServer()[clientFd].getErrorPage());
+    checkDefinedErrorPage(config.getClients()[clientFd].getServer().getRoot(),
+        config.getClients()[clientFd].getServer().getErrorPage());
 }
 
 void Response::checkAutoIndex(Config& config, Request req) {
