@@ -6,7 +6,7 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/22 11:25:38 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/02/18 12:53:02 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/02/19 10:30:29 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,8 +20,6 @@ std::map<int, Response> Config::Responses;
 std::map<int, CGI>&     Config::getCgiScripts() { return cgiScriptContainer; }
 std::vector<Server>     Config::getServers() { return Servers; }
 bool                    Config::getTimeoutResponseFlag() { return timeoutResponseFlag; }
-// Getters
-std::vector<Server> Config::getServers() { return Servers; }
 std::map<int, Client>& Config::getClients() { return Clients; }
 
 // Setters

@@ -6,7 +6,7 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/21 15:07:06 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/02/18 12:50:03 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/02/19 10:30:52 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -35,9 +35,7 @@ class Config {
         
         // Getters
         std::map<int, CGI>&    getCgiScripts();
-        std::vector<Server>    getServers();
         bool                   getTimeoutResponseFlag();
-        // Getters
         std::vector<Server> getServers();
         std::map<int, Client>& getClients();
 

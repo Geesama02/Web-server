@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Cgi.hpp                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
+/*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/30 18:22:52 by maglagal          #+#    #+#             */
-/*   Updated: 2025/02/17 12:05:26 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/02/19 10:34:15 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,11 +27,11 @@
 #include <map>
 #include <vector>
 
-#include "./Child.hpp"
-#include "../Response/Response.hpp"
+// #include "../Response/Response.hpp"
 #include "../Request/Request.hpp"
 
-
+class Config;
+class Response;
 class CGI {
     private :
         std::vector<char *> Envs;
@@ -57,8 +57,6 @@ class CGI {
         //constructor && destructor
         CGI();
         ~CGI();
-        // CGI( const CGI& obj );
-        // CGI& operator=( const CGI& obj );
 
         //getters
         pid_t     getCpid() const;

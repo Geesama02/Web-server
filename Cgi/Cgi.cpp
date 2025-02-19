@@ -3,16 +3,15 @@
 /*                                                        :::      ::::::::   */
 /*   Cgi.cpp                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
+/*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/30 18:22:44 by maglagal          #+#    #+#             */
-/*   Updated: 2025/02/17 12:06:12 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/02/19 10:34:57 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Cgi.hpp"
-#include "../Response/Response.hpp"
-#include "../Request/Request.hpp"
+#include "../Config/Config.hpp"
 
 CGI::CGI() {
     timeout = 5000;

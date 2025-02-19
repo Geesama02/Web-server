@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Client.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
+/*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/17 10:25:29 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/02/18 10:48:32 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/02/19 10:27:21 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,11 +17,11 @@
 
 class Client {
     private:
-        Request req;
-        Response res;
-        CGI cgi;
-        Server server;
-        long long timeout;
+        Request     req;
+        Response    res;
+        CGI         cgi;
+        Server      server;
+        long long   timeout;
     public:
         // Getters
         Request& getRequest();
