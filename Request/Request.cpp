@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Request.cpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
+/*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/30 12:07:04 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/02/12 14:01:26 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/02/15 16:22:41 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -47,6 +47,7 @@ void Request::setBody(std::string& b) { body = b; }
 void Request::addUpload(int fd, UploadFile& new_upload) { uploads[fd] = new_upload; }
 
 // Functions
+
 std::vector<std::string> Request::split(std::string buffer, int full, char del) {
     std::stringstream s(buffer);
     std::vector<std::string> holder;

@@ -3,14 +3,15 @@
 /*                                                        :::      ::::::::   */
 /*   DirectoryResolver.cpp                              :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
+/*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/09 09:49:11 by maglagal          #+#    #+#             */
-/*   Updated: 2025/02/12 14:29:23 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/02/16 09:58:59 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Response.hpp"
+#include "../Config/Config.hpp"
 //error pages
 //if an error is not matched you should use a default
 //you should match the error pages in root
@@ -38,11 +39,11 @@ void    Response::showIndexFile(std::string indexFilePath) {
         body += buff;
 }
 
-void Response::listDirectories(std::string locationPath, std::string dirName) {
-    std::string dirAsbolute = currentDirAbsolutePath + dirName;
+void Response::listDirectories(std::string reqPath) {
     struct dirent *stDir;
-    struct stat st;
+    struct stat   st;
     std::string row;
+    std::string dirAsbolute = currentDirAbsolutePath + reqPath;
     std::string direntName;
     std::string direntPath;
 
@@ -59,16 +60,17 @@ void Response::listDirectories(std::string locationPath, std::string dirName) {
     
     while ((stDir = readdir(dir))) {
         direntName = stDir->d_name;
-        direntPath = locationPath + direntName;
-        std::string absoluteDirentPath = currentDirAbsolutePath + direntPath;
-        stat(absoluteDirentPath.c_str(), &st);
-        if (st.st_mode & S_IFDIR) {
-            direntPath += "/";
-            direntName += "/";
+        if (direntName != ".") {
+            direntPath = reqPath + direntName;
+            std::string absoluteDirentPath = currentDirAbsolutePath + direntPath;
+            if (!stat(absoluteDirentPath.c_str(), &st) && st.st_mode & S_IFDIR) {
+                direntPath += "/";
+                direntName += "/";
+            }
+            row = "<a href=" + direntPath + ">" + "<p>" + direntName;
+            row += "</p></a>";
+            lDirectoriesPage += row;
         }
-        row = "<a href=" + direntPath + ">" + "<p>" + direntName;
-        row += "</p></a>";
-        lDirectoriesPage += row;
     }
 
     lDirectoriesPage += "</body>";
@@ -77,37 +79,34 @@ void Response::listDirectories(std::string locationPath, std::string dirName) {
     body = lDirectoriesPage;
 }
 
-void Response::matchReqPathWithLocation(Location loc, std::string reqPath, std::string toMatch) {
+void Response::matchReqPathWithLocation(Config& config, Location loc, std::string reqPath, std::string toMatch) {
     struct stat st;
     struct stat reqPathCheck;
-    std::string locationPath = loc.getURI();    
-
-    std::cout << "location path " << toMatch << std::endl;
-    std::cout << "request path " << reqPath << std::endl;
+    std::string locationPath = loc.getURI();
     
     std::string indexFile = reqPath + loc.getIndex();
     std::string aIndexFile = currentDirAbsolutePath + indexFile;
-
-    std::cout << "index file " << aIndexFile << std::endl;
-    std::cout << "index " << loc.getIndex() << std::endl;
     std::string reqPathAsbsolute = currentDirAbsolutePath + reqPath;
-    stat(reqPathAsbsolute.c_str(), &reqPathCheck);
-    int res = stat(aIndexFile.c_str(), &st);
 
-    size_t pos = toMatch.rfind("/");
-    std::cout << "comparing of 2 strs" <<strncmp(toMatch.c_str(), reqPath.c_str(), pos + 1)<< std::endl;
-
-    // comparingReqWithLocation(locationPath, reqPath);
-    if (!strncmp(toMatch.c_str(), reqPath.c_str(), pos + 1) && (reqPathCheck.st_mode & S_IFDIR)) {
-        if (loc.getAutoindex()) {
-            if (!res && st.st_mode & S_IFREG)
+    if (!strncmp(toMatch.c_str(), reqPath.c_str(), toMatch.length())) {
+        if (!stat(reqPathAsbsolute.c_str(), &reqPathCheck)
+            && (reqPathCheck.st_mode & S_IFDIR) && loc.getAutoindex()) {
+            if (!stat(aIndexFile.c_str(), &st) && st.st_mode & S_IFREG)
                 showIndexFile(aIndexFile);
             else
-                listDirectories(locationPath, reqPath);
+                listDirectories(reqPath);
         }
-        else if (!res && st.st_mode & S_IFREG)
+        else if (!stat(aIndexFile.c_str(), &st) && st.st_mode & S_IFREG)
             showIndexFile(aIndexFile);
+        else if (checkDefinedErrorPage(config.getClientServer()[clientFd].getRoot(),
+            loc.getErrorPage())) // should not enter just when not found
+        {
+            std::cerr << "error page location!!!" << std::endl;
+            return ;
+        }
     }
+    checkDefinedErrorPage(config.getClientServer()[clientFd].getRoot(),
+        config.getClientServer()[clientFd].getErrorPage());
 }
 
 void Response::checkAutoIndex(Config& config, Request req) {
@@ -128,35 +127,37 @@ void Response::checkAutoIndex(Config& config, Request req) {
             pathMatch = root + uri;
         else
             pathMatch = uri;
-        if (uri.length() > 0 && uri[0] == '/') //dir should have a leading slash
-            matchReqPathWithLocation(*itLocations, req.getPath(), pathMatch);
+        std::cout << pathMatch<<std::endl;
+        if (uri.length() > 0 && uri[0] == '/') //dir should have a leading slash 
+            matchReqPathWithLocation(config, *itLocations, req.getPath(), pathMatch);
         itLocations++;
     }
+    std::cout << "no location matched!!" <<std::endl;
 }
 
-void    Response::checkDefinedPage(Config& config, Request req) {
-    checkAutoIndex(config, req);
-    // std::map<std::vector<int>, std::string>::iterator it = config.getClientServer()[clientFd].getErrorPage().begin();
-    // while (it != config.getClientServer()[clientFd].getErrorPage().end()) {
-    //     std::vector<int>::const_iterator it2 = (it->first).begin();
-    //     while (it2 != (it->first).end()) {
-    //         if (*it2 == statusCode)
-    //             return returnDefinedPage(it->second);
-    //         it2++;
-    //     }
-    //     it++;
-    // }
+int    Response::checkDefinedErrorPage(std::string rootPath, std::map<int, std::string> error_page) {
+    std::map<int, std::string>::iterator it = error_page.begin();
+    while (it != error_page.end()) {
+        if (it->first == statusCode) {
+            returnDefinedPage(rootPath, it->second);
+            return (1);
+        }
+        it++;
+    }
+    return (0);
 }
 
-// void    Response::returnDefinedPage(std::string fileName) {
-//     std::string buffer;
-//     std::string absolutePath = currentDirAbsolutePath + "/" + fileName;
-//     std::ifstream definedPage(absolutePath.c_str());
-//     if (!definedPage.is_open()) {
-//         std::cerr << "Failed to open defined file " << absolutePath << std::endl;
-//         return ;
-//     }
-//     while (std::getline(definedPage, buffer))
-//         body += buffer;
-// }
-
+void    Response::returnDefinedPage(std::string rootPath, std::string errorPageFile) {
+    std::string buffer;
+    if (rootPath == "/")
+        errorPageFile = currentDirAbsolutePath + errorPageFile;
+    else
+        errorPageFile = rootPath + errorPageFile;
+    std::ifstream definedPage(errorPageFile.c_str());
+    if (!definedPage.is_open()) {
+        std::cerr << "Failed to open defined file " << errorPageFile << std::endl;
+        return ;
+    }
+    while (std::getline(definedPage, buffer))
+        body += buffer;
+}

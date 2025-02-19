@@ -8,10 +8,10 @@
 //     // exit(1);
 // }
 
-void f() {system("valgrind --leak-check=yes --log-file=valgrind.txt ./webserv");}
+// void f() {system("valgrind --leak-check=yes --log-file=valgrind.txt ./webserv");}
 int main(int argc, char **argv)
 {
-    atexit(f);
+    // atexit(f);
     if (argc > 2)
     {
         std::cerr << "Invalid Number of parameters\n";

@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Config.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
+/*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/21 15:07:06 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/02/12 14:19:00 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/02/16 16:34:33 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,33 +16,48 @@
 #include "Server.hpp"
 #include <sys/stat.h>
 #include <arpa/inet.h>
-#include "../Request/Request.hpp"
+
+#include "../Cgi/Cgi.hpp"
+
 #define MAX_EVENTS 10
+
+class Request;
+class Response;
 
 class Config {
     private:
-        std::vector<Server> Servers;
+        std::vector<Server>   Servers;
         std::map<int, Server> clientServer;
+        std::map<int, CGI>    cgiScriptContainer;
+        bool                  timeoutResponseFlag;
     public:
         static std::map<int, long long> clientTimeout;
+        static std::map<int, Response>  Responses;
         
         // Getters
-        std::vector<Server> getServers();
+        std::map<int, CGI>&    getCgiScripts();
+        std::vector<Server>    getServers();
         std::map<int, Server>& getClientServer();
+        bool                   getTimeoutResponseFlag();
 
         // Setters
+        void setCgiScripts(int fd, const CGI& newCgiScript);
         void addServer(Server new_server);
+        // void setResponseReady(bool nValue);
+        void setTimeoutResponseFlag(bool nValue);
 
         // Functions
-        int startServers();
-        int monitorServers(int epoll_fd, epoll_event& ev);
-        int isServerFd(int fd);
-        int acceptConnection(int fd, int epoll_fd, epoll_event& ev);
-        int handleClient(int fd, int epoll_fd);
-        Server getServer(int fd);
-        static long long timeNow();
-        int monitorTimeout(int epoll_fd);
-        void closeConnection(int epoll_fd, int fd);
+        void    checkCgiScriptExecution(int fd);
+        void    checkScriptTimeOut(int fd);
+        int     startServers();
+        int     monitorServers(int epoll_fd, epoll_event& ev);
+        int     isServerFd(int fd);
+        int     acceptConnection(int fd, int epoll_fd, epoll_event& ev);
+        int     handleClient(int fd, int epoll_fd);
+        Server  getServer(int fd);
+        static  long long timeNow();
+        int     monitorTimeout(int epoll_fd);
+        void    closeConnection(int epoll_fd, int fd);
 };
 
 #endif
