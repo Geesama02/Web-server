@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/14 17:03:53 by maglagal          #+#    #+#             */
-/*   Updated: 2025/02/18 11:02:47 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/02/16 16:09:32 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,7 +15,6 @@
 
 std::map<int, std::ifstream *> Response::files;
 std::map<std::string, std::string> Response::ContentHeader;
-std::map<int, Response> Response::Responses;
 
 //constructor
 Response::Response() {
@@ -33,17 +32,19 @@ Response::Response() {
 
 //Destructor
 Response::~Response() {
-    // std::cout << "Response destuctor!!" << std::endl;
+    std::cout << "Response destuctor client " <<clientFd<< std::endl;
 }
 
 //getters
 std::map<std::string, std::string>& Response::getHeadersRes() { return Headers; }
+int                                 Response::getClientFd() { return clientFd; }
 std::string Response::getQueryString() { return queryString; }
 int         Response::getStatusCode() { return statusCode; };
 std::string Response::getStatusMssg() { return statusMssg; };
 std::string Response::getHeader( std::string key ) { return Headers[key]; };
 
 //setters
+void Response::setClientFd( int nFd ) { clientFd = nFd; }
 void Response::setQueryString( std::string value ) { queryString = value; }
 void Response::setStatusCode(int value) { statusCode = value; };
 void Response::setStatusMssg( std::string value ) { statusMssg = value; };
@@ -258,7 +259,10 @@ void Response::sendBodyBytes() {
 
 void Response::fillBody(Config& config, Request req) {
     if (statusCode != 301)
-        checkDefinedPage(config, req);
+        checkAutoIndex(config, req);
+
+    
+    //when matching a location should not enter here!!
     if (statusCode == 200)
         successResponse(req);
     else if (statusCode == 206)
@@ -273,25 +277,37 @@ void Response::fillBody(Config& config, Request req) {
 
 void Response::sendResponse(Config& config, Request req, int fd) {
     clientFd = fd;
+
     if (req.getPath().find("/cgi-bin/") != std::string::npos && statusCode == 200) {
         CGI cgiScript;
-        cgiScript.execute_cgi_script(*this, clientFd, req);
+        cgiScript.execute_cgi_script(config, *this, clientFd, req);
+        config.setCgiScripts(fd, cgiScript);
+        // std::cout << "main child created " << cgiScript.getCpid()<<std::endl;
+        // std::cout << "child in config class "<< config.getCgiScripts()[fd].getCpid()<<std::endl;
+        Config::Responses[clientFd] = *this;
+        config.checkCgiScriptExecution(fd);
+        config.checkScriptTimeOut(fd);
         return ;
     }
     fillBody(config, req);
     finalRes += statusMssg;
+
+    //add headers to final response
     std::map<std::string, std::string>::iterator it = Headers.begin();
     while (it != Headers.end()) {
         std::string header = it->first + ": " + it->second;
         finalRes += header + "\r\n";
         it++;
     }
-
     finalRes += "\r\n";
+
     if (!body.empty())
         finalRes += body;
 
-    Responses[clientFd] = *this;
+    Config::Responses[clientFd] = *this;
+
+    std::cout << "----------------------------"<<std::endl;
+    std::cout << finalRes<<std::endl;
 
     send(clientFd, finalRes.c_str(), finalRes.length(), 0);
 }

@@ -3,7 +3,7 @@
 /*                                                        :::      ::::::::   */
 /*   Config.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
+/*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/22 11:25:38 by oait-laa          #+#    #+#             */
 /*   Updated: 2025/02/18 12:53:02 by oait-laa         ###   ########.fr       */
@@ -14,12 +14,104 @@
 #include "../Response/Response.hpp"
 #include <sys/stat.h>
 
+std::map<int, Response> Config::Responses;
+
+// Getters
+std::map<int, CGI>&     Config::getCgiScripts() { return cgiScriptContainer; }
+std::vector<Server>     Config::getServers() { return Servers; }
+bool                    Config::getTimeoutResponseFlag() { return timeoutResponseFlag; }
 // Getters
 std::vector<Server> Config::getServers() { return Servers; }
 std::map<int, Client>& Config::getClients() { return Clients; }
 
 // Setters
-void Config::addServer(Server new_server) { Servers.push_back(new_server); }
+void    Config::setCgiScripts(int fd, const CGI& newCgiScript) { 
+    std::cout << "main child created " << newCgiScript.getCpid()<<std::endl;
+    cgiScriptContainer[fd] = newCgiScript;
+    std::cout << "here !!" <<std::endl;
+}
+void    Config::addServer(Server new_server) { Servers.push_back(new_server); }
+void    Config::setTimeoutResponseFlag(bool nValue) { timeoutResponseFlag = nValue; }
+
+
+void    timeoutResponse(int fd) {
+    std::string res;
+    std::string statusMssg = "408 Request Timeout\r\n";
+    res += statusMssg;
+    std::string body = "<!DOCTYPE html>"
+                "<html><head><title>408 Request Timeout</title>"
+                "<style>h1, p {text-align:center}</style></head><body>"
+                "<h1>408 Request Timeout</h1>"
+                "<hr></hr>"
+                "<p>Webserv</p>"
+                "</body></html>";
+    char buff[150];
+    sprintf(buff, "%ld", body.length());
+    std::string contentLengthHeader = buff;
+    contentLengthHeader = "Content-Length :" + contentLengthHeader;
+    std::string contentTypeHeader = "text/html";
+    contentTypeHeader = "Content-Type :" + contentTypeHeader;
+    std::string headers = contentLengthHeader + "\r\n" + contentTypeHeader;
+    headers += "\r\n";
+    res += headers;
+    res += body;
+    std::cout << "timeout response" << res<<std::endl;
+    send(fd, res.c_str(), res.length(), 0);
+}
+
+void    Config::checkCgiScriptExecution(int fd) {
+    std::map<int, CGI>::iterator it = cgiScriptContainer.begin();
+    while (it != cgiScriptContainer.end()) 
+    {
+        if (it->first == fd && (it->second).getCpid() != 0) {
+            pid_t child = waitpid(cgiScriptContainer[fd].getCpid(), NULL, WNOHANG);
+            std::cout << "child pid from waitpid "<<child<<std::endl;
+            if (child == 0) {
+                std::cout << "client " << fd<<std::endl;
+                std::cout << "child pid "<<cgiScriptContainer[fd].getCpid()<<std::endl;
+                std::cout << "child not yet finished exeuction!!"<<std::endl;
+            }
+            else if(child == -1) {
+                std::cout << "child pid "<<cgiScriptContainer[fd].getCpid()<<std::endl;
+                std::cerr<< "error in child!!" << std::endl;
+                std::cout <<strerror(errno)<<std::endl;
+            }
+            else {
+                std::cout << "child pid "<<cgiScriptContainer[fd].getCpid()<<std::endl;
+                std::cout << "child finished exeuction!!"<<std::endl;
+            
+                // read the ouput of the script executed by the cgi
+                std::cout <<"send response!!"<<std::endl;
+                cgiScriptContainer[fd].read_cgi_response();
+                // close(fds[0]);
+                std::cout << "res body "<< Responses[fd].body<<std::endl;
+                cgiScriptContainer[fd].sendServerResponse(fd, Responses[fd]);
+                cgiScriptContainer.clear();
+            }
+        }
+        it++;
+    }
+}
+
+void    Config::checkScriptTimeOut(int fd) {
+    std::map<int, CGI>::iterator it = cgiScriptContainer.begin();
+    while (it != cgiScriptContainer.end()) 
+    {
+        if (it->first == fd) {
+            if (cgiScriptContainer[fd].getCpid() != 0 && timeNow() - cgiScriptContainer[fd].getStartTime() > 5) {
+                std::cout << "client fd "<<fd<<std::endl;
+                std::cout << "timeout "<<timeNow() - cgiScriptContainer[fd].getStartTime()<<std::endl;
+                std::cout << "child timeout!!! " << cgiScriptContainer[fd].getCpid()<<std::endl;
+                kill(cgiScriptContainer[fd].getCpid(), SIGKILL);
+                close(cgiScriptContainer[fd].getRpipe());
+                timeoutResponseFlag = true;
+                timeoutResponse(fd);
+                cgiScriptContainer.clear();
+            }
+        }
+        it++;
+    }   
+}
 
 // Functions
 int Config::startServers() {
@@ -45,8 +137,10 @@ int Config::startServers() {
                 int fd = events[i].data.fd;
                 if (isServerFd(fd))
                     acceptConnection(fd, epoll_fd, ev);
-                else
+                else {
+                    std::cout << "request sent!! " <<"client "<<events[i].data.fd<<std::endl;
                     handleClient(fd, epoll_fd);
+                }
             }
             else if (events[i].events & EPOLLERR) {
                 std::cerr << "Socket error on fd: " << events[i].data.fd << std::endl;
@@ -61,12 +155,28 @@ int Config::startServers() {
                 }
             }
             else if (events[i].events & EPOLLOUT)
-                Response::Responses[events[i].data.fd].sendBodyBytes();
+                Responses[events[i].data.fd].sendBodyBytes();
+            if (!getCgiScripts().empty() && events[i].data.fd != 0) {
+                checkCgiScriptExecution(events[i].data.fd);
+                checkScriptTimeOut(events[i].data.fd);
+            }
         }
         monitorTimeout(epoll_fd);
     }
     return (0);
 }
+
+// void    Config::monitorTimeoutCgiScripts(int cFd) {
+//     std::map<int, Child>::iterator it = CGI::childsExecuting.begin();
+//     while (it != CGI::childsExecuting.end()) {
+//         if (timeNow() - CGI::childsExecuting[cFd].getStartTime() 
+//             > CGI::childsExecuting[cFd].getTimeout())
+//         {
+//             kill((it->second).getCpid(), SIGKILL);
+//             close((it->second).getRpipe());
+//         }
+//     }
+// }
 
 int Config::monitorTimeout(int epoll_fd) {
     long long currTime = timeNow();

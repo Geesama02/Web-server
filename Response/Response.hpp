@@ -26,6 +26,7 @@
 #include <string>
 #include <sstream>
 #include <sys/types.h>
+#include <fstream>
 
 // #include "../Request/Request.hpp"
 // #include "../Config/Config.hpp"
@@ -41,32 +42,32 @@ class Response {
         int                                clientFd;
         int                                statusCode;
         std::string                        statusMssg;
-        std::string                        body;
         std::string                        finalRes;
         std::string                        queryString;
         std::string                        currentDirAbsolutePath;
         void                               fillBody(Config& config, Request req);
         void                               initializeContentHeader();
         void                               checkForFileExtension(std::string fileName);
-        void                               matchReqPathWithLocation(Location loc, std::string reqPath, std::string toMatch);
-        void                               returnDefinedPage(std::string fileName);
-        void                               checkDefinedPage(Config& config, Request req);
+        void                               matchReqPathWithLocation(Config& config, Location loc, std::string reqPath, std::string toMatch);
+        void                               returnDefinedPage(std::string rootPath, std::string errorPageFile);
+        int                                checkDefinedErrorPage(std::string rootPath, std::map<int, std::string> error_page);
         void                               checkAutoIndex(Config& config, Request req);
-        void                               listDirectories(std::string locationPath, std::string dirName);
+        void                               listDirectories(std::string dirName);
         void                               showIndexFile(std::string indexFilePath);
         int                                comparingReqWithLocation(std::string locationPath, std::string reqPath);
         void                               vertifyDirectorySlash(std::string fileName);
         void                               fromIntTochar(int number, char **buff);
     public:
+        std::string                        body;
         static std::map<std::string, std::string> ContentHeader;
-        static std::map<int, std::ifstream *> files;
-        static std::map<int, Response> Responses;
+        static std::map<int, std::ifstream *>     files;
 
         //constructor
         Response();
         ~Response();
 
         //getters
+        int                                 getClientFd();
         int                                 getStatusCode();
         std::string                         getQueryString();
         std::string                         getStatusMssg();
@@ -74,12 +75,14 @@ class Response {
         std::string                         getHeader( std::string key );
 
         //setters
+        void            setClientFd(int nFd);
         void            setStatusCode(int value);
         void            setQueryString(std::string value);
         void            setStatusMssg(std::string value);
         void            setHeader( std::string key, std::string value );
         
         //other
+        void            timeoutResponse(int fd);
         void            checkForQueryString(std::string& fileName);
         void            successResponse(Request req);
         void            notFoundResponse();

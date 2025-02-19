@@ -8,7 +8,7 @@
 //     exit(1);
 // }
 
-void f() {system("valgrind --leak-check=yes --log-file=valgrind.txt ./webserv");}
+// void f() {system("valgrind --leak-check=yes --log-file=valgrind.txt ./webserv");}
 int main(int argc, char **argv)
 {
     // atexit(f);

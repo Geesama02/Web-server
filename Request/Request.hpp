@@ -3,7 +3,7 @@
 /*                                                        :::      ::::::::   */
 /*   Request.hpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
+/*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/30 11:15:32 by oait-laa          #+#    #+#             */
 /*   Updated: 2025/02/18 12:52:48 by oait-laa         ###   ########.fr       */
@@ -23,6 +23,7 @@
 #include <cstring>
 #include <cstdlib>
 #include <ctime>
+
 #include "UploadFile.hpp"
 // #include "../Config/Config.hpp"
 
@@ -62,8 +63,8 @@ class Request {
         // Functions
         int parse(std::string buffer, size_t stop_p);
         int isNumber(std::string& str);
-        std::vector<std::string> split(std::string buffer, int full, char del);
-        void to_lower(std::string& str);
+        static std::vector<std::string> split(std::string buffer, int full, char del);
+        static void to_lower(std::string& str);
         int readRequest(int fd, Server& server, std::vector<Server>& Servers);
         int readHeaders(std::string& str, Server& server, std::vector<Server>& Servers);
         int setupFile();
