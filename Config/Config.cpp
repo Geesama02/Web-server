@@ -6,7 +6,7 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/22 11:25:38 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/02/20 09:59:03 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/02/20 15:06:10 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,7 +30,7 @@ Config::Config() {
 
 void    timeoutResponse(int fd) {
     std::string res;
-    std::string statusMssg = "408 Request Timeout\r\n";
+    std::string statusMssg = "HTTP1.1 408 Request Timeout\r\n";
     res += statusMssg;
     std::string body = "<!DOCTYPE html>"
                 "<html><head><title>408 Request Timeout</title>"
@@ -43,23 +43,30 @@ void    timeoutResponse(int fd) {
     sprintf(buff, "%ld", body.length());
     std::string contentLengthHeader = buff;
     contentLengthHeader = "Content-Length :" + contentLengthHeader;
+
     std::string contentTypeHeader = "text/html";
     contentTypeHeader = "Content-Type :" + contentTypeHeader;
-    std::string headers = contentLengthHeader + "\r\n" + contentTypeHeader;
-    headers += "\r\n";
+    
+    std::string serverName = "Webserv";
+    std::string serverHeader = "Server :" + serverName;
+
+    std::string connectionType = "close";
+    std::string connectionHeader = "Connection :" + connectionType;
+    std::string headers = contentLengthHeader + "\r\n" + contentTypeHeader + "\r\n" + serverHeader + "\r\n" + connectionHeader;
+    headers += "\r\n\r\n";
     res += headers;
     res += body;
     std::cout << "timeout response" << res<<std::endl;
-    send(fd, res.c_str(), res.length(), 0);
+    std::cout << "send " << send(fd, res.c_str(), res.length(), 0)<<std::endl;
 }
 
 void    Config::checkCgiScriptExecution(int fd) {
     std::map<int, Client>::iterator it = Clients.begin();
     while (it != Clients.end())
     {
-        if (it->first == fd) {
+        if (it->first == fd && Clients[fd].getCGI().getCpid() != 0) {
             pid_t child = waitpid(Clients[fd].getCGI().getCpid(), NULL, WNOHANG);
-            std::cout << "child pid from waitpid "<<child<<std::endl;
+            // std::cout << "child pid from waitpid "<<child<<std::endl;
             if (child == 0) {
                 // std::cout << "client " << fd<<std::endl;
                 // std::cout << "child pid "<<Clients[fd].getCGI().getCpid()<<std::endl;
@@ -68,19 +75,24 @@ void    Config::checkCgiScriptExecution(int fd) {
             else if(child == -1) {
                 // std::cout << "child pid "<<Clients[fd].getCGI().getCpid()<<std::endl;
                 // std::cerr<< "error in child!!" << std::endl;
-                std::cout <<strerror(errno)<<std::endl;
+                // std::cout <<strerror(errno)<<std::endl;
             }
             else {
                 // std::cout << "child pid "<<Clients[fd].getCGI().getCpid()<<std::endl;
                 // std::cout << "child finished exeuction!!"<<std::endl;
             
                 // read the ouput of the script executed by the cgi
+                std::cout << "---------------------------------"<< std::endl;
+                std::cout << "child pid finished executing "<<child<< std::endl;
+                std::cout << "finished executing client fd" <<fd<< std::endl;
+                std::cout << "child pid of cgi script " <<Clients[fd].getCGI().getCpid() <<std::endl;
+                std::cout << "pipe fd " <<Clients[fd].getCGI().getRpipe() <<std::endl;
                 // std::cout <<"send response!!"<<std::endl;
-                Clients[fd].getCGI().read_cgi_response();
                 // close(fds[0]);
                 // std::cout << "res body "<< Clients[fd].getResponse().body<<std::endl;
+                Clients[fd].getCGI().read_cgi_response();
                 Clients[fd].getCGI().sendServerResponse(fd, *this);
-                Clients.clear();
+                Clients[fd].getCGI().clearCGI();
             }
         }
         it++;
@@ -95,10 +107,13 @@ void    Config::checkScriptTimeOut(int fd) {
                 std::cout << "client fd "<<fd<<std::endl;
                 std::cout << "timeout "<<timeNow() - Clients[fd].getCGI().getStartTime()<<std::endl;
                 std::cout << "child timeout!!! " << Clients[fd].getCGI().getCpid()<<std::endl;
-                kill(Clients[fd].getCGI().getCpid(), SIGKILL);
+                kill(Clients[fd].getCGI().getCpid(), SIGTERM);
+                // waitpid(Clients[fd].getCGI().getCpid(), NULL, WNOHANG);
                 close(Clients[fd].getCGI().getRpipe());
                 timeoutResponseFlag = true;
                 timeoutResponse(fd);
+                // closeConnection(fd);
+                timeoutResponseFlag = false;
             }
         }
         it++;
@@ -108,12 +123,12 @@ void    Config::checkScriptTimeOut(int fd) {
 // Functions
 int Config::startServers() {
     epoll_event ev;
-    int epoll_fd = epoll_create(1);
+    epoll_fd = epoll_create(1);
     if (epoll_fd < 0) {
         std::cerr << "Cannot create epoll instance!" << std::endl;
         return (1);
     }
-    if (monitorServers(epoll_fd, ev))
+    if (monitorServers(ev))
         return (1);
     epoll_event events[MAX_EVENTS]; // max events(ready to read or write is an event)
     while (1) {
@@ -128,11 +143,11 @@ int Config::startServers() {
             if (events[i].events & EPOLLIN) { // if event is read
                 int fd = events[i].data.fd;
                 if (isServerFd(fd))
-                    acceptConnection(fd, epoll_fd, ev);
+                    acceptConnection(fd, ev);
                 else {
                     std::cout << "Client size " << Clients.size()<< std::endl;
                     std::cout << "request sent!! " <<"client "<<events[i].data.fd<<std::endl;
-                    handleClient(fd, epoll_fd);
+                    handleClient(fd);
                 }
             }
             else if (events[i].events & EPOLLERR) {
@@ -155,24 +170,12 @@ int Config::startServers() {
                 checkScriptTimeOut(events[i].data.fd);
             }
         }
-        monitorTimeout(epoll_fd);
+        monitorTimeout();
     }
     return (0);
 }
 
-void    Config::monitorTimeoutCgiScripts(int cFd) {
-    std::map<int, Client>::iterator it = Clients.begin();
-    while (it != Clients.end()) {
-        if (timeNow() - Clients[cFd].getCGI().getStartTime() 
-            > Clients[cFd].getCGI().getTimeout())
-        {
-            kill((it->second).getCGI().getCpid(), SIGKILL);
-            close((it->second).getCGI().getRpipe());
-        }
-    }
-}
-
-int Config::monitorTimeout(int epoll_fd) {
+int Config::monitorTimeout() {
     long long currTime = timeNow();
     int timeout = 75;
     for (std::map<int, Client>::iterator it = Clients.begin(); it != Clients.end(); ) {
@@ -194,7 +197,7 @@ int Config::monitorTimeout(int epoll_fd) {
     return (0);
 }
 
-int Config::monitorServers(int epoll_fd, epoll_event& ev) {
+int Config::monitorServers(epoll_event& ev) {
     ev.events = EPOLLIN | EPOLLOUT | EPOLLERR; // monitor if socket ready to (read | write | error)
     for (std::vector<Server>::iterator it = Servers.begin(); it != Servers.end(); it++) {
         if (it->initServer(Servers,it))
@@ -234,7 +237,7 @@ long long Config::timeNow() {
     return (time);
 }
 
-int Config::acceptConnection(int fd, int epoll_fd, epoll_event& ev) {
+int Config::acceptConnection(int fd, epoll_event& ev) {
     // loop until accepting all clients
     while (true) {
         int new_client = accept(fd, NULL, NULL);
@@ -267,9 +270,9 @@ int Config::acceptConnection(int fd, int epoll_fd, epoll_event& ev) {
     return (0);
 }
 
-void Config::closeConnection(int epoll_fd, int fd) {
+void Config::closeConnection(int fd) {
     epoll_ctl(epoll_fd, EPOLL_CTL_DEL, fd, NULL);
-    std::cout << "closed\n";
+    std::cout << "closed client : " << fd<<std::endl;
     Clients.erase(fd);
     // if (Response::files.find(fd) != Response::files.end()) {
     //     Response::files[fd]->close();
@@ -278,7 +281,7 @@ void Config::closeConnection(int epoll_fd, int fd) {
     close(fd);
 }
 
-int Config::handleClient(int fd, int epoll_fd) {
+int Config::handleClient(int fd) {
     Response res;
     int status;
     
@@ -286,7 +289,7 @@ int Config::handleClient(int fd, int epoll_fd) {
     status = Clients[fd].getRequest().readRequest(fd, Clients[fd].getServer(), Servers);
     // std::cout << "status -> " << status << std::endl;
     if (status == 1) // connection is closed
-        closeConnection(epoll_fd, fd);
+        closeConnection(fd);
     else if (status == 2) // if file is uploading
         return (0);
     else if (status != 0) {
@@ -294,7 +297,7 @@ int Config::handleClient(int fd, int epoll_fd) {
         // std::cout << res << std::endl;
         send(fd, res.c_str(), res.size(), 0);
         if (status >= 400)
-            closeConnection(epoll_fd, fd);
+            closeConnection(fd);
         return (0);
     }
     else {

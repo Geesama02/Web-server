@@ -6,7 +6,7 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/21 15:07:06 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/02/20 09:58:31 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/02/20 11:36:43 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,6 +26,7 @@ class Response;
 
 class Config {
     private:
+        int                   epoll_fd;
         std::vector<Server>   Servers;
         std::map<int, Client> Clients;
         bool                  timeoutResponseFlag;
@@ -44,17 +45,16 @@ class Config {
 
         // Functions
         void    checkCgiScriptExecution(int fd);
-        void    monitorTimeoutCgiScripts(int cFd);
         void    checkScriptTimeOut(int fd);
         int     startServers();
-        int     monitorServers(int epoll_fd, epoll_event& ev);
+        int     monitorServers(epoll_event& ev);
         int     isServerFd(int fd);
-        int     acceptConnection(int fd, int epoll_fd, epoll_event& ev);
-        int     handleClient(int fd, int epoll_fd);
+        int     acceptConnection(int fd, epoll_event& ev);
+        int     handleClient(int fd);
         Server  getServer(int fd);
         static  long long timeNow();
-        int     monitorTimeout(int epoll_fd);
-        void    closeConnection(int epoll_fd, int fd);
+        int     monitorTimeout();
+        void    closeConnection(int fd);
 };
 
 #endif

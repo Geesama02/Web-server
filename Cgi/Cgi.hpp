@@ -6,7 +6,7 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/30 18:22:52 by maglagal          #+#    #+#             */
-/*   Updated: 2025/02/19 11:45:38 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/02/20 14:19:55 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -34,7 +34,7 @@ class Config;
 class Response;
 class CGI {
     private :
-        std::vector<char *> Envs;
+        std::vector<char *>                  Envs;
         std::map<std::string, std::string>   executablePaths;
         std::vector<std::string>             headersInScript;
         char        *envs[8];
@@ -59,7 +59,7 @@ class CGI {
         ~CGI();
 
         //getters
-        pid_t     getCpid() const;
+        pid_t     getCpid();
         int       getRpipe();
         int       getTimeout();
         long long getStartTime();
@@ -72,6 +72,7 @@ class CGI {
         
 
         //other
+        void clearCGI();
         void execute_cgi_script(Config& config, Response& res, int fd, Request req);
         void initializeVars(Response& res, Request req);
         void setEnvVars(Request req, Response& res);

@@ -6,7 +6,7 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/30 18:22:44 by maglagal          #+#    #+#             */
-/*   Updated: 2025/02/20 10:06:12 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/02/20 13:46:44 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,23 +19,27 @@ CGI::CGI() {
     executablePathArray = NULL;
     absoluteFilePath = NULL;
     timeout = 5000;
-    executablePaths[".py"] = "/home/maglagal/Desktop/webserv/cgi-bin/myenv/bin/python";
+    executablePaths[".py"] = "/usr/bin/python3";
     executablePaths[".php"] = "/usr/bin/php";
 }
 
 CGI::~CGI() {
     for(int i = 0; i < 7; i++) {
-        if (envs[i])
+        if (envs[i]) {
             delete[] envs[i];
+            envs[i] = NULL;
+        }
     }
     if (absoluteFilePath)
         delete[] absoluteFilePath;
+    absoluteFilePath = NULL;
     if (executablePathArray)
         delete[] executablePathArray;
+    executablePathArray = NULL;
 }
 
 //getters
-pid_t     CGI::getCpid() const { return cPid; }
+pid_t     CGI::getCpid() { return cPid; }
 int       CGI::getRpipe() { return rPipe; }
 pid_t     CGI::getTimeout() { return timeout; }
 long long CGI::getStartTime() { return startTime; }
@@ -46,6 +50,30 @@ void    CGI::setRpipe(int nRpipe) { rPipe = nRpipe; }
 void    CGI::setTimeout(int nTimeout) { timeout = nTimeout; }
 void    CGI::setStartTime(long long nTime) {startTime = nTime;}
 
+void CGI::clearCGI() {
+    std::cout << "cgi script reseted!!" << std::endl;
+    for(int i = 0; i < 7; i++) {
+        if (envs[i])
+            delete[] envs[i];
+    }
+    if (absoluteFilePath)
+        delete[] absoluteFilePath;
+    if (executablePathArray)
+        delete[] executablePathArray;
+    for(int i = 0; i < 7; i++)
+        envs[i] = NULL;
+    executablePathArray = NULL;
+    absoluteFilePath = NULL;
+    cPid = 0;
+    rPipe = 0;
+    startTime = 0;
+    headersInScript.clear();
+    ResBody.clear();
+    cgiRes.clear();
+    extensionFile.clear();
+    scriptFileName.clear();
+    scriptRelativePath.clear();
+}
 
 void CGI::defineResponseStatusMssg(Response& res) {  
     if (res.getStatusCode() == 200)
@@ -121,8 +149,6 @@ void CGI::findExecutablePath()
     getcwd(buff, 120);
     std::string current_dir = buff;
     std::string absolutePath = current_dir + scriptRelativePath;
-    // executablePathArray = new char[executablePath.length() + 1];
-    // absoluteFilePath = new char[absolutePath.length() + 1];
     executablePathArray = new char[executablePath.length() + 1];
     absoluteFilePath = new char[absolutePath.length() + 1];
     std::strcpy(executablePathArray, executablePath.c_str());
@@ -240,17 +266,19 @@ void CGI::execute_cgi_script(Config& config, Response& res, int fd, Request req)
 
     int fds[2];
     if (!config.getTimeoutResponseFlag()) {
-        std::cout << "cgi script executing!!" << std::endl;
         int save_out = dup(1);
         if (pipe(fds) != 0)
             std::cerr << "pipe failed!!" << std::endl;
-        pid_t c_fd = fork();
-        if (c_fd != 0) {
+        pid_t c_pid = fork();
+        if (c_pid != 0) {
             setStartTime(Config::timeNow());
-            setCpid(c_fd);
+            std::cout << "start time " << getStartTime() << std::endl;
+            setCpid(c_pid);
+            std::cout << "child pid "<<c_pid <<std::endl;
+            std::cout << "pipe fd" << fds[0]<<std::endl;
             setRpipe(fds[0]);
         }
-        if (!c_fd) {
+        if (!c_pid) {
             close(fds[0]);
             dup2(fds[1], 1);
             close(fds[1]);

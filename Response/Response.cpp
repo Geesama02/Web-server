@@ -6,7 +6,7 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/14 17:03:53 by maglagal          #+#    #+#             */
-/*   Updated: 2025/02/20 09:54:50 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/02/20 11:50:05 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -302,8 +302,14 @@ void Response::sendResponse(Config& config, Request req, int fd) {
     clientFd = fd;
 
     if (req.getPath().find("/cgi-bin/") != std::string::npos && statusCode == 200) {
-        std::cout << "cgi script!!" << std::endl;
+        std::cout << "execute new cgi script !!!" << std::endl;
+        config.setTimeoutResponseFlag(false);
         config.getClients()[fd].getCGI().execute_cgi_script(config, *this, clientFd, req);
+        if (fd != 0)
+        {
+            config.checkCgiScriptExecution(fd);
+            config.checkScriptTimeOut(fd);
+        }
         return ;
     }
     fillBody(config, req);

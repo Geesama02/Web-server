@@ -12,6 +12,7 @@
 int main(int argc, char **argv)
 {
     // atexit(f);
+    signal(SIGPIPE, SIG_IGN);
     if (argc > 2)
     {
         std::cerr << "Invalid Number of parameters\n";
