@@ -6,7 +6,7 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/30 18:22:44 by maglagal          #+#    #+#             */
-/*   Updated: 2025/02/20 13:46:44 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/02/20 18:00:27 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -49,6 +49,11 @@ void    CGI::setCpid(pid_t nPid) { cPid = nPid; }
 void    CGI::setRpipe(int nRpipe) { rPipe = nRpipe; }
 void    CGI::setTimeout(int nTimeout) { timeout = nTimeout; }
 void    CGI::setStartTime(long long nTime) {startTime = nTime;}
+
+void CGI::defineExecutionPaths()
+{
+    
+}
 
 void CGI::clearCGI() {
     std::cout << "cgi script reseted!!" << std::endl;
@@ -240,8 +245,8 @@ void CGI::sendServerResponse(int fd, Config& config)
     if (ResBody.length() > 0)
         cgiRes += ResBody;
 
-    std::cout << "------------cgi Response------------------"<<std::endl;
-    std::cout << cgiRes<< std::endl;
+    // std::cout << "------------cgi Response------------------"<<std::endl;
+    // std::cout << cgiRes<< std::endl;
 
     send(fd, cgiRes.c_str(), cgiRes.length(), 0);
     

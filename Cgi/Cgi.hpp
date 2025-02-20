@@ -6,7 +6,7 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/30 18:22:52 by maglagal          #+#    #+#             */
-/*   Updated: 2025/02/20 14:19:55 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/02/20 17:43:38 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -72,6 +72,7 @@ class CGI {
         
 
         //other
+        void defineExecutionPaths();
         void clearCGI();
         void execute_cgi_script(Config& config, Response& res, int fd, Request req);
         void initializeVars(Response& res, Request req);

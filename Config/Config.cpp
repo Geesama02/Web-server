@@ -6,7 +6,7 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/22 11:25:38 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/02/20 15:06:10 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/02/20 17:03:45 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -57,7 +57,7 @@ void    timeoutResponse(int fd) {
     res += headers;
     res += body;
     std::cout << "timeout response" << res<<std::endl;
-    std::cout << "send " << send(fd, res.c_str(), res.length(), 0)<<std::endl;
+    send(fd, res.c_str(), res.length(), 0);
 }
 
 void    Config::checkCgiScriptExecution(int fd) {
@@ -108,7 +108,7 @@ void    Config::checkScriptTimeOut(int fd) {
                 std::cout << "timeout "<<timeNow() - Clients[fd].getCGI().getStartTime()<<std::endl;
                 std::cout << "child timeout!!! " << Clients[fd].getCGI().getCpid()<<std::endl;
                 kill(Clients[fd].getCGI().getCpid(), SIGTERM);
-                // waitpid(Clients[fd].getCGI().getCpid(), NULL, WNOHANG);
+                waitpid(Clients[fd].getCGI().getCpid(), NULL, 0);
                 close(Clients[fd].getCGI().getRpipe());
                 timeoutResponseFlag = true;
                 timeoutResponse(fd);
