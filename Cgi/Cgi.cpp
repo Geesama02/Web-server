@@ -6,7 +6,7 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/30 18:22:44 by maglagal          #+#    #+#             */
-/*   Updated: 2025/02/19 11:47:35 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/02/20 10:06:12 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,14 +18,12 @@ CGI::CGI() {
         envs[i] = NULL;
     executablePathArray = NULL;
     absoluteFilePath = NULL;
-    std::cout << "cgi script constructed!!"<<std::endl;
     timeout = 5000;
     executablePaths[".py"] = "/home/maglagal/Desktop/webserv/cgi-bin/myenv/bin/python";
     executablePaths[".php"] = "/usr/bin/php";
 }
 
 CGI::~CGI() {
-    std::cout << "cgi destructor called"<<std::endl;
     for(int i = 0; i < 7; i++) {
         if (envs[i])
             delete[] envs[i];
@@ -47,38 +45,6 @@ void    CGI::setCpid(pid_t nPid) { cPid = nPid; }
 void    CGI::setRpipe(int nRpipe) { rPipe = nRpipe; }
 void    CGI::setTimeout(int nTimeout) { timeout = nTimeout; }
 void    CGI::setStartTime(long long nTime) {startTime = nTime;}
-
-//copy assignment
-// CGI& CGI::operator=( const CGI& obj ) {
-//     if (this != &obj) {
-//         std::cout << "obj " << obj.cPid<<std::endl;
-//         for (int i = 0; i < 7; i++) {
-//             std::cout << obj.envs[i]<<std::endl;
-//             delete[] envs[i];
-//             envs[i] = new char[std::strlen(obj.envs[i]) + 1];
-//             strcpy(envs[i], obj.envs[i]);
-//         }
-//         envs[7] = NULL;
-//         executablePathArray = new char[std::strlen(obj.executablePathArray) + 1];
-//         if (obj.executablePathArray)
-//             strcpy(executablePathArray, obj.executablePathArray);
-//         absoluteFilePath = new char[std::strlen(obj.absoluteFilePath) + 1];
-//         if (obj.absoluteFilePath)
-//             strcpy(absoluteFilePath, obj.absoluteFilePath);
-//         cPid = obj.cPid;
-//         rPipe = obj.rPipe;
-//         timeout = obj.timeout;
-//         startTime = obj.startTime;
-//         cgiRes = obj.cgiRes;
-//         ResBody = obj.ResBody;
-//         extensionFile = obj.extensionFile;
-//         scriptFileName = obj.scriptFileName;
-//         scriptRelativePath = obj.scriptRelativePath;
-//         executablePaths = obj.executablePaths;
-//         headersInScript = obj.headersInScript;
-//     }
-//     return (*this);
-// }
 
 
 void CGI::defineResponseStatusMssg(Response& res) {  
@@ -121,14 +87,6 @@ void CGI::setEnvVars(Request req, Response& res)
     storeEnvs["CONTENT_LENGTH"] = req.getBody().length() > 0 ? contentLengthStr : ""; //forbidden!!
     storeEnvs["CONTENT_TYPE"] = req.getHeaders()["content-type"].c_str();
     storeEnvs["QUERY_STRING"] = (res.getQueryString()).c_str();
-    
-    // reqMathodEnv = req.getMethod().c_str();
-    // scriptNameEnv = req.getPath().empty() ? "/" : req.getPath().c_str();//forbidden!!
-    // servNameEnv= "Webserv";
-    // servProtocolEnv = "HTTP 1.1";
-    // contentLengthEnv = req.getBody().length() > 0 ? contentLengthStr : ""; //forbidden!!
-    // contentTypeEnv = req.getHeaders()["content-type"].c_str();
-    // queryStringEnv = (res.getQueryString()).c_str();
     
     std::map<std::string, std::string>::iterator it = storeEnvs.begin();
     for (int i = 0; i < 7; i++) {
@@ -174,23 +132,6 @@ void CGI::findExecutablePath()
     argv[2] = NULL;
 }
 
-void CGI::read_cgi_response()
-{
-    char buff2[1025];
-    fcntl(rPipe, F_SETFL, O_NONBLOCK);
-    int nbytes = read(rPipe, buff2, 1024);
-    if (nbytes < 0)
-    {
-        std::cout << "read fail!!" << std::endl;
-        return ;
-    }
-    buff2[nbytes] = '\0';
-    ResBody += buff2;
-    while ((nbytes = read(rPipe, buff2, 1024)) > 0) {
-        buff2[nbytes] = '\0';
-        ResBody += buff2;
-    }
-}
 
 void CGI::findHeadersInsideScript(Response& res) {
     int contentLengthFlag = 0;
@@ -236,6 +177,24 @@ void CGI::findHeadersInsideScript(Response& res) {
         res.setHeader("Content-Type", "text/html");
 }
 
+void CGI::read_cgi_response()
+{
+    char buff2[1025];
+    fcntl(rPipe, F_SETFL, O_NONBLOCK);
+    int nbytes = read(rPipe, buff2, 1024);
+    if (nbytes < 0)
+    {
+        std::cout << "read fail!!" << std::endl;
+        return ;
+    }
+    buff2[nbytes] = '\0';
+    ResBody += buff2;
+    while ((nbytes = read(rPipe, buff2, 1024)) > 0) {
+        buff2[nbytes] = '\0';
+        ResBody += buff2;
+    }
+}
+
 void CGI::sendServerResponse(int fd, Config& config)
 {
     cgiRes += config.getClients()[fd].getResponse().getStatusMssg();
@@ -254,6 +213,9 @@ void CGI::sendServerResponse(int fd, Config& config)
 
     if (ResBody.length() > 0)
         cgiRes += ResBody;
+
+    std::cout << "------------cgi Response------------------"<<std::endl;
+    std::cout << cgiRes<< std::endl;
 
     send(fd, cgiRes.c_str(), cgiRes.length(), 0);
     
@@ -277,7 +239,8 @@ void CGI::execute_cgi_script(Config& config, Response& res, int fd, Request req)
     findExecutablePath();
 
     int fds[2];
-    if (config.getTimeoutResponseFlag()) {
+    if (!config.getTimeoutResponseFlag()) {
+        std::cout << "cgi script executing!!" << std::endl;
         int save_out = dup(1);
         if (pipe(fds) != 0)
             std::cerr << "pipe failed!!" << std::endl;
@@ -288,19 +251,13 @@ void CGI::execute_cgi_script(Config& config, Response& res, int fd, Request req)
             setRpipe(fds[0]);
         }
         if (!c_fd) {
-            std::cout << "executable " <<executablePathArray<<std::endl;
-            // std::cout << "---------------- argv ----------------"<<std::endl;
-            // for (int i = 0 ; i < 3;i++) {
-            //     std::cout << "argv " <<argv[i]<<std::endl;
-            // }
-            // std::cout << "---------------- argv ----------------"<<std::endl;
             close(fds[0]);
             dup2(fds[1], 1);
             close(fds[1]);
             if (execve(executablePathArray, argv, envs) ==-1) {
                 std::cerr << "execve failed!!" << std::endl;
                 std::cerr << strerror(errno) << std::endl;
-                exit(1);    
+                exit(1);
             }
             dup2(save_out, 1);
             close(save_out);

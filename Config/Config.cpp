@@ -6,7 +6,7 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/22 11:25:38 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/02/19 16:42:58 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/02/20 09:59:03 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,6 +23,10 @@ std::map<int, Client>&  Config::getClients() { return Clients; }
 void    Config::addServer(Server new_server) { Servers.push_back(new_server); }
 void    Config::setTimeoutResponseFlag(bool nValue) { timeoutResponseFlag = nValue; }
 
+//constructor
+Config::Config() {
+    timeoutResponseFlag = false;
+}
 
 void    timeoutResponse(int fd) {
     std::string res;
@@ -57,24 +61,24 @@ void    Config::checkCgiScriptExecution(int fd) {
             pid_t child = waitpid(Clients[fd].getCGI().getCpid(), NULL, WNOHANG);
             std::cout << "child pid from waitpid "<<child<<std::endl;
             if (child == 0) {
-                std::cout << "client " << fd<<std::endl;
-                std::cout << "child pid "<<Clients[fd].getCGI().getCpid()<<std::endl;
-                std::cout << "child not yet finished exeuction!!"<<std::endl;
+                // std::cout << "client " << fd<<std::endl;
+                // std::cout << "child pid "<<Clients[fd].getCGI().getCpid()<<std::endl;
+                // std::cout << "child not yet finished exeuction!!"<<std::endl;
             }
             else if(child == -1) {
-                std::cout << "child pid "<<Clients[fd].getCGI().getCpid()<<std::endl;
-                std::cerr<< "error in child!!" << std::endl;
+                // std::cout << "child pid "<<Clients[fd].getCGI().getCpid()<<std::endl;
+                // std::cerr<< "error in child!!" << std::endl;
                 std::cout <<strerror(errno)<<std::endl;
             }
             else {
-                std::cout << "child pid "<<Clients[fd].getCGI().getCpid()<<std::endl;
-                std::cout << "child finished exeuction!!"<<std::endl;
+                // std::cout << "child pid "<<Clients[fd].getCGI().getCpid()<<std::endl;
+                // std::cout << "child finished exeuction!!"<<std::endl;
             
                 // read the ouput of the script executed by the cgi
-                std::cout <<"send response!!"<<std::endl;
+                // std::cout <<"send response!!"<<std::endl;
                 Clients[fd].getCGI().read_cgi_response();
                 // close(fds[0]);
-                std::cout << "res body "<< Clients[fd].getResponse().body<<std::endl;
+                // std::cout << "res body "<< Clients[fd].getResponse().body<<std::endl;
                 Clients[fd].getCGI().sendServerResponse(fd, *this);
                 Clients.clear();
             }
@@ -146,27 +150,27 @@ int Config::startServers() {
             else if (events[i].events & EPOLLOUT) {
                 Clients[events[i].data.fd].getResponse().sendBodyBytes();
             }
-            // if (!getCgiScripts().empty() && events[i].data.fd != 0) {
-            //     checkCgiScriptExecution(events[i].data.fd);
-            //     checkScriptTimeOut(events[i].data.fd);
-            // }
+            if (events[i].data.fd != 0) {
+                checkCgiScriptExecution(events[i].data.fd);
+                checkScriptTimeOut(events[i].data.fd);
+            }
         }
         monitorTimeout(epoll_fd);
     }
     return (0);
 }
 
-// void    Config::monitorTimeoutCgiScripts(int cFd) {
-//     std::map<int, Child>::iterator it = CGI::childsExecuting.begin();
-//     while (it != CGI::childsExecuting.end()) {
-//         if (timeNow() - CGI::childsExecuting[cFd].getStartTime() 
-//             > CGI::childsExecuting[cFd].getTimeout())
-//         {
-//             kill((it->second).getCpid(), SIGKILL);
-//             close((it->second).getRpipe());
-//         }
-//     }
-// }
+void    Config::monitorTimeoutCgiScripts(int cFd) {
+    std::map<int, Client>::iterator it = Clients.begin();
+    while (it != Clients.end()) {
+        if (timeNow() - Clients[cFd].getCGI().getStartTime() 
+            > Clients[cFd].getCGI().getTimeout())
+        {
+            kill((it->second).getCGI().getCpid(), SIGKILL);
+            close((it->second).getCGI().getRpipe());
+        }
+    }
+}
 
 int Config::monitorTimeout(int epoll_fd) {
     long long currTime = timeNow();
@@ -296,6 +300,7 @@ int Config::handleClient(int fd, int epoll_fd) {
     else {
         if (!Clients[fd].getRequest().getPath().empty()) {
             // std::cout << "path -> " << request.getPath() << std::endl;
+            Clients[fd].getResponse().clearResponse();
             std::string tmp = Clients[fd].getRequest().getHeaders()["host"];
             size_t pos = tmp.rfind(':');
             if (pos != std::string::npos)

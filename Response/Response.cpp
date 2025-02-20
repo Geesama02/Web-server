@@ -6,7 +6,7 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/14 17:03:53 by maglagal          #+#    #+#             */
-/*   Updated: 2025/02/19 16:44:59 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/02/20 09:54:50 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,7 +18,6 @@ std::map<std::string, std::string> Response::ContentHeader;
 
 //constructor
 Response::Response() {
-    std::cout << "response constructed!!"<<std::endl;
     file = NULL;
     initializeContentHeader();
     Headers["Content-Type"] = "text/html";
@@ -27,7 +26,7 @@ Response::Response() {
     Headers["Content-Length"] = "0";
     statusMssg = "HTTP/1.1 ";
     statusCode = 0;
-    totalBytesSent = 0;
+    // totalBytesSent = 0;
     char curr_dirChar[120];
     getcwd(curr_dirChar, 120);
     currentDirAbsolutePath = curr_dirChar;
@@ -35,8 +34,6 @@ Response::Response() {
 
 //Destructor
 Response::~Response() {
-    std::cout << "Response destuctor client " <<clientFd<< std::endl;
-    std::cout << "total bytes sent " << totalBytesSent<< std::endl;
     if (file) {
         file->close();
         delete file;
@@ -78,11 +75,14 @@ void    Response::fromIntTochar(int number, char **buff) {
 }
 
 void    Response::clearResponse() {
+    Headers.clear();
+    statusMssg.clear();
     Headers["Connection"] = "keep-alive";
     Headers["Content-Length"] = "0";
+    Headers["Server"] = "Webserv";
     statusMssg = "HTTP/1.1 ";
     statusCode = 0;
-    totalBytesSent = 0;
+    // totalBytesSent = 0;
     body.clear();
     finalRes.clear();
 }
@@ -101,7 +101,7 @@ void Response::notFoundResponse() {
     char buff[150];
     sprintf(buff, "%ld", body.length());
     Headers["Content-Length"] = buff;
-    bytesToSend = body.length();
+    // bytesToSend = body.length();
 }
 
 void Response::forbiddenResponse() {
@@ -118,7 +118,7 @@ void Response::forbiddenResponse() {
     char buff[150];
     sprintf(buff, "%ld", body.length());
     Headers["Content-Length"] = buff;
-    bytesToSend = body.length();
+    // bytesToSend = body.length();
 }
 
 void Response::successResponse(Request req) {
@@ -139,10 +139,8 @@ void Response::successResponse(Request req) {
             std::sprintf(buff, "%ld", body.length());
             Headers["Content-Length"] = buff;
         }
-        if (!file) {
-            std::cout << "success response!!" << std::endl;
+        if (!file)
             file = new std::ifstream(req.getPath().erase(0, 1).c_str(), std::ios::binary);
-        }
         Headers["Accept-Ranges"] = "bytes";
     }
 }
@@ -235,7 +233,7 @@ void Response::searchForFile(Request req) {
     if (!stat(fileName.c_str(), &st)) {
         if (st.st_mode & S_IFDIR || (!(st.st_mode & S_IRUSR))) {
             statusCode = 403;
-            bytesToSend = st.st_size;
+            // bytesToSend = st.st_size;
             vertifyDirectorySlash(fileName);
             return ;
         }
@@ -244,13 +242,13 @@ void Response::searchForFile(Request req) {
                 statusCode = 206;
                 sprintf(buff3, "%ld", st.st_size);
                 setHeader("Content-Length", buff3);
-                bytesToSend = st.st_size;
+                // bytesToSend = st.st_size;
                 checkForFileExtension(fileName);
                 return ;
             }
             statusCode = 200;
             sprintf(buff3, "%ld", st.st_size);
-            bytesToSend = st.st_size;
+            // bytesToSend = st.st_size;
             setHeader("Content-Length", buff3);
             if (st.st_mode & S_IFDIR)
                 vertifyDirectorySlash(fileName);
@@ -263,17 +261,14 @@ void Response::searchForFile(Request req) {
 
 void Response::sendBodyBytes() {
     int bytesR = 0;
-    if (clientFd != 0 && totalBytesSent == bytesToSend)
-        clearResponse();
-    else if (file) {
+    if (file) {
         char buff[1024];
         // if marouan updates, update timeout of client here ---------
-        // std::cout << "send response" << std::endl;
         file->read(buff, 1024);
         if (file->eof()) 
         {
             bytesR = file->gcount();
-            totalBytesSent += bytesR;
+            // totalBytesSent += bytesR;
             send(clientFd, buff, bytesR, 0);
             file->close();
             delete file;
@@ -281,12 +276,9 @@ void Response::sendBodyBytes() {
             return ;
         }
         bytesR = file->gcount();
-        totalBytesSent += bytesR;
+        // totalBytesSent += bytesR;
         send(clientFd, buff, bytesR, 0);
     }
-    // std::cout << "bytes to send " << bytesToSend<<std::endl;
-    // std::cout << "total to send " << totalBytesSent<<std::endl;
-    // exit(1);
 }
 
 void Response::fillBody(Config& config, Request req) {
@@ -310,12 +302,8 @@ void Response::sendResponse(Config& config, Request req, int fd) {
     clientFd = fd;
 
     if (req.getPath().find("/cgi-bin/") != std::string::npos && statusCode == 200) {
+        std::cout << "cgi script!!" << std::endl;
         config.getClients()[fd].getCGI().execute_cgi_script(config, *this, clientFd, req);
-        // config.setCgiScripts(fd, cgiScript);
-        // std::cout << "main child created " << cgiScript.getCpid()<<std::endl;
-        // std::cout << "child in config class "<< config.getCgiScripts()[fd].getCpid()<<std::endl;
-        // config.checkCgiScriptExecution(fd);
-        // config.checkScriptTimeOut(fd);
         return ;
     }
     fillBody(config, req);
@@ -334,7 +322,5 @@ void Response::sendResponse(Config& config, Request req, int fd) {
     if (!body.empty())
         finalRes += body;
 
-    std::cout << "--------------- body -------------"<<std::endl;
-    std::cout << finalRes<<std::endl;
     send(clientFd, finalRes.c_str(), finalRes.length(), 0);
 }

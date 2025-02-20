@@ -6,7 +6,7 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/14 16:55:34 by maglagal          #+#    #+#             */
-/*   Updated: 2025/02/19 15:13:14 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/02/20 09:30:34 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -60,8 +60,8 @@ class Response {
         void                               fromIntTochar(int number, char **buff);
     public:
         // std::map<int, std::ifstream *>     files;
-        size_t                                    totalBytesSent;
-        size_t                                    bytesToSend;
+        // size_t                                    totalBytesSent;
+        // size_t                                    bytesToSend;
         std::string                               body;
         static std::map<std::string, std::string> ContentHeader;
 

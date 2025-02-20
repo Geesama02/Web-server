@@ -6,7 +6,7 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/09 09:49:11 by maglagal          #+#    #+#             */
-/*   Updated: 2025/02/19 10:36:39 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/02/20 09:41:06 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -88,13 +88,19 @@ void Response::matchReqPathWithLocation(Config& config, Location loc, std::strin
     std::string aIndexFile = currentDirAbsolutePath + indexFile;
     std::string reqPathAsbsolute = currentDirAbsolutePath + reqPath;
 
-    if (!strncmp(toMatch.c_str(), reqPath.c_str(), toMatch.length())) {
+    if (!strncmp(toMatch.c_str(), reqPath.c_str(), toMatch.length()))
+    {
+        
         if (!stat(reqPathAsbsolute.c_str(), &reqPathCheck)
-            && (reqPathCheck.st_mode & S_IFDIR) && loc.getAutoindex()) {
+            && (reqPathCheck.st_mode & S_IFDIR) && loc.getAutoindex())
+        {
+            std::cout << "directories listing!!" << std::endl; 
             if (!stat(aIndexFile.c_str(), &st) && st.st_mode & S_IFREG)
                 showIndexFile(aIndexFile);
             else
+            {
                 listDirectories(reqPath);
+            }
         }
         else if (!stat(aIndexFile.c_str(), &st) && st.st_mode & S_IFREG)
             showIndexFile(aIndexFile);
@@ -128,11 +134,11 @@ void Response::checkAutoIndex(Config& config, Request req) {
         else
             pathMatch = uri;
         std::cout << pathMatch<<std::endl;
-        if (uri.length() > 0 && uri[0] == '/') //dir should have a leading slash 
+        if (uri.length() > 0 && uri[0] == '/'){ //dir should have a leading slash 
             matchReqPathWithLocation(config, *itLocations, req.getPath(), pathMatch);
+        }
         itLocations++;
     }
-    std::cout << "no location matched!!" <<std::endl;
 }
 
 int    Response::checkDefinedErrorPage(std::string rootPath, std::map<int, std::string> error_page) {
@@ -153,6 +159,7 @@ void    Response::returnDefinedPage(std::string rootPath, std::string errorPageF
         errorPageFile = currentDirAbsolutePath + errorPageFile;
     else
         errorPageFile = rootPath + errorPageFile;
+    std::cout << "Error page " << errorPageFile<< std::endl;
     std::ifstream definedPage(errorPageFile.c_str());
     if (!definedPage.is_open()) {
         std::cerr << "Failed to open defined file " << errorPageFile << std::endl;

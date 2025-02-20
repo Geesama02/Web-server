@@ -6,19 +6,16 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/17 10:34:46 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/02/19 16:16:41 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/02/20 09:42:56 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Client.hpp"
 // #include "../Cgi/Cgi.hpp"
 
-Client::Client() {
-    std::cout << "client constructed!!" <<std::endl;
-}
-Client::~Client() {
-    std::cout << "Client Destructor"<< std::endl;
-}
+Client::Client() {}
+Client::~Client() {}
+
 // Getters
 int      Client::getFdClient() { return fdClient; }
 Request& Client::getRequest() { return (req); }

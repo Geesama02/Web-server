@@ -6,7 +6,7 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/03 11:07:50 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/02/19 16:41:29 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/02/20 09:42:08 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -71,7 +71,7 @@ int UploadFile::openFile() {
 
 // Destructor
 UploadFile::~UploadFile() {
-    // std::cout << "Destroyed file -> |" << filename << "|\n";
+    std::cout << "Destroyed file -> |" << filename << "|\n";
     if (fd && fd->is_open()) {
         if (!state) { // delete file if connection closed before full file uploaded
             int status = remove(filename.c_str());

@@ -6,7 +6,7 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/21 15:07:06 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/02/19 11:42:19 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/02/20 09:58:31 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -35,12 +35,16 @@ class Config {
         std::vector<Server>    getServers();
         std::map<int, Client>& getClients();
 
+        //constructor
+        Config();
+
         // Setters
         void addServer(Server new_server);
         void setTimeoutResponseFlag(bool nValue);
 
         // Functions
         void    checkCgiScriptExecution(int fd);
+        void    monitorTimeoutCgiScripts(int cFd);
         void    checkScriptTimeOut(int fd);
         int     startServers();
         int     monitorServers(int epoll_fd, epoll_event& ev);
