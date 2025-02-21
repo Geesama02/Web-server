@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/14 17:03:53 by maglagal          #+#    #+#             */
-/*   Updated: 2025/02/16 16:09:32 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/02/20 14:39:21 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,7 +32,7 @@ Response::Response() {
 
 //Destructor
 Response::~Response() {
-    std::cout << "Response destuctor client " <<clientFd<< std::endl;
+    // std::cout << "Response destuctor client " <<clientFd<< std::endl;
 }
 
 //getters
@@ -306,8 +306,8 @@ void Response::sendResponse(Config& config, Request req, int fd) {
 
     Config::Responses[clientFd] = *this;
 
-    std::cout << "----------------------------"<<std::endl;
-    std::cout << finalRes<<std::endl;
+    // std::cout << "----------------------------"<<std::endl;
+    // std::cout << finalRes<<std::endl;
 
     send(clientFd, finalRes.c_str(), finalRes.length(), 0);
 }

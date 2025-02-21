@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Request.hpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
+/*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/30 11:15:32 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/02/18 12:52:48 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/02/21 15:45:55 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,7 +25,7 @@
 #include <ctime>
 
 #include "UploadFile.hpp"
-// #include "../Config/Config.hpp"
+// #include "../Parser/Parser.hpp"
 
 class Response;
 class Server;
@@ -35,6 +35,9 @@ class Request {
         std::map<std::string, std::string> Headers;
         static std::map<int, std::string>  reqStatus;
         UploadFile                         *file;
+        int                                state;
+        int                                headersLength;
+        std::string                        holder;
         std::string                        fileName;
         std::string                        method;
         std::string                        path;
@@ -89,7 +92,10 @@ class Request {
         std::string generateRes(int status);
         std::string getDate();
         int checkMethod(std::string str);
-        void clear();
+        void clearReq();
+        int continueReq(std::string& buffer, size_t stop_p);
+        int handleReqLine(std::stringstream& s);
+        std::string urlDecode(std::string path);
 
         // Destructor
         ~Request();

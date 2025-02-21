@@ -3,16 +3,17 @@
 /*                                                        :::      ::::::::   */
 /*   Request.cpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
+/*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/30 12:07:04 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/02/18 10:31:26 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/02/21 17:02:43 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Request.hpp"
 // #include "../Response/Response.hpp"
 #include "../Config/Config.hpp"
+#include "../Parser/Parser.hpp"
 
 // std::map<int, UploadFile> Request::uploads;
 // std::map<int, Request> Request::unfinishedReqs;
@@ -20,6 +21,8 @@ std::map<int, std::string> Request::reqStatus;
 
 // Constructor
 Request::Request() {
+    headersLength = 0;
+    state = 1;
     Request::reqStatus.insert(std::make_pair(201, "Created"));
     Request::reqStatus.insert(std::make_pair(400, "Bad Request"));
     Request::reqStatus.insert(std::make_pair(405, "Method Not Allowed"));
@@ -29,6 +32,7 @@ Request::Request() {
     Request::reqStatus.insert(std::make_pair(500, "Internal Server Error"));
     Request::reqStatus.insert(std::make_pair(501, "Not Implemented"));
     Request::reqStatus.insert(std::make_pair(505, "HTTP Version Not Supported"));
+    file = NULL;
 }
 
 // Getters
@@ -101,33 +105,94 @@ int Request::checkMethod(std::string str) {
     return (1);
 }
 
-int Request::parse(std::string buffer, size_t stop_p) {
-    std::stringstream s(buffer);
+int Request::continueReq(std::string& buffer, size_t stop_p) {
+    if (!holder.empty()) {
+        buffer = holder + buffer;
+        holder.clear();
+    }
+    if (stop_p == std::string::npos) {
+        size_t last_pos = buffer.rfind("\r\n");
+        if (last_pos == std::string::npos) {
+            holder = buffer;
+            if (holder.size() > 8192 && !state)
+                return (400);
+        }
+        else {
+            holder = buffer.substr(last_pos + 2);
+            buffer.erase(last_pos + 2);
+        }
+    }
+    return (0);
+}
+
+std::string Request::urlDecode(std::string path) {
+    // std::string ret;
+    Parser::replace(path, "+", " ");
+    size_t index = path.find('%');
+    while(index != std::string::npos) {
+        std::string tmp = path.substr(index + 1, 2);
+        path.erase(index, 3);
+        std::string c;
+        c += static_cast<char>(hexToDecimal(tmp));
+        // std::cout << "c -> " << c << std::endl;
+        path.insert(index, c.c_str());
+        index = path.find('%', index + 2);
+    }
+    return (path);
+}
+
+int Request::handleReqLine(std::stringstream& s) {
     std::string line;
-    if (std::getline(s, line)) {
+    if (state && std::getline(s, line)) {
         std::vector<std::string> holder;
         holder = split(line, 1, ' ');
-        // std::cout << "size-> " << holder.size() << std::endl;
         if (holder.size() == 2) {
             if (!checkMethod(holder[0]))
                 return (400);
             if (holder[1].size() > 2048)
                 return (414);
-        }
-        else if (holder.size() != 3 || stop_p == std::string::npos || (holder.size() >=1 && !checkMethod(holder[0])))
             return (400);
+        }
+        else if (holder.size() != 3 || (holder.size() >= 1 && !checkMethod(holder[0])))
+            return (400);
+        if (holder[1].size() > 2048)
+            return (414);
+        if (holder[2] != "HTTP/1.1\r")
+            return (505);
+        if (*holder[1].begin() != '/')
+            return (400);
+        headersLength += line.size() + 1;
         setMethod(holder[0]);
-        setPath(holder[1]);
+        std::cout << "old -> " << holder[1] << std::endl;
+        std::string decodedUrl = urlDecode(holder[1]);
+        std::cout << "new -> " << decodedUrl << std::endl;
+        setPath(decodedUrl);
         setVersion(holder[2]);
     }
+    return (0);
+}
+
+int Request::parse(std::string buffer, size_t stop_p) {
+    if (continueReq(buffer, stop_p) != 0)
+        return (400);
+    std::stringstream s(buffer);
+    std::string line;
+    int retValue = handleReqLine(s);
+    if (retValue != 0)
+        return (retValue);
     while (std::getline(s, line) && line != "\r") {
+        headersLength += line.size();
         std::vector<std::string> holder = split(line, 0, ':');
-        if (holder.size() != 2)
+        if (holder.size() != 2 || line.size() >= 8192 || headersLength > 32768)
             return (400);
         Headers[holder[0]] = holder[1];
     }
-    if (stop_p == std::string::npos)
-        return (400);
+    if (stop_p == std::string::npos) {
+        state = 0;
+        return (2);
+    }
+    else
+        state = 1;
     return (0);
 }
 
@@ -152,6 +217,7 @@ int Request::handleFirstPart(UploadFile& file, std::string& str) {
     }
     return (0);
 }
+
 int Request::handleFilePart(UploadFile& file, std::string& str) {
     size_t stopPos;
     if ((stopPos = str.find("\r\n--" + file.getBoundary() + "--")) != std::string::npos) {
@@ -425,18 +491,20 @@ Server Request::getServer(Server& server, std::vector<Server>& Servers) {
     return (server);
 }
 
-void Request::clear() {
+void Request::clearReq() {
     Headers.clear();
     fileName.clear();
     method.clear();
     path.clear();
     version.clear();
+    headersLength = 0;
 }
 
 int Request::readHeaders(std::string& str, Server& server, std::vector<Server>& Servers) {
     if (!file) {
         int status;
-        clear();
+        if (state)
+            clearReq();
         size_t stop_p = str.find("\r\n\r\n");
         if ((status = parse(str, stop_p)) != 0)
             return (status);

@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   DirectoryResolver.cpp                              :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
+/*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/09 09:49:11 by maglagal          #+#    #+#             */
-/*   Updated: 2025/02/19 10:36:39 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/02/21 16:57:41 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,8 +24,8 @@
 //5- if not index.html and not autoindex = 404 not found
 
 int    Response::comparingReqWithLocation(std::string locationPath, std::string reqPath) {
-    std::cout << locationPath << std::endl;
-    std::cout << reqPath << std::endl;
+    // std::cout << locationPath << std::endl;
+    // std::cout << reqPath << std::endl;
     size_t i = locationPath.find(reqPath);
     std::string rest = locationPath.substr(i);
     return (0);
@@ -37,6 +37,14 @@ void    Response::showIndexFile(std::string indexFilePath) {
     setStatusCode(200);
     while (std::getline(indexFile, buff))
         body += buff;
+}
+
+void Response::urlEncode(std::string& path) {
+    for (std::string::iterator i = path.begin(); i != path.end(); i++) {
+        if (!isalnum(*i) && *i != '-' && *i != '_' && *i != '.' && *i != '~') {
+            
+        }
+    }
 }
 
 void Response::listDirectories(std::string reqPath) {
@@ -62,12 +70,13 @@ void Response::listDirectories(std::string reqPath) {
         direntName = stDir->d_name;
         if (direntName != ".") {
             direntPath = reqPath + direntName;
+            std::cout << "direntPath -> " << direntPath << std::endl;
             std::string absoluteDirentPath = currentDirAbsolutePath + direntPath;
             if (!stat(absoluteDirentPath.c_str(), &st) && st.st_mode & S_IFDIR) {
                 direntPath += "/";
                 direntName += "/";
             }
-            row = "<a href=" + direntPath + ">" + "<p>" + direntName;
+            row = "<a href=\"" + direntPath + "\">" + "<p>" + direntName;
             row += "</p></a>";
             lDirectoriesPage += row;
         }
@@ -127,12 +136,12 @@ void Response::checkAutoIndex(Config& config, Request req) {
             pathMatch = root + uri;
         else
             pathMatch = uri;
-        std::cout << pathMatch<<std::endl;
+        // std::cout << pathMatch<<std::endl;
         if (uri.length() > 0 && uri[0] == '/') //dir should have a leading slash 
             matchReqPathWithLocation(config, *itLocations, req.getPath(), pathMatch);
         itLocations++;
     }
-    std::cout << "no location matched!!" <<std::endl;
+    // std::cout << "no location matched!!" <<std::endl;
 }
 
 int    Response::checkDefinedErrorPage(std::string rootPath, std::map<int, std::string> error_page) {

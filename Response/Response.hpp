@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/14 16:55:34 by maglagal          #+#    #+#             */
-/*   Updated: 2025/02/17 12:09:19 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/02/21 16:43:52 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -92,6 +92,7 @@ class Response {
         void            sendResponse(Config& config, Request req, int fd);
         void            sendBodyBytes();
         void            handleRangeRequest(Request req);
+        void            urlEncode(std::string& path);
 };
 
 #endif

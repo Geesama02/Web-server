@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Cgi.cpp                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
+/*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/30 18:22:44 by maglagal          #+#    #+#             */
-/*   Updated: 2025/02/19 10:34:57 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/02/20 10:22:06 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,7 +20,7 @@ CGI::CGI() {
 }
 
 CGI::~CGI() {
-    std::cout << "cgi destructor called"<<std::endl;
+    // std::cout << "cgi destructor called"<<std::endl;
 }
 
 //getters

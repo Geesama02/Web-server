@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Config.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
+/*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/22 11:25:38 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/02/19 10:30:29 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/02/21 15:58:32 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -136,7 +136,7 @@ int Config::startServers() {
                 if (isServerFd(fd))
                     acceptConnection(fd, epoll_fd, ev);
                 else {
-                    std::cout << "request sent!! " <<"client "<<events[i].data.fd<<std::endl;
+                    // std::cout << "request sent!! " <<"client "<<events[i].data.fd<<std::endl;
                     handleClient(fd, epoll_fd);
                 }
             }
@@ -286,7 +286,7 @@ int Config::handleClient(int fd, int epoll_fd) {
     
     Clients[fd].setTimeout(timeNow());
     status = Clients[fd].getRequest().readRequest(fd, Clients[fd].getServer(), Servers);
-    // std::cout << "status -> " << status << std::endl;
+    std::cout << "status -> " << status << std::endl;
     if (status == 1) // connection is closed
         closeConnection(epoll_fd, fd);
     else if (status == 2) // if file is uploading
@@ -301,7 +301,10 @@ int Config::handleClient(int fd, int epoll_fd) {
     }
     else {
         if (!Clients[fd].getRequest().getPath().empty()) {
-            // std::cout << "path -> " << request.getPath() << std::endl;
+            // std::cout << "path -> " << Clients[fd].getRequest().getPath() << std::endl;
+            // for (std::map<std::string, std::string>::iterator it = Clients[fd].getRequest().getHeaders().begin() ; it != Clients[fd].getRequest().getHeaders().end(); it++) {
+            //     std::cout << it->first << " = " << it->second << std::endl;
+            // }
             std::string tmp = Clients[fd].getRequest().getHeaders()["host"];
             size_t pos = tmp.rfind(':');
             if (pos != std::string::npos)

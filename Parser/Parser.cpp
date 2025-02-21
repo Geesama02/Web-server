@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/21 14:31:56 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/02/16 10:56:00 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/02/21 15:43:16 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -64,7 +64,6 @@ void Parser::replace(std::string& line, std::string old_char, std::string new_ch
     while(index != std::string::npos) {
         line.erase(index, old_char.size());
         line.insert(index, new_char);
-        // line.replace(index, new_char.size(), new_char.c_str());
         index = line.find(old_char, index + new_char.size());
     }
 }
