@@ -6,7 +6,7 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/30 18:22:52 by maglagal          #+#    #+#             */
-/*   Updated: 2025/02/20 17:43:38 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/02/21 18:07:42 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -37,19 +37,20 @@ class CGI {
         std::vector<char *>                  Envs;
         std::map<std::string, std::string>   executablePaths;
         std::vector<std::string>             headersInScript;
-        char        *envs[8];
-        char        *argv[3];
-        std::string scriptRelativePath;
-        std::string scriptFileName;
-        std::string extensionFile;
-        std::string cgiRes;
-        std::string ResBody;
-        pid_t       cPid;
-        int         rPipe;
-        int         timeout;
-        long long   startTime;
-        char*       executablePathArray;
-        char*       absoluteFilePath;
+        char                                 *envs[8];
+        char                                 *argv[3];
+        std::string                          scriptRelativePath;
+        std::string                          scriptFileName;
+        std::string                          extensionFile;
+        std::string                          cgiRes;
+        std::string                          ResBody;
+        pid_t                                cPid;
+        int                                  rPipe;
+        int                                  timeout;
+        int                                  childStatus;
+        long long                            startTime;
+        char*                                executablePathArray;
+        char*                                absoluteFilePath;
         
 
     public :
@@ -59,26 +60,32 @@ class CGI {
         ~CGI();
 
         //getters
-        pid_t     getCpid();
-        int       getRpipe();
-        int       getTimeout();
-        long long getStartTime();
+        std::string     getBody();
+        int             getChildStatus();
+        pid_t           getCpid();
+        int             getRpipe();
+        int             getTimeout();
+        long long       getStartTime();
 
         //setters
-        void   setCpid(pid_t nPid);
-        void   setRpipe(int nRpipe);
-        void   setTimeout(int nTimeout);
-        void   setStartTime(long long nTime);
+        void            setBody(std::string newBody);
+        void            setChildStatus(int newChildStatus);
+        void            setCpid(pid_t nPid);
+        void            setRpipe(int nRpipe);
+        void            setTimeout(int nTimeout);
+        void            setStartTime(long long nTime);
         
 
         //other
-        void defineExecutionPaths();
+        int  failureHandler(Config& config, int fd);
+        void defineArgv();
+        void defineExecutionPaths(int fd, Config& config);
         void clearCGI();
-        void execute_cgi_script(Config& config, Response& res, int fd, Request req);
+        int  execute_cgi_script(Config& config, Response& res, int fd, Request req);
         void initializeVars(Response& res, Request req);
         void setEnvVars(Request req, Response& res);
-        void findExecutablePath();
-        void read_cgi_response();
+        int  findExecutablePath(Config& config, int fd);
+        int  read_cgi_response(Config& config, int fd);
         void sendServerResponse(int fd, Config& config);
         void findHeadersInsideScript(Response& res);
         void convertHeaderToCamelCase(std::string& value);

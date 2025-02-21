@@ -6,7 +6,7 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/14 16:55:34 by maglagal          #+#    #+#             */
-/*   Updated: 2025/02/20 09:30:34 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/02/21 18:15:53 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -38,7 +38,7 @@ class Request;
 
 class Response {
     private:
-        std::ifstream *file;
+        std::ifstream                      *file;
         std::map<std::string, std::string> Headers;
         int                                clientFd;
         int                                statusCode;
@@ -46,6 +46,7 @@ class Response {
         std::string                        finalRes;
         std::string                        queryString;
         std::string                        currentDirAbsolutePath;
+        std::string                        body;
         void                               fillBody(Config& config, Request req);
         void                               initializeContentHeader();
         void                               checkForFileExtension(std::string fileName);
@@ -57,12 +58,10 @@ class Response {
         void                               showIndexFile(std::string indexFilePath);
         int                                comparingReqWithLocation(std::string locationPath, std::string reqPath);
         void                               vertifyDirectorySlash(std::string fileName);
-        void                               fromIntTochar(int number, char **buff);
     public:
         // std::map<int, std::ifstream *>     files;
         // size_t                                    totalBytesSent;
         // size_t                                    bytesToSend;
-        std::string                               body;
         static std::map<std::string, std::string> ContentHeader;
 
         //constructor
@@ -85,16 +84,19 @@ class Response {
         void            setHeader( std::string key, std::string value );
         
         //other
+        void            addHeadersToResponse();
         void            clearResponse();
-        void            timeoutResponse(int fd);
+        // void            timeoutResponse(int fd);
         void            checkForQueryString(std::string& fileName);
         void            successResponse(Request req);
         void            notFoundResponse();
         void            forbiddenResponse();
         void            redirectionResponse(Request req, Config& config);
+        void            badGatewayResponse();
+        void            internalServerErrorResponse();
         void            searchForFile(Request Req);
         void            sendResponse(Config& config, Request req, int fd);
-        void            sendBodyBytes();
+        int             sendBodyBytes();
         void            handleRangeRequest(Request req);
 };
 

@@ -6,7 +6,7 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/09 09:49:11 by maglagal          #+#    #+#             */
-/*   Updated: 2025/02/20 09:41:06 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/02/21 09:31:08 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -124,7 +124,8 @@ void Response::checkAutoIndex(Config& config, Request req) {
 
     while (itLocations != config.getClients()[clientFd].getServer().getLocations().end()) {
         uri = (*itLocations).getURI();
-        if (uri.rfind("/") == 0 && uri.length() != 1) {
+        if (uri.rfind("/") == 0 && uri.length() != 1)
+        {
             uri = uri + "/";
             (*itLocations).setURI(uri);
         }
@@ -134,9 +135,8 @@ void Response::checkAutoIndex(Config& config, Request req) {
         else
             pathMatch = uri;
         std::cout << pathMatch<<std::endl;
-        if (uri.length() > 0 && uri[0] == '/'){ //dir should have a leading slash 
+        if (uri.length() > 0 && uri[0] == '/') //dir should have a leading slash 
             matchReqPathWithLocation(config, *itLocations, req.getPath(), pathMatch);
-        }
         itLocations++;
     }
 }

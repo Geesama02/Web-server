@@ -6,7 +6,7 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/22 11:25:38 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/02/20 17:03:45 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/02/21 18:24:33 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,17 +16,10 @@
 
 // Getters
 std::vector<Server>     Config::getServers() { return Servers; }
-bool                    Config::getTimeoutResponseFlag() { return timeoutResponseFlag; }
 std::map<int, Client>&  Config::getClients() { return Clients; }
 
 // Setters
 void    Config::addServer(Server new_server) { Servers.push_back(new_server); }
-void    Config::setTimeoutResponseFlag(bool nValue) { timeoutResponseFlag = nValue; }
-
-//constructor
-Config::Config() {
-    timeoutResponseFlag = false;
-}
 
 void    timeoutResponse(int fd) {
     std::string res;
@@ -61,38 +54,40 @@ void    timeoutResponse(int fd) {
 }
 
 void    Config::checkCgiScriptExecution(int fd) {
+    int status;
     std::map<int, Client>::iterator it = Clients.begin();
     while (it != Clients.end())
     {
         if (it->first == fd && Clients[fd].getCGI().getCpid() != 0) {
-            pid_t child = waitpid(Clients[fd].getCGI().getCpid(), NULL, WNOHANG);
-            // std::cout << "child pid from waitpid "<<child<<std::endl;
-            if (child == 0) {
-                // std::cout << "client " << fd<<std::endl;
-                // std::cout << "child pid "<<Clients[fd].getCGI().getCpid()<<std::endl;
-                // std::cout << "child not yet finished exeuction!!"<<std::endl;
-            }
-            else if(child == -1) {
-                // std::cout << "child pid "<<Clients[fd].getCGI().getCpid()<<std::endl;
-                // std::cerr<< "error in child!!" << std::endl;
-                // std::cout <<strerror(errno)<<std::endl;
-            }
-            else {
-                // std::cout << "child pid "<<Clients[fd].getCGI().getCpid()<<std::endl;
-                // std::cout << "child finished exeuction!!"<<std::endl;
+            pid_t child = waitpid(Clients[fd].getCGI().getCpid(), &status, WNOHANG);
+            if (child > 0) {
             
                 // read the ouput of the script executed by the cgi
-                std::cout << "---------------------------------"<< std::endl;
-                std::cout << "child pid finished executing "<<child<< std::endl;
-                std::cout << "finished executing client fd" <<fd<< std::endl;
-                std::cout << "child pid of cgi script " <<Clients[fd].getCGI().getCpid() <<std::endl;
-                std::cout << "pipe fd " <<Clients[fd].getCGI().getRpipe() <<std::endl;
-                // std::cout <<"send response!!"<<std::endl;
-                // close(fds[0]);
-                // std::cout << "res body "<< Clients[fd].getResponse().body<<std::endl;
-                Clients[fd].getCGI().read_cgi_response();
-                Clients[fd].getCGI().sendServerResponse(fd, *this);
-                Clients[fd].getCGI().clearCGI();
+                // std::cout << "---------------------------------"<< std::endl;
+                // std::cout << "child pid finished executing "<<child<< std::endl;
+                // std::cout << "finished executing client fd" <<fd<< std::endl;
+                // std::cout << "child pid of cgi script " <<Clients[fd].getCGI().getCpid() <<std::endl;
+                // std::cout << "pipe fd " <<Clients[fd].getCGI().getRpipe() <<std::endl;
+    
+                if (WEXITSTATUS(status)) {
+                    Clients[fd].getCGI().setChildStatus(WEXITSTATUS(status));
+                    Clients[fd].getCGI().clearCGI();
+                    Clients[fd].getResponse().clearResponse();
+                    Clients[fd].getResponse().setStatusCode(502);
+                    Clients[fd].getResponse().sendResponse(*this, Clients[fd].getRequest(), fd);
+                }
+                else { 
+                    if (Clients[fd].getCGI().read_cgi_response(*this, fd) == -1) {
+                        Clients[fd].getCGI().clearCGI();
+                        Clients[fd].getResponse().clearResponse();
+                        Clients[fd].getResponse().setStatusCode(502);
+                        Clients[fd].getResponse().sendResponse(*this, Clients[fd].getRequest(), fd);
+                        closeConnection(fd);
+                        return ;
+                    }
+                    Clients[fd].getCGI().sendServerResponse(fd, *this);
+                    Clients[fd].getCGI().clearCGI();
+                }
             }
         }
         it++;
@@ -110,10 +105,8 @@ void    Config::checkScriptTimeOut(int fd) {
                 kill(Clients[fd].getCGI().getCpid(), SIGTERM);
                 waitpid(Clients[fd].getCGI().getCpid(), NULL, 0);
                 close(Clients[fd].getCGI().getRpipe());
-                timeoutResponseFlag = true;
                 timeoutResponse(fd);
-                // closeConnection(fd);
-                timeoutResponseFlag = false;
+                closeConnection(fd);
             }
         }
         it++;
@@ -144,28 +137,25 @@ int Config::startServers() {
                 int fd = events[i].data.fd;
                 if (isServerFd(fd))
                     acceptConnection(fd, ev);
-                else {
-                    std::cout << "Client size " << Clients.size()<< std::endl;
-                    std::cout << "request sent!! " <<"client "<<events[i].data.fd<<std::endl;
+                else
                     handleClient(fd);
-                }
             }
             else if (events[i].events & EPOLLERR) {
                 std::cerr << "Socket error on fd: " << events[i].data.fd << std::endl;
                 Clients.erase(events[i].data.fd);
                 close(events[i].data.fd);
-                // if (clientTimeout.find(events[i].data.fd) != clientTimeout.end())
-                //     clientTimeout.erase(events[i].data.fd);
                 epoll_ctl(epoll_fd, EPOLL_CTL_DEL, events[i].data.fd, NULL);
-                // if (Response::files.find(events[i].data.fd) != Response::files.end()) {
-                //     Response::files[events[i].data.fd]->close();
-                //     Response::files.erase(events[i].data.fd);
-                // }
             }
             else if (events[i].events & EPOLLOUT) {
-                Clients[events[i].data.fd].getResponse().sendBodyBytes();
+                if (Clients[events[i].data.fd].getResponse().sendBodyBytes() == -1)
+                {
+                    Clients[events[i].data.fd].getResponse().clearResponse();
+                    Clients[events[i].data.fd].getResponse().setStatusCode(502);
+                    Clients[events[i].data.fd].getResponse().sendResponse(*this, Clients[events[i].data.fd].getRequest(), events[i].data.fd);
+                }
             }
-            if (events[i].data.fd != 0) {
+            if (events[i].data.fd != 0)
+            {
                 checkCgiScriptExecution(events[i].data.fd);
                 checkScriptTimeOut(events[i].data.fd);
             }

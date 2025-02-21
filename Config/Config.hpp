@@ -6,7 +6,7 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/21 15:07:06 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/02/20 11:36:43 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/02/21 18:20:49 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,15 +29,11 @@ class Config {
         int                   epoll_fd;
         std::vector<Server>   Servers;
         std::map<int, Client> Clients;
-        bool                  timeoutResponseFlag;
     public:        
         // Getters
         bool                   getTimeoutResponseFlag();
         std::vector<Server>    getServers();
         std::map<int, Client>& getClients();
-
-        //constructor
-        Config();
 
         // Setters
         void addServer(Server new_server);
