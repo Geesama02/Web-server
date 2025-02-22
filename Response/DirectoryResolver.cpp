@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/09 09:49:11 by maglagal          #+#    #+#             */
-/*   Updated: 2025/02/21 16:57:41 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/02/22 16:51:17 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -39,12 +39,20 @@ void    Response::showIndexFile(std::string indexFilePath) {
         body += buff;
 }
 
-void Response::urlEncode(std::string& path) {
+std::string Response::urlEncode(std::string path) {
+    std::string res;
     for (std::string::iterator i = path.begin(); i != path.end(); i++) {
-        if (!isalnum(*i) && *i != '-' && *i != '_' && *i != '.' && *i != '~') {
-            
+        if (!isalnum(*i) && *i != '-' && *i != '_' && *i != '.' && *i != '~' && *i != '/') {
+            int n = static_cast<int>(*i);
+            std::stringstream s;
+            s << '%' << std::setw(2) << std::setfill('0') << std::uppercase 
+                << std::hex << n << std::nouppercase;
+            res += s.str();
         }
+        else 
+            res += *i;
     }
+    return (res);
 }
 
 void Response::listDirectories(std::string reqPath) {
@@ -54,6 +62,7 @@ void Response::listDirectories(std::string reqPath) {
     std::string dirAsbolute = currentDirAbsolutePath + reqPath;
     std::string direntName;
     std::string direntPath;
+    std::string EncodedPath;
 
     setStatusCode(200);
     DIR *dir = opendir(dirAsbolute.c_str());
@@ -70,13 +79,14 @@ void Response::listDirectories(std::string reqPath) {
         direntName = stDir->d_name;
         if (direntName != ".") {
             direntPath = reqPath + direntName;
-            std::cout << "direntPath -> " << direntPath << std::endl;
+            EncodedPath = urlEncode(reqPath + direntName);
+            // std::cout << "direntPath -> " << direntPath << std::endl;
             std::string absoluteDirentPath = currentDirAbsolutePath + direntPath;
             if (!stat(absoluteDirentPath.c_str(), &st) && st.st_mode & S_IFDIR) {
-                direntPath += "/";
+                EncodedPath += "/";
                 direntName += "/";
             }
-            row = "<a href=\"" + direntPath + "\">" + "<p>" + direntName;
+            row = "<a href=\"" + EncodedPath + "\">" + "<p>" + direntName;
             row += "</p></a>";
             lDirectoriesPage += row;
         }

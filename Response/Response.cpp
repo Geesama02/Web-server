@@ -6,12 +6,13 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/14 17:03:53 by maglagal          #+#    #+#             */
-/*   Updated: 2025/02/20 14:39:21 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/02/22 16:45:34 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Response.hpp"
 #include "../Config/Config.hpp"
+#include "../Parser/Parser.hpp"
 
 std::map<int, std::ifstream *> Response::files;
 std::map<std::string, std::string> Response::ContentHeader;
@@ -195,14 +196,15 @@ void Response::vertifyDirectorySlash(std::string fileName) {
         statusCode = 301;
 }
 
-void Response::searchForFile(Request req) {
+void Response::searchForFile(Request& req) {
     struct stat st;
     std::string fileName = req.getPath();
     char buff3[150];
 
     //seperating filename from querystring
     checkForQueryString(fileName);
-
+    req.setPath(req.urlDecode(req.getPath()));
+    fileName = req.urlDecode(fileName);
     if (fileName != "/")
         fileName.erase(0, 1);
     else {

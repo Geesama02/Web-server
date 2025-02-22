@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/30 11:15:32 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/02/21 15:45:55 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/02/22 16:05:03 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -58,7 +58,7 @@ class Request {
 
         // Setters
         void setMethod(std::string& m);
-        void setPath(std::string& p);
+        void setPath(std::string p);
         void setVersion(std::string& v);
         void setBody(std::string& b);
         void addUpload(UploadFile& new_upload);

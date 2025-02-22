@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/30 12:07:04 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/02/21 17:02:43 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/02/22 16:24:30 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -46,7 +46,7 @@ std::string Request::getBody() { return body; }
 
 // Setters
 void Request::setMethod(std::string& m) { method = m; }
-void Request::setPath(std::string& p) { path = p; }
+void Request::setPath(std::string p) { path = p; }
 void Request::setVersion(std::string& v) { version = v; }
 void Request::setBody(std::string& b) { body = b; }
 void Request::addUpload(UploadFile& new_upload) {
@@ -126,17 +126,14 @@ int Request::continueReq(std::string& buffer, size_t stop_p) {
 }
 
 std::string Request::urlDecode(std::string path) {
-    // std::string ret;
-    Parser::replace(path, "+", " ");
     size_t index = path.find('%');
     while(index != std::string::npos) {
         std::string tmp = path.substr(index + 1, 2);
         path.erase(index, 3);
         std::string c;
         c += static_cast<char>(hexToDecimal(tmp));
-        // std::cout << "c -> " << c << std::endl;
         path.insert(index, c.c_str());
-        index = path.find('%', index + 2);
+        index = path.find('%', index + 1);
     }
     return (path);
 }
@@ -163,10 +160,11 @@ int Request::handleReqLine(std::stringstream& s) {
             return (400);
         headersLength += line.size() + 1;
         setMethod(holder[0]);
-        std::cout << "old -> " << holder[1] << std::endl;
-        std::string decodedUrl = urlDecode(holder[1]);
-        std::cout << "new -> " << decodedUrl << std::endl;
-        setPath(decodedUrl);
+        // std::cout << "old -> " << holder[1] << std::endl;
+        // std::string decodedUrl = urlDecode(holder[1]);
+        // std::cout << "new -> " << decodedUrl << std::endl;
+        // setPath(decodedUrl);
+        setPath(holder[1]);
         setVersion(holder[2]);
     }
     return (0);

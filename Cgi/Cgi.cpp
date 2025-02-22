@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/30 18:22:44 by maglagal          #+#    #+#             */
-/*   Updated: 2025/02/20 10:22:06 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/02/22 10:09:45 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,7 +15,7 @@
 
 CGI::CGI() {
     timeout = 5000;
-    executablePaths[".py"] = "/home/maglagal/Desktop/webserv/cgi-bin/myenv/bin/python";
+    executablePaths[".py"] = "/usr/bin/python3";
     executablePaths[".php"] = "/usr/bin/php";
 }
 

@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/14 16:55:34 by maglagal          #+#    #+#             */
-/*   Updated: 2025/02/21 16:43:52 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/02/22 16:43:50 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,6 +27,7 @@
 #include <sstream>
 #include <sys/types.h>
 #include <fstream>
+#include <iomanip>
 
 // #include "../Request/Request.hpp"
 // #include "../Config/Config.hpp"
@@ -88,11 +89,11 @@ class Response {
         void            notFoundResponse();
         void            forbiddenResponse();
         void            redirectionResponse(Request req, Config& config);
-        void            searchForFile(Request Req);
+        void            searchForFile(Request& Req);
         void            sendResponse(Config& config, Request req, int fd);
         void            sendBodyBytes();
         void            handleRangeRequest(Request req);
-        void            urlEncode(std::string& path);
+        std::string     urlEncode(std::string path);
 };
 
 #endif
