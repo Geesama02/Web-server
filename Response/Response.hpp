@@ -27,6 +27,7 @@
 #include <sstream>
 #include <sys/types.h>
 #include <fstream>
+#include <iomanip>
 
 // #include "../Request/Request.hpp"
 // #include "../Config/Config.hpp"
@@ -91,9 +92,10 @@ class Response {
         void            successResponse(Request req);
         void            redirectionResponse(Request req, Config& config);
         void            rangeResponse(Request req);
-        void            searchForFile(Request Req);
         void            sendResponse(Config& config, Request& req, int fd);
         int             sendBodyBytes();
+        void            searchForFile(Request& Req);
+        std::string     urlEncode(std::string path);
 };
 
 #endif

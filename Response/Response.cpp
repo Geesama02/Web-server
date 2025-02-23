@@ -12,6 +12,7 @@
 
 #include "Response.hpp"
 #include "../Config/Config.hpp"
+#include "../Parser/Parser.hpp"
 
 // std::map<int, std::ifstream *> Response::files;
 std::map<std::string, std::string> Response::ContentTypeHeader;
@@ -264,14 +265,15 @@ void Response::vertifyDirectorySlash(std::string fileName) {
         statusCode = 301;
 }
 
-void Response::searchForFile(Request req) {
+void Response::searchForFile(Request& req) {
     struct stat st;
     std::string fileName = req.getPath();
     char buff3[150];
 
     //seperating filename from querystring
     checkForQueryString(fileName);
-
+    req.setPath(req.urlDecode(req.getPath()));
+    fileName = req.urlDecode(fileName);
     if (fileName != "/")
         fileName.erase(0, 1);
     else {
@@ -374,7 +376,6 @@ void Response::sendResponse(Config& config, Request& req, int fd) {
     finalRes += "\r\n";
     if (!body.empty())
         finalRes += body;
-
     send(clientFd, finalRes.c_str(), finalRes.length(), 0);
     if (statusCode >= 500)
         config.closeConnection(fd);

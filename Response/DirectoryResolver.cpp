@@ -3,7 +3,7 @@
 /*                                                        :::      ::::::::   */
 /*   DirectoryResolver.cpp                              :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
+/*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/09 09:49:11 by maglagal          #+#    #+#             */
 /*   Updated: 2025/02/23 09:21:06 by maglagal         ###   ########.fr       */
@@ -24,8 +24,8 @@
 //5- if not index.html and not autoindex = 404 not found
 
 int    Response::comparingReqWithLocation(std::string locationPath, std::string reqPath) {
-    std::cout << locationPath << std::endl;
-    std::cout << reqPath << std::endl;
+    // std::cout << locationPath << std::endl;
+    // std::cout << reqPath << std::endl;
     size_t i = locationPath.find(reqPath);
     std::string rest = locationPath.substr(i);
     return (0);
@@ -39,6 +39,23 @@ void    Response::showIndexFile(std::string indexFilePath) {
         body += buff;
 }
 
+std::string Response::url
+(std::string path) {
+    std::string res;
+    for (std::string::iterator i = path.begin(); i != path.end(); i++) {
+        if (!isalnum(*i) && *i != '-' && *i != '_' && *i != '.' && *i != '~' && *i != '/') {
+            int n = static_cast<int>(*i);
+            std::stringstream s;
+            s << '%' << std::setw(2) << std::setfill('0') << std::uppercase 
+                << std::hex << n << std::nouppercase;
+            res += s.str();
+        }
+        else 
+            res += *i;
+    }
+    return (res);
+}
+
 void Response::listDirectories(std::string reqPath) {
     struct dirent *stDir;
     struct stat   st;
@@ -46,6 +63,7 @@ void Response::listDirectories(std::string reqPath) {
     std::string dirAsbolute = currentDirAbsolutePath + reqPath;
     std::string direntName;
     std::string direntPath;
+    std::string EncodedPath;
 
     statusCode = 200;
     DIR *dir = opendir(dirAsbolute.c_str());
@@ -62,12 +80,14 @@ void Response::listDirectories(std::string reqPath) {
         direntName = stDir->d_name;
         if (direntName != ".") {
             direntPath = reqPath + direntName;
+            EncodedPath = urlEncode(reqPath + direntName);
+            // std::cout << "direntPath -> " << direntPath << std::endl;
             std::string absoluteDirentPath = currentDirAbsolutePath + direntPath;
             if (!stat(absoluteDirentPath.c_str(), &st) && st.st_mode & S_IFDIR) {
-                direntPath += "/";
+                EncodedPath += "/";
                 direntName += "/";
             }
-            row = "<a href=" + direntPath + ">" + "<p>" + direntName;
+            row = "<a href=\"" + EncodedPath + "\">" + "<p>" + direntName;
             row += "</p></a>";
             lDirectoriesPage += row;
         }

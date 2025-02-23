@@ -3,7 +3,7 @@
 /*                                                        :::      ::::::::   */
 /*   Request.hpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
+/*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/30 11:15:32 by oait-laa          #+#    #+#             */
 /*   Updated: 2025/02/22 16:52:26 by maglagal         ###   ########.fr       */
@@ -25,7 +25,7 @@
 #include <ctime>
 
 #include "UploadFile.hpp"
-// #include "../Config/Config.hpp"
+// #include "../Parser/Parser.hpp"
 
 class Response;
 class Server;
@@ -35,6 +35,9 @@ class Request {
         std::map<std::string, std::string> Headers;
         static std::map<int, std::string>  reqStatus;
         UploadFile                         *file;
+        int                                state;
+        int                                headersLength;
+        std::string                        holder;
         std::string                        fileName;
         std::string                        method;
         std::string                        path;
@@ -55,7 +58,7 @@ class Request {
 
         // Setters
         void setMethod(std::string& m);
-        void setPath(std::string& p);
+        void setPath(std::string p);
         void setVersion(std::string& v);
         void setBody(std::string& b);
         void addUpload(UploadFile& new_upload);
@@ -64,30 +67,33 @@ class Request {
         int                             parse(std::string buffer, size_t stop_p);
         int                             isNumber(std::string& str);
         static std::vector<std::string> split(std::string buffer, int full, char del);
-        static void                     to_lower(std::string& str);
-        int                             readRequest(int fd, Server& server, std::vector<Server>& Servers);
-        int                             readHeaders(std::string& str, Server& server, std::vector<Server>& Servers);
-        int                             setupFile();
-        int                             setupChunkedFile();
-        int                             setupPostBody();
-        int                             continuePostBody(std::string str);
-        int                             readFile(UploadFile& file, std::string str);
-        int                             readChunkedFile(UploadFile& file, std::string str);
-        int                             readBinaryFile(UploadFile& file, std::string str);
-        long long                       hexToDecimal(std::string str);
-        long long                       strToDecimal(std::string str);
-        int                             writeFile(UploadFile& file, std::string& str);
-        int                             writeFirstChunk(UploadFile& file, std::string& str);
-        int                             checkChunks(UploadFile& file, std::string& str);
-        int                             handleFilePart(UploadFile& file, std::string& str);
-        int                             handleFirstPart(UploadFile& file, std::string& str);
-        int                             handleFiles(std::string& str);
-        int                             handlePostReq();
-        Server                          getServer(Server& server, std::vector<Server>& Servers);
-        int                             setupBinaryFile();
-        std::string                     getExtension(std::string type);
-        int                             checkMethod(std::string str);
-        void                            clear();
+        static void to_lower(std::string& str);
+        int readRequest(int fd, Server& server, std::vector<Server>& Servers);
+        int readHeaders(std::string& str, Server& server, std::vector<Server>& Servers);
+        int setupFile();
+        int setupChunkedFile();
+        int setupPostBody();
+        int continuePostBody(std::string str);
+        int readFile(UploadFile& file, std::string str);
+        int readChunkedFile(UploadFile& file, std::string str);
+        int readBinaryFile(UploadFile& file, std::string str);
+        long long hexToDecimal(std::string str);
+        long long strToDecimal(std::string str);
+        int writeFile(UploadFile& file, std::string& str);
+        int writeFirstChunk(UploadFile& file, std::string& str);
+        int checkChunks(UploadFile& file, std::string& str);
+        int handleFilePart(UploadFile& file, std::string& str);
+        int handleFirstPart(UploadFile& file, std::string& str);
+        int handleFiles(std::string& str);
+        int handlePostReq();
+        Server getServer(Server& server, std::vector<Server>& Servers);
+        int setupBinaryFile();
+        std::string getExtension(std::string type);
+        int checkMethod(std::string str);
+        void clearReq();
+        int continueReq(std::string& buffer, size_t stop_p);
+        int handleReqLine(std::stringstream& s);
+        std::string urlDecode(std::string path);
 
         // Destructor
         ~Request();
