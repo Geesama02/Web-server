@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/09 09:49:11 by maglagal          #+#    #+#             */
-/*   Updated: 2025/02/23 09:21:06 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/02/23 11:39:36 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -39,8 +39,7 @@ void    Response::showIndexFile(std::string indexFilePath) {
         body += buff;
 }
 
-std::string Response::url
-(std::string path) {
+std::string Response::urlEncode(std::string path) {
     std::string res;
     for (std::string::iterator i = path.begin(); i != path.end(); i++) {
         if (!isalnum(*i) && *i != '-' && *i != '_' && *i != '.' && *i != '~' && *i != '/') {
