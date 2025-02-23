@@ -94,7 +94,8 @@
         "thread": "cpp",
         "typeindex": "cpp",
         "valarray": "cpp",
-        "filesystem": "cpp"
+        "filesystem": "cpp",
+        "cerrno": "cpp"
     },
     "C_Cpp.errorSquiggles": "disabled"
 }

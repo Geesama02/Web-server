@@ -6,7 +6,7 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/17 10:25:29 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/02/19 10:27:21 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/02/19 16:15:37 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,20 +17,27 @@
 
 class Client {
     private:
+        int         fdClient;
         Request     req;
         Response    res;
         CGI         cgi;
         Server      server;
         long long   timeout;
     public:
+        //constructor
+        Client();
+        ~Client();
+    
         // Getters
-        Request& getRequest();
-        Response& getResponse();
-        CGI& getCGI();
-        Server& getServer();
-        long long getTimeout();
+        int         getFdClient();
+        Request&    getRequest();
+        Response&   getResponse();
+        CGI&        getCGI();
+        Server&     getServer();
+        long long   getTimeout();
 
         // Setters
-        void setServer(Server& server);
-        void setTimeout(long long t);
+        void        setFdClient(int nfd);
+        void        setServer(Server& server);
+        void        setTimeout(long long t);
 };

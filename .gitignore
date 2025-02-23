@@ -7,4 +7,5 @@ valgrind.txt
 .gitignore
 404.html
 403.html
-cgi-bin/myenv/
+cgi-bin/venv/
+notes.txt

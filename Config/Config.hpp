@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/21 15:07:06 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/02/23 10:28:12 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/02/22 16:00:22 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,37 +26,29 @@ class Response;
 
 class Config {
     private:
-        std::map<int, CGI>    cgiScriptContainer;
-        bool                  timeoutResponseFlag;       
-        std::vector<Server> Servers;
+        int                   epoll_fd;
+        std::vector<Server>   Servers;
         std::map<int, Client> Clients;
-    public:
-        static std::map<int, Response>  Responses;
-        
+    public:        
         // Getters
-        std::map<int, CGI>&    getCgiScripts();
-        bool                   getTimeoutResponseFlag();
-        std::vector<Server>&   getServers();
+        std::vector<Server>    getServers();
         std::map<int, Client>& getClients();
 
         // Setters
-        void setCgiScripts(int fd, const CGI& newCgiScript);
         void addServer(Server new_server);
-        // void setResponseReady(bool nValue);
-        void setTimeoutResponseFlag(bool nValue);
 
         // Functions
         void    checkCgiScriptExecution(int fd);
         void    checkScriptTimeOut(int fd);
         int     startServers();
-        int     monitorServers(int epoll_fd, epoll_event& ev);
+        int     monitorServers(epoll_event& ev);
         int     isServerFd(int fd);
-        int     acceptConnection(int fd, int epoll_fd, epoll_event& ev);
-        int     handleClient(int fd, int epoll_fd);
+        int     acceptConnection(int fd, epoll_event& ev);
+        int     handleClient(int fd);
         Server  getServer(int fd);
         static  long long timeNow();
-        int     monitorTimeout(int epoll_fd);
-        void    closeConnection(int epoll_fd, int fd);
+        int     monitorTimeout();
+        void    closeConnection(int fd);
 };
 
 #endif

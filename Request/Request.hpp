@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/30 11:15:32 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/02/22 16:05:03 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/02/22 16:52:26 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -64,8 +64,8 @@ class Request {
         void addUpload(UploadFile& new_upload);
 
         // Functions
-        int parse(std::string buffer, size_t stop_p);
-        int isNumber(std::string& str);
+        int                             parse(std::string buffer, size_t stop_p);
+        int                             isNumber(std::string& str);
         static std::vector<std::string> split(std::string buffer, int full, char del);
         static void to_lower(std::string& str);
         int readRequest(int fd, Server& server, std::vector<Server>& Servers);
@@ -89,8 +89,6 @@ class Request {
         Server getServer(Server& server, std::vector<Server>& Servers);
         int setupBinaryFile();
         std::string getExtension(std::string type);
-        std::string generateRes(int status);
-        std::string getDate();
         int checkMethod(std::string str);
         void clearReq();
         int continueReq(std::string& buffer, size_t stop_p);

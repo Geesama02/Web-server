@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/30 12:07:04 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/02/22 16:24:30 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/02/22 17:00:22 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,15 +23,6 @@ std::map<int, std::string> Request::reqStatus;
 Request::Request() {
     headersLength = 0;
     state = 1;
-    Request::reqStatus.insert(std::make_pair(201, "Created"));
-    Request::reqStatus.insert(std::make_pair(400, "Bad Request"));
-    Request::reqStatus.insert(std::make_pair(405, "Method Not Allowed"));
-    Request::reqStatus.insert(std::make_pair(411, "Length Required"));
-    Request::reqStatus.insert(std::make_pair(413, "Content Too Large"));
-    Request::reqStatus.insert(std::make_pair(414, "URI Too Long"));
-    Request::reqStatus.insert(std::make_pair(500, "Internal Server Error"));
-    Request::reqStatus.insert(std::make_pair(501, "Not Implemented"));
-    Request::reqStatus.insert(std::make_pair(505, "HTTP Version Not Supported"));
     file = NULL;
 }
 
@@ -57,7 +48,6 @@ void Request::addUpload(UploadFile& new_upload) {
 
 // Destructor
 Request::~Request() {
-    // std::cout << "Request Destructor\n";
     if (file)
         delete file;
 }
@@ -416,7 +406,7 @@ int Request::handleFiles(std::string& str) {
 }
 
 std::string Request::getExtension(std::string type) {
-    for (std::map<std::string, std::string>::iterator it = Response::ContentHeader.begin(); it != Response::ContentHeader.end(); it++) {
+    for (std::map<std::string, std::string>::iterator it = Response::ContentTypeHeader.begin(); it != Response::ContentTypeHeader.end(); it++) {
         if (type == it->second)
             return (it->first);
     }
@@ -462,7 +452,8 @@ int Request::handlePostReq() {
     return (0);
 }
 
-int Request::isNumber(std::string& str) {
+int Request::isNumber(std::string& str)
+{
     for(std::string::iterator i = str.begin(); i != str.end(); i++) {
         if (!std::isdigit(*i))
             return (0);
@@ -471,7 +462,8 @@ int Request::isNumber(std::string& str) {
 }
 
 Server Request::getServer(Server& server, std::vector<Server>& Servers) {
-    for (std::vector<Server>::iterator it = Servers.begin(); it != Servers.end(); it++) {
+    for (std::vector<Server>::iterator it = Servers.begin(); it != Servers.end(); it++)
+    {
         if (it->getPort() == server.getPort() && it->getHost() == server.getHost()) {
             std::string tmp = Headers["host"];
             size_t pos = tmp.rfind(':');
@@ -537,41 +529,6 @@ int Request::setupChunkedFile() {
     return (0);
 }
 
-std::string Request::getDate() {
-    time_t timestamp = time(NULL);
-    struct tm datetime = *gmtime(&timestamp);
-    char now[50];
-
-    strftime(now, 50, "%a, %d %b %Y %H:%M:%S GMT", &datetime);
-    std::string res = now;
-    return (res);
-}
-
-std::string Request::generateRes(int status) {
-    char statusBuff[4];
-    char bodySizeBuff[10];
-    std::sprintf(statusBuff, "%d", status);
-    std::string resBody = "<!DOCTYPE html>"
-                        "<html>"
-                        "<head><title>" + std::string(statusBuff) + " " + reqStatus[status] + "</title></head>"
-                        "<body>"
-                        "<center><h1>" + std::string(statusBuff) + " " + reqStatus[status] + "</h1></center>"
-                        "<hr><center>Webserv</center>"
-                        "</body>"
-                        "</html>";
-    std::string res = "HTTP/1.1 " + std::string(statusBuff) + " " + reqStatus[status] + "\r\n";
-    if (status == 201)
-        res += "Location: " + fileName + "\r\n";
-    res += "Server: webserv\r\n";
-    res += "Date: " + getDate() + "\r\n";
-    res += "Content-Type: text/html\r\n";
-    std::sprintf(bodySizeBuff, "%zu", resBody.size());
-    res += "Content-Length: " + std::string(bodySizeBuff) + "\r\n";
-    res += "Connection: close\r\n\r\n";
-    res += resBody;
-    return (res);
-}
-
 int Request::setupFile() {
     UploadFile file;
     if (Headers.find("content-length") != Headers.end())
@@ -579,7 +536,6 @@ int Request::setupFile() {
     else
         return (411); // Missing Content-length
     size_t pos = Headers["content-type"].find("boundary=");
-    // std::cout << "file created\n";
     std::string boundary = Headers["content-type"].substr(pos + 9);
     file.setType("multipart");
     file.setBoundary(boundary);
