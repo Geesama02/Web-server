@@ -6,7 +6,7 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/30 18:22:44 by maglagal          #+#    #+#             */
-/*   Updated: 2025/02/21 18:21:13 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/02/22 18:28:10 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,7 +19,7 @@ CGI::CGI() {
     executablePathArray = NULL;
     absoluteFilePath = NULL;
     childStatus = 0;
-    timeout = 5000;
+    timeout = 10000;
 }
 
 CGI::~CGI() {
@@ -89,6 +89,8 @@ void CGI::clearCGI() {
         envs[i] = NULL;
     executablePathArray = NULL;
     absoluteFilePath = NULL;
+    if (rPipe != 0)
+        close(rPipe);
     cPid = 0;
     rPipe = 0;
     startTime = 0;
@@ -106,7 +108,6 @@ int CGI::failureHandler(Config& config, int fd)
     clearCGI();
     config.getClients()[fd].getResponse().clearResponse();
     config.getClients()[fd].getResponse().setStatusCode(500);
-    config.closeConnection(fd);
     return (-1);
 }
 
@@ -214,8 +215,11 @@ void CGI::findHeadersInsideScript(Response& res) {
         headerInScript = ResBody.substr(0, i);
         ResBody.erase(0, i + 1);
     }
-    if (headerInScript.length() > 0) {
-        if (headerInScript.find(":") != std::string::npos) {
+    if (headerInScript.length() > 0)
+    {
+        std::cout << "headers in script  => " << headerInScript << std::endl; 
+        if (headerInScript.find(":") != std::string::npos)
+        {
             headersInScript = Request::split(headerInScript, 0, '\n');
             std::vector<std::string>::iterator it = headersInScript.begin();
             while (it != headersInScript.end())
@@ -321,21 +325,25 @@ int CGI::execute_cgi_script(Config& config, Response& res, int fd, Request req)
         return (failureHandler(config, fd));
     }
     pid_t c_pid = fork();
-    if (c_pid == -1) {
+    if (c_pid == -1)
+    {
         std::cerr << "Error: Fork Failed" << std::endl;
         return (failureHandler(config, fd));
     }
-    if (c_pid != 0) {
+    if (c_pid != 0)
+    {
         startTime = Config::timeNow();
         cPid = c_pid;
         rPipe = fds[0];
     }
-    if (!c_pid) {
+    if (!c_pid)
+    {
         close(fds[0]);
         if (dup2(fds[1], 1) == -1)
             exit(EXIT_FAILURE);
         close(fds[1]);
-        if (execve(executablePathArray, argv, envs) == -1) {
+        if (execve(executablePathArray, argv, envs) == -1)
+        {
             std::cerr << "Error Execve : " << strerror(errno) << std::endl;
             exit(EXIT_FAILURE);
         }

@@ -6,7 +6,7 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/14 17:03:53 by maglagal          #+#    #+#             */
-/*   Updated: 2025/02/21 18:28:38 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/02/23 09:22:35 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,19 +14,20 @@
 #include "../Config/Config.hpp"
 
 // std::map<int, std::ifstream *> Response::files;
-std::map<std::string, std::string> Response::ContentHeader;
+std::map<std::string, std::string> Response::ContentTypeHeader;
 
 //constructor
 Response::Response() {
     file = NULL;
     initializeContentHeader();
+    initializeStatusRes();
     Headers["Content-Type"] = "text/html";
     Headers["Connection"] = "keep-alive";
     Headers["Server"] = "Webserv";
     Headers["Content-Length"] = "0";
+    Headers["Date"] = "0";
     statusMssg = "HTTP/1.1 ";
     statusCode = 0;
-    // totalBytesSent = 0;
     char curr_dirChar[120];
     getcwd(curr_dirChar, 120);
     currentDirAbsolutePath = curr_dirChar;
@@ -56,19 +57,41 @@ void Response::setStatusMssg( std::string value ) { statusMssg = value; };
 void Response::setHeader( std::string key, std::string value ) { Headers[key] = value; };
 
 //other
-void Response::initializeContentHeader() {
-    ContentHeader[".txt"] = "text/plain";
-    ContentHeader[".html"] = "text/html";
-    ContentHeader[".css"] = "text/css";
-    ContentHeader[".js"] = "application/javascript";
-    ContentHeader[".pdf"] = "application/pdf";
-    ContentHeader[".png"] = "image/png";
-    ContentHeader[".jpg"] = "image/jpeg";
-    ContentHeader[".jpeg"] = "image/jpeg";
-    ContentHeader[".mp4"] = "video/mp4";
-    ContentHeader[".mp3"] = "audio/mpeg";
-    ContentHeader[".json"] = "application/json";
+void Response::initializeStatusRes()
+{
+    resStatus.insert(std::make_pair(200, "OK\r\n"));
+    resStatus.insert(std::make_pair(201, "Created\r\n"));
+    resStatus.insert(std::make_pair(206, "Partial Content\r\n"));
+    resStatus.insert(std::make_pair(301, "Moved Permanently\r\n"));
+    resStatus.insert(std::make_pair(400, "Bad Response\r\n"));
+    resStatus.insert(std::make_pair(403, "Forbidden\r\n"));
+    resStatus.insert(std::make_pair(404, "Not Found\r\n"));
+    resStatus.insert(std::make_pair(405, "Method Not Allowed\r\n"));
+    resStatus.insert(std::make_pair(411, "Length Required\r\n"));
+    resStatus.insert(std::make_pair(413, "Content Too Large\r\n"));
+    resStatus.insert(std::make_pair(414, "URI Too Long\r\n"));
+    resStatus.insert(std::make_pair(500, "Internal Server Error\r\n"));
+    resStatus.insert(std::make_pair(501, "Not Implemented\r\n"));
+    resStatus.insert(std::make_pair(502, "Bad Gateway\r\n"));
+    resStatus.insert(std::make_pair(504, "Gateway Timeout\r\n"));
+    resStatus.insert(std::make_pair(505, "HTTP Version Not Supported\r\n"));
 }
+
+void Response::initializeContentHeader()
+{
+    ContentTypeHeader[".txt"] = "text/plain";
+    ContentTypeHeader[".html"] = "text/html";
+    ContentTypeHeader[".css"] = "text/css";
+    ContentTypeHeader[".js"] = "application/javascript";
+    ContentTypeHeader[".pdf"] = "application/pdf";
+    ContentTypeHeader[".png"] = "image/png";
+    ContentTypeHeader[".jpg"] = "image/jpeg";
+    ContentTypeHeader[".jpeg"] = "image/jpeg";
+    ContentTypeHeader[".mp4"] = "video/mp4";
+    ContentTypeHeader[".mp3"] = "audio/mpeg";
+    ContentTypeHeader[".json"] = "application/json";
+}
+
 
 void    Response::addHeadersToResponse()
 {
@@ -86,6 +109,7 @@ void    Response::clearResponse() {
     Headers["Connection"] = "keep-alive";
     Headers["Content-Length"] = "0";
     Headers["Server"] = "Webserv";
+    Headers["Date"] = "0";
     statusMssg = "HTTP/1.1 ";
     statusCode = 0;
     body.clear();
@@ -95,75 +119,46 @@ void    Response::clearResponse() {
     file = NULL;
 }
 
-void    Response::internalServerErrorResponse()
+std::string Response::getDate()
 {
-    statusMssg += "500 Internal Server Error\r\n";
-    if (body.empty())
-    {
-        body = "<!DOCTYPE html>"
-                "<html><head><title>500 Internal Server Error</title>"
-                "<style>h1, p {text-align:center}</style></head><body>"
-                "<h1>500 Internal Server Error</h1>"
-                "<hr></hr>"
-                "<p>Webserv</p>"
-                "</body></html>";
-    }
-    char buff[150];
-    sprintf(buff, "%ld", body.length());
-    Headers["Content-Length"] = buff;
+    time_t timestamp = time(NULL);
+    struct tm datetime = *gmtime(&timestamp);
+    char now[50];
+
+    strftime(now, 50, "%a, %d %b %Y %H:%M:%S GMT", &datetime);
+    std::string res = now;
+    return (res);
 }
 
-void    Response::badGatewayResponse()
+void Response::generateRes(Config& config)
 {
-    statusMssg += "502 Bad Gateway\r\n";
-    if (body.empty())
-    {
-        body = "<!DOCTYPE html>"
-                "<html><head><title>502 Bad Gateway</title>"
-                "<style>h1, p {text-align:center}</style></head><body>"
-                "<h1>502 Bad Gateway</h1>"
-                "<hr></hr>"
-                "<p>Webserv</p>"
-                "</body></html>";
-    }
     char buff[150];
-    sprintf(buff, "%ld", body.length());
-    Headers["Content-Length"] = buff;
-}
-
-void Response::notFoundResponse() {
-    statusMssg += "404 Not Found\r\n";
+    std::string statusCodeStr;
+    sprintf(buff, "%d", statusCode);
+    statusCodeStr = buff;
+    statusMssg += statusCodeStr + " " + resStatus[statusCode];
     if (body.empty()) {
         body = "<!DOCTYPE html>"
-                "<html><head><title>404 Not Found</title>"
-                "<style>h1, p {text-align:center}</style></head><body>"
-                "<h1>404 Not Found</h1>"
-                "<hr></hr>"
-                "<p>Webserv</p>"
-                "</body></html>";
+                "<html>"
+                "<head><title>" + statusCodeStr + " " + resStatus[statusCode] + "</title></head>"
+                "<body>"
+                "<center><h1>" + statusCodeStr + " " + resStatus[statusCode] + "</h1></center>"
+                "<hr><center>Webserv</center>"
+                "</body>"
+                "</html>";
     }
-    char buff[150];
-    sprintf(buff, "%ld", body.length());
-    Headers["Content-Length"] = buff;
-}
-
-void Response::forbiddenResponse() {
-    statusMssg += "403 Forbidden\r\n";
-    if (body.empty()) {
-        body = "<!DOCTYPE html>"
-            "<html><head><title>403 Forbidden</title>"
-            "<style>h1, p {text-align:center}</style></head><body>"
-            "<h1>403 Forbidden</h1>"
-            "<hr></hr>"
-            "<p>Webserv</p>"
-            "</body></html>";
-    }
-    char buff[150];
-    sprintf(buff, "%ld", body.length());
-    Headers["Content-Length"] = buff;
+    char contentLength[150];
+    std::sprintf(contentLength, "%ld", body.length());
+    Headers["Content-Length"] = contentLength;
+    Headers["Date"] = getDate();
+    if (statusCode == 201)
+        Headers["Location"] = config.getClients()[clientFd].getRequest().getFileName();
+    if (statusCode >= 400)
+        Headers["Connection"] = "close";
 }
 
 void Response::successResponse(Request req) {
+    char contentLengthHeader[150];
     statusMssg += "200 OK\r\n";
     if (req.getPath() == "/") {
         body = "<!DOCTYPE html>"
@@ -171,39 +166,50 @@ void Response::successResponse(Request req) {
             "<input type=\"file\" name=\"file\">"
             "<button>Upload</button>"
             "</form></body></html>";
-        char buff[150];
-        std::sprintf(buff, "%ld", body.length());
-        Headers["Content-Length"] = buff;
+        std::sprintf(contentLengthHeader, "%ld", body.length());
+        Headers["Content-Length"] = contentLengthHeader;
+        Headers["Date"] = getDate();
     }
     else {
         if (!body.empty()) {
-            char buff[150];
-            std::sprintf(buff, "%ld", body.length());
-            Headers["Content-Length"] = buff;
+            std::sprintf(contentLengthHeader, "%ld", body.length());
+            Headers["Content-Length"] = contentLengthHeader;
         }
         if (!file)
             file = new std::ifstream(req.getPath().erase(0, 1).c_str(), std::ios::binary);
         Headers["Accept-Ranges"] = "bytes";
+        Headers["Date"] = getDate();
     }
 }
 
 void    Response::redirectionResponse(Request req, Config& config)
 {
-    statusMssg += "301 Moved Permanently\r\n";
+    char buff[150];
+    std::string statusCodeStr;
+    sprintf(buff, "%d", statusCode);
+    statusCodeStr = buff;
+    statusMssg += statusCodeStr + " " + resStatus[statusCode];
     int port = config.getClients()[clientFd].getServer().getPort(); 
-    char portChar[120];
+    char portChar[150];
     sprintf(portChar, "%d", port);
     std::string host = config.getClients()[clientFd].getServer().getHost() + ":" + portChar;
     std::string location =  req.getPath() + "/";
     std::string locationHeader = "http://" + host + location;
     setHeader("Location", locationHeader);
-    setHeader("Content-Length", "169");
+    char contentLengthHeader[150];
+    std::sprintf(contentLengthHeader, "%ld", body.length());
+    Headers["Content-Length"] = contentLengthHeader;
+    Headers["Date"] = getDate();
 }
 
-void Response::handleRangeRequest(Request req) {
+void Response::rangeResponse(Request req) {
     if (!file)
         file = new std::ifstream(req.getPath().erase(0, 1).c_str(), std::ios::binary);
-    statusMssg = "HTTP/1.1 206 Partial Content\r\n";
+    char buff[150];
+    std::string statusCodeStr;
+    sprintf(buff, "%d", statusCode);
+    statusCodeStr = buff;
+    statusMssg += statusCodeStr + " " + resStatus[statusCode];
     std::string range = req.getHeaders()["range"];
     size_t i = range.find("=");
     if (i == std::string::npos)
@@ -217,11 +223,12 @@ void Response::handleRangeRequest(Request req) {
         Headers["Content-Range"] = range + buff2 + '/' + Headers["Content-Length"]; // construct the header content-range with the corresponding values
         std::string rangeNumber = range.substr(i, range.size() - i);
         long long rangeStart = req.strToDecimal(rangeNumber);
-        file->seekg(rangeStart); //this is where we start sending the video content
+        file->seekg(rangeStart);  //this is where we start sending the video content
         size_t len = req.strToDecimal(Headers["Content-Length"]);
         char rangeContentLength[150];
         sprintf(rangeContentLength, "%lld", len - rangeStart);
         setHeader("Content-Length", rangeContentLength);
+        Headers["Date"] = getDate();
     }
 }
 
@@ -229,8 +236,8 @@ void Response::checkForFileExtension(std::string extension) {
     size_t pos = extension.rfind(".");
     if (pos != std::string::npos) {
         extension.erase(0, pos);
-        std::map<std::string, std::string>::iterator it = ContentHeader.begin();
-        while(it != ContentHeader.end())
+        std::map<std::string, std::string>::iterator it = ContentTypeHeader.begin();
+        while(it != ContentTypeHeader.end())
         {
             if (it->first == extension) {
                 setHeader("Content-Type", it->second);
@@ -244,7 +251,8 @@ void Response::checkForFileExtension(std::string extension) {
 
 void Response::checkForQueryString(std::string& fileName) {
     size_t index = fileName.find("?");
-    if (index != std::string::npos) {
+    if (index != std::string::npos)
+    {
         queryString = fileName.substr(index + 1);
         fileName.erase(index);
     }
@@ -335,20 +343,14 @@ void Response::fillBody(Config& config, Request req) {
     if (statusCode == 200)
         successResponse(req);
     else if (statusCode == 206)
-        handleRangeRequest(req);
+        rangeResponse(req);
     else if (statusCode == 301)
         redirectionResponse(req, config);
-    else if (statusCode == 404)
-        notFoundResponse();
-    else if (statusCode == 403)
-        forbiddenResponse();
-    else if(statusCode == 500)
-        internalServerErrorResponse();
-    else if(statusCode == 502)
-        badGatewayResponse();
+    else
+        generateRes(config);
 }
 
-void Response::sendResponse(Config& config, Request req, int fd) {
+void Response::sendResponse(Config& config, Request& req, int fd) {
     clientFd = fd;
 
     if (req.getPath().find("/cgi-bin/") != std::string::npos && statusCode == 200) {
@@ -374,4 +376,6 @@ void Response::sendResponse(Config& config, Request req, int fd) {
         finalRes += body;
 
     send(clientFd, finalRes.c_str(), finalRes.length(), 0);
+    if (statusCode >= 500)
+        config.closeConnection(fd);
 }

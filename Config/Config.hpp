@@ -6,7 +6,7 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/21 15:07:06 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/02/21 18:20:49 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/02/22 16:00:22 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,13 +31,11 @@ class Config {
         std::map<int, Client> Clients;
     public:        
         // Getters
-        bool                   getTimeoutResponseFlag();
         std::vector<Server>    getServers();
         std::map<int, Client>& getClients();
 
         // Setters
         void addServer(Server new_server);
-        void setTimeoutResponseFlag(bool nValue);
 
         // Functions
         void    checkCgiScriptExecution(int fd);

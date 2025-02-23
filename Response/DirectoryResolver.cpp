@@ -6,7 +6,7 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/09 09:49:11 by maglagal          #+#    #+#             */
-/*   Updated: 2025/02/21 09:31:08 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/02/23 09:21:06 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -34,7 +34,7 @@ int    Response::comparingReqWithLocation(std::string locationPath, std::string 
 void    Response::showIndexFile(std::string indexFilePath) {
     std::ifstream indexFile(indexFilePath.c_str());
     std::string buff;
-    setStatusCode(200);
+    statusCode = 200;
     while (std::getline(indexFile, buff))
         body += buff;
 }
@@ -47,7 +47,7 @@ void Response::listDirectories(std::string reqPath) {
     std::string direntName;
     std::string direntPath;
 
-    setStatusCode(200);
+    statusCode = 200;
     DIR *dir = opendir(dirAsbolute.c_str());
     std::string lDirectoriesPage = "<!DOCTYPE html>"
                 "<html>"
@@ -94,11 +94,9 @@ void Response::matchReqPathWithLocation(Config& config, Location loc, std::strin
         if (!stat(reqPathAsbsolute.c_str(), &reqPathCheck)
             && (reqPathCheck.st_mode & S_IFDIR) && loc.getAutoindex())
         {
-            std::cout << "directories listing!!" << std::endl; 
             if (!stat(aIndexFile.c_str(), &st) && st.st_mode & S_IFREG)
                 showIndexFile(aIndexFile);
-            else
-            {
+            else {
                 listDirectories(reqPath);
             }
         }
@@ -120,8 +118,8 @@ void Response::checkAutoIndex(Config& config, Request req) {
     std::string uri;
     std::string nUri;
     std::string pathMatch;
-    std::vector<Location>::iterator itLocations = config.getClients()[clientFd].getServer().getLocations().begin();
 
+    std::vector<Location>::iterator itLocations = config.getClients()[clientFd].getServer().getLocations().begin();
     while (itLocations != config.getClients()[clientFd].getServer().getLocations().end()) {
         uri = (*itLocations).getURI();
         if (uri.rfind("/") == 0 && uri.length() != 1)
@@ -134,7 +132,6 @@ void Response::checkAutoIndex(Config& config, Request req) {
             pathMatch = root + uri;
         else
             pathMatch = uri;
-        std::cout << pathMatch<<std::endl;
         if (uri.length() > 0 && uri[0] == '/') //dir should have a leading slash 
             matchReqPathWithLocation(config, *itLocations, req.getPath(), pathMatch);
         itLocations++;
@@ -144,7 +141,8 @@ void Response::checkAutoIndex(Config& config, Request req) {
 int    Response::checkDefinedErrorPage(std::string rootPath, std::map<int, std::string> error_page) {
     std::map<int, std::string>::iterator it = error_page.begin();
     while (it != error_page.end()) {
-        if (it->first == statusCode) {
+        if (it->first == statusCode)
+        {
             returnDefinedPage(rootPath, it->second);
             return (1);
         }
@@ -159,7 +157,7 @@ void    Response::returnDefinedPage(std::string rootPath, std::string errorPageF
         errorPageFile = currentDirAbsolutePath + errorPageFile;
     else
         errorPageFile = rootPath + errorPageFile;
-    std::cout << "Error page " << errorPageFile<< std::endl;
+    // std::cout << "Error page " << errorPageFile<< std::endl;
     std::ifstream definedPage(errorPageFile.c_str());
     if (!definedPage.is_open()) {
         std::cerr << "Failed to open defined file " << errorPageFile << std::endl;

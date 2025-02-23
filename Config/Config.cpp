@@ -6,7 +6,7 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/22 11:25:38 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/02/21 18:24:33 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/02/22 17:23:11 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,38 +21,6 @@ std::map<int, Client>&  Config::getClients() { return Clients; }
 // Setters
 void    Config::addServer(Server new_server) { Servers.push_back(new_server); }
 
-void    timeoutResponse(int fd) {
-    std::string res;
-    std::string statusMssg = "HTTP1.1 408 Request Timeout\r\n";
-    res += statusMssg;
-    std::string body = "<!DOCTYPE html>"
-                "<html><head><title>408 Request Timeout</title>"
-                "<style>h1, p {text-align:center}</style></head><body>"
-                "<h1>408 Request Timeout</h1>"
-                "<hr></hr>"
-                "<p>Webserv</p>"
-                "</body></html>";
-    char buff[150];
-    sprintf(buff, "%ld", body.length());
-    std::string contentLengthHeader = buff;
-    contentLengthHeader = "Content-Length :" + contentLengthHeader;
-
-    std::string contentTypeHeader = "text/html";
-    contentTypeHeader = "Content-Type :" + contentTypeHeader;
-    
-    std::string serverName = "Webserv";
-    std::string serverHeader = "Server :" + serverName;
-
-    std::string connectionType = "close";
-    std::string connectionHeader = "Connection :" + connectionType;
-    std::string headers = contentLengthHeader + "\r\n" + contentTypeHeader + "\r\n" + serverHeader + "\r\n" + connectionHeader;
-    headers += "\r\n\r\n";
-    res += headers;
-    res += body;
-    std::cout << "timeout response" << res<<std::endl;
-    send(fd, res.c_str(), res.length(), 0);
-}
-
 void    Config::checkCgiScriptExecution(int fd) {
     int status;
     std::map<int, Client>::iterator it = Clients.begin();
@@ -61,23 +29,18 @@ void    Config::checkCgiScriptExecution(int fd) {
         if (it->first == fd && Clients[fd].getCGI().getCpid() != 0) {
             pid_t child = waitpid(Clients[fd].getCGI().getCpid(), &status, WNOHANG);
             if (child > 0) {
-            
-                // read the ouput of the script executed by the cgi
-                // std::cout << "---------------------------------"<< std::endl;
-                // std::cout << "child pid finished executing "<<child<< std::endl;
-                // std::cout << "finished executing client fd" <<fd<< std::endl;
-                // std::cout << "child pid of cgi script " <<Clients[fd].getCGI().getCpid() <<std::endl;
-                // std::cout << "pipe fd " <<Clients[fd].getCGI().getRpipe() <<std::endl;
-    
-                if (WEXITSTATUS(status)) {
+                if (WEXITSTATUS(status))
+                {
                     Clients[fd].getCGI().setChildStatus(WEXITSTATUS(status));
                     Clients[fd].getCGI().clearCGI();
                     Clients[fd].getResponse().clearResponse();
                     Clients[fd].getResponse().setStatusCode(502);
                     Clients[fd].getResponse().sendResponse(*this, Clients[fd].getRequest(), fd);
                 }
-                else { 
-                    if (Clients[fd].getCGI().read_cgi_response(*this, fd) == -1) {
+                else
+                { 
+                    if (Clients[fd].getCGI().read_cgi_response(*this, fd) == -1) //error in cgi script
+                    {
                         Clients[fd].getCGI().clearCGI();
                         Clients[fd].getResponse().clearResponse();
                         Clients[fd].getResponse().setStatusCode(502);
@@ -99,13 +62,13 @@ void    Config::checkScriptTimeOut(int fd) {
     while (it != Clients.end()) {
         if (it->first == fd) {
             if (Clients[fd].getCGI().getCpid() != 0 && timeNow() - Clients[fd].getCGI().getStartTime() > 5) {
-                std::cout << "client fd "<<fd<<std::endl;
-                std::cout << "timeout "<<timeNow() - Clients[fd].getCGI().getStartTime()<<std::endl;
-                std::cout << "child timeout!!! " << Clients[fd].getCGI().getCpid()<<std::endl;
-                kill(Clients[fd].getCGI().getCpid(), SIGTERM);
+                kill(Clients[fd].getCGI().getCpid(), SIGKILL);
                 waitpid(Clients[fd].getCGI().getCpid(), NULL, 0);
                 close(Clients[fd].getCGI().getRpipe());
-                timeoutResponse(fd);
+                Clients[fd].getCGI().clearCGI();
+                Clients[fd].getResponse().clearResponse();
+                Clients[fd].getResponse().setStatusCode(504);
+                Clients[fd].getResponse().sendResponse(*this, Clients[fd].getRequest(), fd);
                 closeConnection(fd);
             }
         }
@@ -132,7 +95,8 @@ int Config::startServers() {
             close(epoll_fd);
             return (1);
         }
-        for (int i = 0; i < fds; i++) {
+        for (int i = 0; i < fds; i++)
+        {
             if (events[i].events & EPOLLIN) { // if event is read
                 int fd = events[i].data.fd;
                 if (isServerFd(fd))
@@ -140,18 +104,21 @@ int Config::startServers() {
                 else
                     handleClient(fd);
             }
-            else if (events[i].events & EPOLLERR) {
+            else if (events[i].events & EPOLLERR)
+            {
                 std::cerr << "Socket error on fd: " << events[i].data.fd << std::endl;
                 Clients.erase(events[i].data.fd);
                 close(events[i].data.fd);
                 epoll_ctl(epoll_fd, EPOLL_CTL_DEL, events[i].data.fd, NULL);
             }
-            else if (events[i].events & EPOLLOUT) {
+            else if (events[i].events & EPOLLOUT)
+            {
                 if (Clients[events[i].data.fd].getResponse().sendBodyBytes() == -1)
                 {
                     Clients[events[i].data.fd].getResponse().clearResponse();
-                    Clients[events[i].data.fd].getResponse().setStatusCode(502);
+                    Clients[events[i].data.fd].getResponse().setStatusCode(500);
                     Clients[events[i].data.fd].getResponse().sendResponse(*this, Clients[events[i].data.fd].getRequest(), events[i].data.fd);
+                    closeConnection(events[i].data.fd);
                 }
             }
             if (events[i].data.fd != 0)
@@ -264,10 +231,6 @@ void Config::closeConnection(int fd) {
     epoll_ctl(epoll_fd, EPOLL_CTL_DEL, fd, NULL);
     std::cout << "closed client : " << fd<<std::endl;
     Clients.erase(fd);
-    // if (Response::files.find(fd) != Response::files.end()) {
-    //     Response::files[fd]->close();
-    //     Response::files.erase(fd);
-    // }
     close(fd);
 }
 
@@ -276,24 +239,17 @@ int Config::handleClient(int fd) {
     int status;
     
     Clients[fd].setTimeout(timeNow());
+    Clients[fd].getResponse().clearResponse();
     status = Clients[fd].getRequest().readRequest(fd, Clients[fd].getServer(), Servers);
-    // std::cout << "status -> " << status << std::endl;
+    Clients[fd].getResponse().setStatusCode(status);
     if (status == 1) // connection is closed
         closeConnection(fd);
     else if (status == 2) // if file is uploading
         return (0);
-    else if (status != 0) {
-        std::string res = Clients[fd].getRequest().generateRes(status);
-        // std::cout << res << std::endl;
-        send(fd, res.c_str(), res.size(), 0);
-        if (status >= 400)
-            closeConnection(fd);
-        return (0);
-    }
     else {
-        if (!Clients[fd].getRequest().getPath().empty()) {
+        if (!Clients[fd].getRequest().getPath().empty())
+        {
             // std::cout << "path -> " << request.getPath() << std::endl;
-            Clients[fd].getResponse().clearResponse();
             std::string tmp = Clients[fd].getRequest().getHeaders()["host"];
             size_t pos = tmp.rfind(':');
             if (pos != std::string::npos)
@@ -301,7 +257,8 @@ int Config::handleClient(int fd) {
             std::cout << Clients[fd].getServer().whichServerName(tmp) << ':' << Clients[fd].getServer().getPort()
             << " - " << Clients[fd].getRequest().getMethod() << ' ' << Clients[fd].getRequest().getPath()
             << ' ' << Clients[fd].getRequest().getVersion() << std::endl;
-            Clients[fd].getResponse().searchForFile(Clients[fd].getRequest());
+            if (Clients[fd].getRequest().getMethod() == "GET")
+                Clients[fd].getResponse().searchForFile(Clients[fd].getRequest());
         }
         Clients[fd].getResponse().sendResponse(*this, Clients[fd].getRequest(), fd);
     }

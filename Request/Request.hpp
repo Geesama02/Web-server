@@ -6,7 +6,7 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/30 11:15:32 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/02/19 16:25:21 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/02/22 16:52:26 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -61,35 +61,33 @@ class Request {
         void addUpload(UploadFile& new_upload);
 
         // Functions
-        int parse(std::string buffer, size_t stop_p);
-        int isNumber(std::string& str);
+        int                             parse(std::string buffer, size_t stop_p);
+        int                             isNumber(std::string& str);
         static std::vector<std::string> split(std::string buffer, int full, char del);
-        static void to_lower(std::string& str);
-        int readRequest(int fd, Server& server, std::vector<Server>& Servers);
-        int readHeaders(std::string& str, Server& server, std::vector<Server>& Servers);
-        int setupFile();
-        int setupChunkedFile();
-        int setupPostBody();
-        int continuePostBody(std::string str);
-        int readFile(UploadFile& file, std::string str);
-        int readChunkedFile(UploadFile& file, std::string str);
-        int readBinaryFile(UploadFile& file, std::string str);
-        long long hexToDecimal(std::string str);
-        long long strToDecimal(std::string str);
-        int writeFile(UploadFile& file, std::string& str);
-        int writeFirstChunk(UploadFile& file, std::string& str);
-        int checkChunks(UploadFile& file, std::string& str);
-        int handleFilePart(UploadFile& file, std::string& str);
-        int handleFirstPart(UploadFile& file, std::string& str);
-        int handleFiles(std::string& str);
-        int handlePostReq();
-        Server getServer(Server& server, std::vector<Server>& Servers);
-        int setupBinaryFile();
-        std::string getExtension(std::string type);
-        std::string generateRes(int status);
-        std::string getDate();
-        int checkMethod(std::string str);
-        void clear();
+        static void                     to_lower(std::string& str);
+        int                             readRequest(int fd, Server& server, std::vector<Server>& Servers);
+        int                             readHeaders(std::string& str, Server& server, std::vector<Server>& Servers);
+        int                             setupFile();
+        int                             setupChunkedFile();
+        int                             setupPostBody();
+        int                             continuePostBody(std::string str);
+        int                             readFile(UploadFile& file, std::string str);
+        int                             readChunkedFile(UploadFile& file, std::string str);
+        int                             readBinaryFile(UploadFile& file, std::string str);
+        long long                       hexToDecimal(std::string str);
+        long long                       strToDecimal(std::string str);
+        int                             writeFile(UploadFile& file, std::string& str);
+        int                             writeFirstChunk(UploadFile& file, std::string& str);
+        int                             checkChunks(UploadFile& file, std::string& str);
+        int                             handleFilePart(UploadFile& file, std::string& str);
+        int                             handleFirstPart(UploadFile& file, std::string& str);
+        int                             handleFiles(std::string& str);
+        int                             handlePostReq();
+        Server                          getServer(Server& server, std::vector<Server>& Servers);
+        int                             setupBinaryFile();
+        std::string                     getExtension(std::string type);
+        int                             checkMethod(std::string str);
+        void                            clear();
 
         // Destructor
         ~Request();
