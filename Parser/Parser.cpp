@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/21 14:31:56 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/02/21 15:43:16 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/02/23 10:44:28 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -551,12 +551,23 @@ int Parser::skipLocation(std::vector<std::string>& holder, size_t& index) {
         return (1);
     return (0);
 }
+
+int Parser::checkDupUri(std::string holder, Server& server) {
+    for (std::vector<Location>::iterator it = server.getLocations().begin(); it != server.getLocations().end(); it++) {
+        if (holder == it->getURI())
+            return (1);
+    }
+    return (0);
+}
+
 int Parser::handleLocation(std::vector<std::string>& holder, Server& tmp_server, size_t& index) {
     Location tmp_location(tmp_server);
     index++;
     int retValue = 0;
     bool errExist = false;
     if (index < holder.size() && holder[index] != "{") {
+        if (checkDupUri(holder[index], tmp_server))
+            return (0);
         tmp_location.setURI(holder[index]);
         index++;
         if (index < holder.size() && holder[index] == "{") {
@@ -584,7 +595,8 @@ int Parser::handleLocation(std::vector<std::string>& holder, Server& tmp_server,
                 else if (holder[index] == "cgi_ext")
                     retValue = setCgiExtVar(holder, tmp_location, index);
                 else if (holder[index] == "}") {
-                    tmp_server.addLocation(tmp_location);
+                    if (*tmp_location.getURI().begin() == '/')
+                        tmp_server.addLocation(tmp_location);
                     index++;
                     return (0);
                 }

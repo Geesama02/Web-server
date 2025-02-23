@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Config.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
+/*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/21 15:07:06 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/02/19 10:30:52 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/02/23 10:28:12 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -36,7 +36,7 @@ class Config {
         // Getters
         std::map<int, CGI>&    getCgiScripts();
         bool                   getTimeoutResponseFlag();
-        std::vector<Server> getServers();
+        std::vector<Server>&   getServers();
         std::map<int, Client>& getClients();
 
         // Setters

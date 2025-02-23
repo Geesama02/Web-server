@@ -25,6 +25,11 @@ int main(int argc, char **argv)
     // }
     if (parser.startParsing(config, argv[1]))
         return (1);
+    // for (std::vector<Server>::iterator it = config.getServers().begin(); it != config.getServers().end(); it++) {
+    //     for (std::vector<Location>::iterator it2 = it->getLocations().begin(); it2 != it->getLocations().end(); it2++) {
+    //         std::cout << "Location -> " << it2->getURI() << std::endl;
+    //     }
+    // }
     if (config.startServers())
         return (1);
     // if (re)

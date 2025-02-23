@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/23 10:46:14 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/02/21 15:43:25 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/02/23 10:37:40 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -49,6 +49,7 @@ class Parser {
         int setCgiExtVar(std::vector<std::string>& holder, Location& tmp_location, size_t& index);
         int handleLocation(std::vector<std::string>& holder, Server& tmp_server, size_t& index);
         int skipLocation(std::vector<std::string>& holder, size_t& index);
+        int checkDupUri(std::string holder, Server& server);
 };
 
 #endif

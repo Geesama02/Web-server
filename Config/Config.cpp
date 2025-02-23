@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/22 11:25:38 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/02/22 16:43:38 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/02/23 10:28:00 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,7 +18,7 @@ std::map<int, Response> Config::Responses;
 
 // Getters
 std::map<int, CGI>&     Config::getCgiScripts() { return cgiScriptContainer; }
-std::vector<Server>     Config::getServers() { return Servers; }
+std::vector<Server>&     Config::getServers() { return Servers; }
 bool                    Config::getTimeoutResponseFlag() { return timeoutResponseFlag; }
 std::map<int, Client>& Config::getClients() { return Clients; }
 
@@ -286,7 +286,7 @@ int Config::handleClient(int fd, int epoll_fd) {
     
     Clients[fd].setTimeout(timeNow());
     status = Clients[fd].getRequest().readRequest(fd, Clients[fd].getServer(), Servers);
-    std::cout << "status -> " << status << std::endl;
+    // std::cout << "status -> " << status << std::endl;
     if (status == 1) // connection is closed
         closeConnection(epoll_fd, fd);
     else if (status == 2) // if file is uploading
