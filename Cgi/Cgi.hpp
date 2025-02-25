@@ -6,7 +6,7 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/30 18:22:52 by maglagal          #+#    #+#             */
-/*   Updated: 2025/02/21 18:07:42 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/02/23 11:52:29 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -46,7 +46,6 @@ class CGI {
         std::string                          ResBody;
         pid_t                                cPid;
         int                                  rPipe;
-        int                                  timeout;
         int                                  childStatus;
         long long                            startTime;
         char*                                executablePathArray;
@@ -64,7 +63,6 @@ class CGI {
         int             getChildStatus();
         pid_t           getCpid();
         int             getRpipe();
-        int             getTimeout();
         long long       getStartTime();
 
         //setters
@@ -72,7 +70,6 @@ class CGI {
         void            setChildStatus(int newChildStatus);
         void            setCpid(pid_t nPid);
         void            setRpipe(int nRpipe);
-        void            setTimeout(int nTimeout);
         void            setStartTime(long long nTime);
         
 

@@ -14,6 +14,7 @@
 #include "../Config/Config.hpp"
 #include "../Parser/Parser.hpp"
 
+
 // std::map<int, std::ifstream *> Response::files;
 std::map<std::string, std::string> Response::ContentTypeHeader;
 
@@ -60,10 +61,12 @@ void Response::setHeader( std::string key, std::string value ) { Headers[key] = 
 //other
 void Response::initializeStatusRes()
 {
+    locationMatch = NULL;
     resStatus.insert(std::make_pair(200, "OK\r\n"));
     resStatus.insert(std::make_pair(201, "Created\r\n"));
     resStatus.insert(std::make_pair(206, "Partial Content\r\n"));
     resStatus.insert(std::make_pair(301, "Moved Permanently\r\n"));
+    resStatus.insert(std::make_pair(302, "Moved Temporarily\r\n"));
     resStatus.insert(std::make_pair(400, "Bad Response\r\n"));
     resStatus.insert(std::make_pair(403, "Forbidden\r\n"));
     resStatus.insert(std::make_pair(404, "Not Found\r\n"));
@@ -75,7 +78,6 @@ void Response::initializeStatusRes()
     resStatus.insert(std::make_pair(501, "Not Implemented\r\n"));
     resStatus.insert(std::make_pair(502, "Bad Gateway\r\n"));
     resStatus.insert(std::make_pair(504, "Gateway Timeout\r\n"));
-    resStatus.insert(std::make_pair(505, "HTTP Version Not Supported\r\n"));
 }
 
 void Response::initializeContentHeader()
@@ -104,7 +106,8 @@ void    Response::addHeadersToResponse()
     }
 }
 
-void    Response::clearResponse() {
+void    Response::clearResponse()
+{
     Headers.clear();
     statusMssg.clear();
     Headers["Connection"] = "keep-alive";
@@ -113,6 +116,7 @@ void    Response::clearResponse() {
     Headers["Date"] = "0";
     statusMssg = "HTTP/1.1 ";
     statusCode = 0;
+    locationMatch = NULL;
     body.clear();
     finalRes.clear();
     if (file)
@@ -138,7 +142,8 @@ void Response::generateRes(Config& config)
     sprintf(buff, "%d", statusCode);
     statusCodeStr = buff;
     statusMssg += statusCodeStr + " " + resStatus[statusCode];
-    if (body.empty()) {
+    if (body.empty())
+    {
         body = "<!DOCTYPE html>"
                 "<html>"
                 "<head><title>" + statusCodeStr + " " + resStatus[statusCode] + "</title></head>"
@@ -158,7 +163,8 @@ void Response::generateRes(Config& config)
         Headers["Connection"] = "close";
 }
 
-void Response::successResponse(Request req) {
+void Response::successResponse(Request req)
+{
     char contentLengthHeader[150];
     statusMssg += "200 OK\r\n";
     if (req.getPath() == "/") {
@@ -190,12 +196,25 @@ void    Response::redirectionResponse(Request req, Config& config)
     sprintf(buff, "%d", statusCode);
     statusCodeStr = buff;
     statusMssg += statusCodeStr + " " + resStatus[statusCode];
-    int port = config.getClients()[clientFd].getServer().getPort(); 
-    char portChar[150];
-    sprintf(portChar, "%d", port);
-    std::string host = config.getClients()[clientFd].getServer().getHost() + ":" + portChar;
-    std::string location =  req.getPath() + "/";
-    std::string locationHeader = "http://" + host + location;
+    if (body.empty())
+    {
+        body = "<!DOCTYPE html>"
+                "<html>"
+                "<head><title>" + statusCodeStr + " " + resStatus[statusCode] + "</title></head>"
+                "<body>"
+                "<center><h1>" + statusCodeStr + " " + resStatus[statusCode] + "</h1></center>"
+                "<hr><center>Webserv</center>"
+                "</body>"
+                "</html>";
+    }
+    if (statusCode == 301) 
+    {
+        int port = config.getClients()[clientFd].getServer().getPort(); 
+        char portChar[150];
+        sprintf(portChar, "%d", port);
+        std::string host = config.getClients()[clientFd].getServer().getHost() + ":" + portChar;
+        locationHeader = "http://" + host + req.getPath() + "/";
+    }
     setHeader("Location", locationHeader);
     char contentLengthHeader[150];
     std::sprintf(contentLengthHeader, "%ld", body.length());
@@ -233,7 +252,8 @@ void Response::rangeResponse(Request req) {
     }
 }
 
-void Response::checkForFileExtension(std::string extension) {
+void Response::checkForFileExtension(std::string extension)
+{
     size_t pos = extension.rfind(".");
     if (pos != std::string::npos) {
         extension.erase(0, pos);
@@ -250,7 +270,8 @@ void Response::checkForFileExtension(std::string extension) {
     setHeader("Content-Type", "application/stream-octet");
 }
 
-void Response::checkForQueryString(std::string& fileName) {
+void Response::checkForQueryString(std::string& fileName)
+{
     size_t index = fileName.find("?");
     if (index != std::string::npos)
     {
@@ -259,13 +280,15 @@ void Response::checkForQueryString(std::string& fileName) {
     }
 }
 
-void Response::vertifyDirectorySlash(std::string fileName) {
+void Response::vertifyDirectorySlash(std::string fileName)
+{
     size_t i = fileName.rfind("/");
     if (i != fileName.length() - 1)
         statusCode = 301;
 }
 
-void Response::searchForFile(Request& req) {
+void Response::searchForFile(Request& req)
+{
     struct stat st;
     std::string fileName = req.getPath();
     char buff3[150];
@@ -337,7 +360,8 @@ int Response::sendBodyBytes()
     return (0);
 }
 
-void Response::fillBody(Config& config, Request req) {
+void Response::fillBody(Config& config, Request req)
+{
     if (statusCode != 301)
         checkAutoIndex(config, req);
 
@@ -346,13 +370,14 @@ void Response::fillBody(Config& config, Request req) {
         successResponse(req);
     else if (statusCode == 206)
         rangeResponse(req);
-    else if (statusCode == 301)
+    else if (statusCode == 301 || statusCode == 302)
         redirectionResponse(req, config);
     else
         generateRes(config);
 }
 
-void Response::sendResponse(Config& config, Request& req, int fd) {
+void Response::sendResponse(Config& config, Request& req, int fd)
+{
     clientFd = fd;
 
     if (req.getPath().find("/cgi-bin/") != std::string::npos && statusCode == 200) {
