@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/22 11:17:32 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/02/15 14:06:53 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/02/24 15:13:48 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -39,6 +39,7 @@ Location::Location(Server& copy) {
 // Getters
 std::string Location::getURI() { return URI; }
 std::string Location::getRoot() { return root; }
+std::string Location::getUploadPath() { return uploadPath; }
 std::map<int, std::string>& Location::getErrorPage() { return error_page; }
 std::string Location::getIndex() { return index; }
 bool Location::getAutoindex() { return autoindex; }
@@ -50,6 +51,7 @@ std::vector<std::string>& Location::getCgiExt() { return cgi_ext; }
 // Setters
 void Location::setURI(std::string& n_URI) { URI = n_URI; }
 void Location::setRoot(std::string& n_root) { root = n_root; }
+void Location::setUploadPath(std::string& n_path) { uploadPath = n_path; }
 void Location::setErrorPage(std::map<int, std::string>& n_ep) { error_page = n_ep; }
 void Location::addErrorPage(int code, std::string path) {
     if (error_page.find(code) == error_page.end())

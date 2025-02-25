@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/22 11:25:38 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/02/22 17:23:11 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/02/24 16:07:51 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -216,7 +216,7 @@ int Config::acceptConnection(int fd, epoll_event& ev) {
         Clients[new_client] = client;
         Clients[new_client].setFdClient(new_client);
         Clients[new_client].setTimeout(timeNow());
-        std::cout << "client connection fd " <<new_client<<"!!!!"<< std::endl;
+        // std::cout << "client connection fd " <<new_client<<"!!!!"<< std::endl;
         // add client socket to epoll to monitor
         if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, new_client, &ev) != 0) {
             std::cerr << "epoll_ctl error: " << strerror(errno) << std::endl;

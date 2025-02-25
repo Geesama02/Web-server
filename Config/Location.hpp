@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/21 16:52:32 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/02/15 14:06:15 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/02/24 15:13:30 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -34,6 +34,7 @@ class Location {
     private:
         std::string URI;
         std::string root;
+        std::string uploadPath;
         std::map<int, std::string> error_page;
         std::vector<std::string> allowed_methods;
         std::string index;
@@ -49,6 +50,7 @@ class Location {
         // Getters
         std::string getURI();
         std::string getRoot();
+        std::string getUploadPath();
         std::map<int, std::string>& getErrorPage();
         std::string getIndex();
         bool getAutoindex();
@@ -58,8 +60,9 @@ class Location {
         std::vector<std::string>& getCgiExt();
         
         // Setters
-        void setURI(std::string& name);
-        void setRoot(std::string& name);
+        void setURI(std::string& n_URI);
+        void setRoot(std::string& n_root);
+        void setUploadPath(std::string& name);
         void setErrorPage(std::map<int, std::string>& n_ep);
         void addErrorPage(int code, std::string path);
         void setIndex(std::string& str);

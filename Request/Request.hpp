@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/30 11:15:32 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/02/22 16:52:26 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/02/25 10:50:01 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -94,6 +94,7 @@ class Request {
         int continueReq(std::string& buffer, size_t stop_p);
         int handleReqLine(std::stringstream& s);
         std::string urlDecode(std::string path);
+        int checkValidPath(std::string& path);
 
         // Destructor
         ~Request();
