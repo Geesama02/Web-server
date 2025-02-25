@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/23 10:46:14 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/02/23 10:37:40 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/02/24 15:23:41 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -33,6 +33,7 @@ class Parser {
         int setPortVar(std::vector<std::string>& holder, Server& tmp_server, size_t& index);
         int setRootVar(std::vector<std::string>& holder, Server& tmp_server, size_t& index);
         int setRootVar(std::vector<std::string>& holder, Location& tmp_location, size_t& index);
+        int setUploadVar(std::vector<std::string>& holder, Location& tmp_location, size_t& index);
         int setHostVar(std::vector<std::string>& holder, Server& tmp_server, size_t& index);
         int setIndexVar(std::vector<std::string>& holder, Server& tmp_server, size_t& index);
         int setIndexVar(std::vector<std::string>& holder, Location& tmp_location, size_t& index);

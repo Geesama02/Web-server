@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/21 14:31:56 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/02/23 10:44:28 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/02/24 16:02:40 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -232,6 +232,20 @@ int Parser::setRootVar(std::vector<std::string>& holder, Location& tmp_location,
         if (holder[index].empty() || !isValidValue(holder[index]))
             return (1);
         tmp_location.setRoot(holder[index]);
+        index++;
+    }
+    else
+        return (1);
+    return (0);
+}
+
+int Parser::setUploadVar(std::vector<std::string>& holder, Location& tmp_location, size_t& index) {
+    index++;
+    if (index < holder.size() && *holder[index].rbegin() == ';') {
+        holder[index].erase(holder[index].end() - 1);
+        if (holder[index].empty() || !isValidValue(holder[index]))
+            return (1);
+        tmp_location.setUploadPath(holder[index]);
         index++;
     }
     else
@@ -522,6 +536,8 @@ int Parser::skipLocation(std::vector<std::string>& holder, size_t& index) {
                     retValue = setRootVar(holder, tmp_location, index);
                 else if (holder[index] == "index" && !(indexCount++))
                     retValue = setIndexVar(holder, tmp_location, index);
+                else if (holder[index] == "upload_path")
+                    retValue = setUploadVar(holder, tmp_location, index);
                 else if (holder[index] == "autoindex" && !(aIndexCount++))
                     retValue = setAutoindexVar(holder, tmp_location, index);
                 else if (holder[index] == "return")
@@ -577,6 +593,8 @@ int Parser::handleLocation(std::vector<std::string>& holder, Server& tmp_server,
                     retValue = setRootVar(holder, tmp_location, index);
                 else if (holder[index] == "index")
                     retValue = setIndexVar(holder, tmp_location, index);
+                else if (holder[index] == "upload_path")
+                    retValue = setUploadVar(holder, tmp_location, index);
                 else if (holder[index] == "autoindex")
                     retValue = setAutoindexVar(holder, tmp_location, index);
                 else if (holder[index] == "return")

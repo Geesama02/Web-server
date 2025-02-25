@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/30 12:07:04 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/02/22 17:00:22 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/02/25 11:49:30 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -41,7 +41,6 @@ void Request::setPath(std::string p) { path = p; }
 void Request::setVersion(std::string& v) { version = v; }
 void Request::setBody(std::string& b) { body = b; }
 void Request::addUpload(UploadFile& new_upload) {
-    // isUploading = true;
     file = new UploadFile;
     *file = new_upload;
 }
@@ -128,6 +127,15 @@ std::string Request::urlDecode(std::string path) {
     return (path);
 }
 
+int Request::checkValidPath(std::string& path) {
+    std::string validChars = "-._~:/?#[]@!$&'()*+,;=%";
+    for (std::string::iterator it = path.begin(); it != path.end(); it++) {
+        if (!isalnum(*it) && validChars.find(*it) == std::string::npos)
+            return (0);
+    }
+    return (1);
+}
+
 int Request::handleReqLine(std::stringstream& s) {
     std::string line;
     if (state && std::getline(s, line)) {
@@ -146,14 +154,10 @@ int Request::handleReqLine(std::stringstream& s) {
             return (414);
         if (holder[2] != "HTTP/1.1\r")
             return (505);
-        if (*holder[1].begin() != '/')
+        if (*holder[1].begin() != '/' || !checkValidPath(holder[1]))
             return (400);
         headersLength += line.size() + 1;
         setMethod(holder[0]);
-        // std::cout << "old -> " << holder[1] << std::endl;
-        // std::string decodedUrl = urlDecode(holder[1]);
-        // std::cout << "new -> " << decodedUrl << std::endl;
-        // setPath(decodedUrl);
         setPath(holder[1]);
         setVersion(holder[2]);
     }
@@ -439,7 +443,8 @@ int Request::handlePostReq() {
     }
     else if (method == "POST" 
         && Headers.find("content-type") != Headers.end()
-        && Headers["content-type"] != "text/plain") {
+        && Headers["content-type"] != "text/plain"
+        && Headers["content-type"] != "application/x-www-form-urlencoded") {
         return (setupBinaryFile());
     }
     else if (method == "POST"
