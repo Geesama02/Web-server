@@ -49,6 +49,8 @@ class Response {
         std::string                        queryString;
         std::string                        currentDirAbsolutePath;
         std::string                        body;
+        std::string                        locationHeader;
+        Location*                          locationMatch;
     public:
         static std::map<std::string, std::string> ContentTypeHeader;
 
@@ -72,10 +74,11 @@ class Response {
         void            setHeader( std::string key, std::string value );
         
         //other
+        void            listingOrIndex(Config&config, std::string reqPath);
         void            fillBody(Config& config, Request req);
         void            initializeContentHeader();
         void            checkForFileExtension(std::string fileName);
-        void            matchReqPathWithLocation(Config& config, Location loc, std::string reqPath, std::string toMatch);
+        void            matchReqPathWithLocation(Location& loc, std::string reqPath, Location **match);
         void            returnDefinedPage(std::string rootPath, std::string errorPageFile);
         int             checkDefinedErrorPage(std::string rootPath, std::map<int, std::string> error_page);
         void            checkAutoIndex(Config& config, Request req);

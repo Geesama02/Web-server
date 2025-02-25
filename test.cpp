@@ -3,7 +3,8 @@
 
 using namespace std;
 
-int main(void) {
+int main(void) 
+{
     ofstream file;
 
     file.open("test.conf");

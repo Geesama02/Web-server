@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Config.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
+/*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/22 11:25:38 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/02/24 16:07:51 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/02/23 11:51:49 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -61,7 +61,7 @@ void    Config::checkScriptTimeOut(int fd) {
     std::map<int, Client>::iterator it = Clients.begin();
     while (it != Clients.end()) {
         if (it->first == fd) {
-            if (Clients[fd].getCGI().getCpid() != 0 && timeNow() - Clients[fd].getCGI().getStartTime() > 5) {
+            if (Clients[fd].getCGI().getCpid() != 0 && timeNow() - Clients[fd].getCGI().getStartTime() > 10) {
                 kill(Clients[fd].getCGI().getCpid(), SIGKILL);
                 waitpid(Clients[fd].getCGI().getCpid(), NULL, 0);
                 close(Clients[fd].getCGI().getRpipe());

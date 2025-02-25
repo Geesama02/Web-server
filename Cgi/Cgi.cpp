@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Cgi.cpp                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
+/*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/30 18:22:44 by maglagal          #+#    #+#             */
-/*   Updated: 2025/02/22 18:28:10 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/02/23 11:52:12 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,7 +19,6 @@ CGI::CGI() {
     executablePathArray = NULL;
     absoluteFilePath = NULL;
     childStatus = 0;
-    timeout = 10000;
 }
 
 CGI::~CGI() {
@@ -42,7 +41,6 @@ std::string CGI::getBody() { return ResBody; }
 int         CGI::getChildStatus() { return childStatus; }
 pid_t       CGI::getCpid() { return cPid; }
 int         CGI::getRpipe() { return rPipe; }
-pid_t       CGI::getTimeout() { return timeout; }
 long long   CGI::getStartTime() { return startTime; }
 
 //setters
@@ -50,7 +48,6 @@ void        CGI::setBody(std::string newBody) { ResBody = newBody; }
 void        CGI::setChildStatus(int newChildStatus) { childStatus = newChildStatus; }
 void        CGI::setCpid(pid_t nPid) { cPid = nPid; }
 void        CGI::setRpipe(int nRpipe) { rPipe = nRpipe; }
-void        CGI::setTimeout(int nTimeout) { timeout = nTimeout; }
 void        CGI::setStartTime(long long nTime) {startTime = nTime;}
 
 
