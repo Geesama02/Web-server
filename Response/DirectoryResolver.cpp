@@ -111,8 +111,6 @@ void Response::listDirectories(std::string reqPath)
 
 void Response::matchReqPathWithLocation(Location& loc, std::string reqPath, Location **match)
 {
-    std::string pathMatch;
-    std::string root;
     std::string uri;
     size_t index;
 
@@ -122,9 +120,18 @@ void Response::matchReqPathWithLocation(Location& loc, std::string reqPath, Loca
     {
         uri = uri + "/";
         loc.setURI(uri);
-    }
+    } 
+    index = reqPath.rfind("/");
+    if ((index == 0 || index != reqPath.length() - 1) && reqPath.length() != 1)
+        reqPath = reqPath + "/";
+    std::cout << "Request uri => " << reqPath << std::endl;
+    std::cout << "location to match => " << uri<<std::endl;
+
     if (uri.length() > 0 && uri[0] == '/' && !strncmp(uri.c_str(), reqPath.c_str(), uri.length()))
     {  //dir should have a leading slash
+
+        
+
         if (!*match || (*match && loc.getURI().length() > (*match)->getURI().length()))
             *match = &loc;
     }
@@ -182,16 +189,14 @@ void Response::listingOrIndex(Config& config, std::string reqPath)
   
 }
 
-void Response::checkAutoIndexAndErrorPages(Config& config, Request req) {
-    //Location*   matchLocation = NULL;
-
+void Response::checkAutoIndexAndErrorPages(Config& config, Request req)
+{
     std::vector<Location>::iterator itLocations = config.getClients()[clientFd].getServer().getLocations().begin();
     while (itLocations != config.getClients()[clientFd].getServer().getLocations().end())
-    {    
+    {
         matchReqPathWithLocation(*itLocations, req.getPath(), &locationMatch);
         itLocations++;
     }
-    //locationMatch = matchLocation;
     listingOrIndex(config, req.getPath());
 }
 
