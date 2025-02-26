@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Response.hpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
+/*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/14 16:55:34 by maglagal          #+#    #+#             */
-/*   Updated: 2025/02/22 16:55:37 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/02/25 13:58:52 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -78,7 +78,7 @@ class Response {
         void            fillBody(Config& config, Request req);
         void            initializeContentHeader();
         void            checkForFileExtension(std::string fileName);
-        void            matchReqPathWithLocation(Location& loc, std::string reqPath, Location **match);
+        static void     matchReqPathWithLocation(Location& loc, std::string reqPath, Location **match);
         void            returnDefinedPage(std::string rootPath, std::string errorPageFile);
         int             checkDefinedErrorPage(std::string rootPath, std::map<int, std::string> error_page);
         void            checkAutoIndexAndErrorPages(Config& config, Request req);

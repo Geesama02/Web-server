@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/03 10:58:22 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/01/11 10:36:49 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/02/25 15:15:13 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,6 +30,7 @@ class UploadFile {
         bool firstRead;
         bool state;
         std::string boundary;
+        std::string path;
     public:
         // Constructor
         UploadFile();
@@ -52,6 +53,7 @@ class UploadFile {
         void setState(bool s);
         void setFirstRead(bool s);
         void setBoundary(std::string name);
+        void setPath(std::string p);
 
         // Functions
         int openFile();
