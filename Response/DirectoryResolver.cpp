@@ -156,12 +156,9 @@ void Response::listingOrIndex(Config& config, std::string reqPath)
       indexFile = pathMatch + locationMatch->getIndex();
   }
   else 
-  {          
       indexFile = serverRoot + reqPath + config.getClients()[clientFd].getServer().getIndex();
-  }
 
-  if (serverRoot.length() > 0 && serverRoot.rfind("/") != serverRoot.length() - 1)
-      reqPathAbsolute = config.getClients()[clientFd].getServer().getRoot() + reqPath;
+  reqPathAbsolute = config.getClients()[clientFd].getServer().getRoot() + reqPath;
   
   if (locationMatch)
   {
@@ -179,13 +176,14 @@ void Response::listingOrIndex(Config& config, std::string reqPath)
   else 
   {
     std::cout << "index file -> " << indexFile << std::endl;
+    std::cout << "request -> " << reqPathAbsolute << std::endl;
     if (!stat(reqPathAbsolute.c_str(), &reqPathCheck))
     {
-        if ((reqPathCheck.st_mode & S_IFDIR)
+        if (!stat(indexFile.c_str(), &st) && st.st_mode & S_IFREG)
+            showIndexFile(indexFile);
+        else if ((reqPathCheck.st_mode & S_IFDIR)
             && config.getClients()[clientFd].getServer().getAutoindex())
             listDirectories(reqPath);
-        else if (!stat(indexFile.c_str(), &st) && st.st_mode & S_IFREG)
-            showIndexFile(indexFile);
     }
   }
 }

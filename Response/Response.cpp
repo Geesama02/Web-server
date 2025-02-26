@@ -168,17 +168,18 @@ void Response::successResponse(Request req)
 {
     char contentLengthHeader[150];
     statusMssg += "200 OK\r\n";
-    if (req.getPath() == "/") {
-        body = "<!DOCTYPE html>"
-            "<html><head></head><body><form method=\"post\" enctype=\"multipart/form-data\">"
-            "<input type=\"file\" name=\"file\">"
-            "<button>Upload</button>"
-            "</form></body></html>";
-        std::sprintf(contentLengthHeader, "%ld", body.length());
-        Headers["Content-Length"] = contentLengthHeader;
-        Headers["Date"] = getDate();
-    }
-    else {
+    //if (req.getPath() == "/")
+    //{
+        //body = "<!DOCTYPE html>"
+            //"<html><head></head><body><form method=\"post\" enctype=\"multipart/form-data\">"
+            //"<input type=\"file\" name=\"file\">"
+            //"<button>Upload</button>"
+            //"</form></body></html>";
+        //std::sprintf(contentLengthHeader, "%ld", body.length());
+        //Headers["Content-Length"] = contentLengthHeader;
+        //Headers["Date"] = getDate();
+    //}
+    //else {
         if (!body.empty()) {
             std::sprintf(contentLengthHeader, "%ld", body.length());
             Headers["Content-Length"] = contentLengthHeader;
@@ -187,7 +188,7 @@ void Response::successResponse(Request req)
             file = new std::ifstream(req.getPath().erase(0, 1).c_str(), std::ios::binary);
         Headers["Accept-Ranges"] = "bytes";
         Headers["Date"] = getDate();
-    }
+    //}
 }
 
 void    Response::redirectionResponse(Request req, Config& config)
@@ -292,11 +293,9 @@ void Response::searchForFile(Config& config, Request& req)
 {
     struct stat st;
     std::string fileName;
-    std::string serverRoot;
+    std::string serverRoot = config.getClients()[clientFd].getServer().getRoot();
     char buff3[150];
 
-    std::cout << "before filename => " << fileName << std::endl;
-    serverRoot = config.getClients()[clientFd].getServer().getRoot();
     //seperating filename from querystring
     checkForQueryString(fileName);
     if (fileName == "/")
@@ -305,15 +304,9 @@ void Response::searchForFile(Config& config, Request& req)
         fileName = serverRoot + "/" + req.getPath();
     else    
         fileName = serverRoot + req.getPath();
+
     req.setPath(req.urlDecode(req.getPath()));
-    fileName = req.urlDecode(fileName);
-    //if (fileName != "/")
-    //    fileName.erase(0, 1);
-    if (fileName == "/") {
-        statusCode = 200;
-        setHeader("Content-Type", "text/html");
-        return ;
-    }
+    fileName = req.urlDecode(fileName); 
     std::cout << "fileName => " << fileName << std::endl;
     if (!stat(fileName.c_str(), &st)) {
         if (st.st_mode & S_IFDIR || (!(st.st_mode & S_IRUSR))) {
@@ -389,8 +382,6 @@ void Response::fillBody(Config& config, Request& req)
 
 void Response::sendResponse(Config& config, Request& req, int fd)
 {
-    clientFd = fd;
-
     if (req.getPath().find("/cgi-bin/") != std::string::npos && statusCode == 200) {
         int status;
         status = config.getClients()[fd].getCGI().execute_cgi_script(config, *this, clientFd, req);
