@@ -157,9 +157,10 @@ void Response::generateRes(Config& config)
     std::sprintf(contentLength, "%ld", body.length());
     Headers["Content-Length"] = contentLength;
     Headers["Date"] = getDate();
+    Headers["Content-Type"] = "text/html";
     if (statusCode == 201)
         Headers["Location"] = config.getClients()[clientFd].getRequest().getFileName();
-    if (statusCode >= 400)
+    if (statusCode >= 500)
         Headers["Connection"] = "close";
 }
 
@@ -363,7 +364,7 @@ int Response::sendBodyBytes()
 void Response::fillBody(Config& config, Request req)
 {
     if (statusCode != 301)
-        checkAutoIndex(config, req);
+        checkAutoIndexAndErrorPages(config, req);
 
     //when matching a location should not enter here!!
     if (statusCode == 200)
