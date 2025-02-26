@@ -537,8 +537,8 @@ int Request::readHeaders(std::string& str, Server& server, std::vector<Server>& 
             server = getServer(server, Servers);
         str = str.substr(stop_p + 4);
         currLocation = getMatchedLocation(path, server);
-        if (currLocation)
-            std::cout << "Location is -> " << currLocation->getURI() << std::endl;
+        //if (currLocation)
+            //std::cout << "Location is -> " << currLocation->getURI() << std::endl;
         if (Headers.find("host") == Headers.end() || (method == "POST"
             && Headers.find("content-length") != Headers.end()
             && !isNumber(Headers["content-length"])))

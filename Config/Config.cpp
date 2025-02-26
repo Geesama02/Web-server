@@ -243,6 +243,7 @@ int Config::handleClient(int fd) {
     Clients[fd].getResponse().clearResponse();
     status = Clients[fd].getRequest().readRequest(fd, Clients[fd].getServer(), Servers);
     Clients[fd].getResponse().setStatusCode(status);
+    Clients[fd].getResponse().setClientFd(fd);
     if (status == 1) // connection is closed
         closeConnection(fd);
     else if (status == 2) // if file is uploading
@@ -259,7 +260,8 @@ int Config::handleClient(int fd) {
             << " - " << Clients[fd].getRequest().getMethod() << ' ' << Clients[fd].getRequest().getPath()
             << ' ' << Clients[fd].getRequest().getVersion() << std::endl;
             if (Clients[fd].getRequest().getMethod() == "GET" && !status)
-                Clients[fd].getResponse().searchForFile(Clients[fd].getRequest());
+                Clients[fd].getResponse().searchForFile(*this, Clients[fd].getRequest());
+            std::cout << "status code -> " << Clients[fd].getResponse().getStatusCode() << std::endl; 
         }
         Clients[fd].getResponse().sendResponse(*this, Clients[fd].getRequest(), fd);
     }

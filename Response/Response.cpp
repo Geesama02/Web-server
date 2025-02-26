@@ -67,7 +67,7 @@ void Response::initializeStatusRes()
     resStatus.insert(std::make_pair(206, "Partial Content\r\n"));
     resStatus.insert(std::make_pair(301, "Moved Permanently\r\n"));
     resStatus.insert(std::make_pair(302, "Moved Temporarily\r\n"));
-    resStatus.insert(std::make_pair(400, "Bad Response\r\n"));
+    resStatus.insert(std::make_pair(400, "Bad Request\r\n"));
     resStatus.insert(std::make_pair(403, "Forbidden\r\n"));
     resStatus.insert(std::make_pair(404, "Not Found\r\n"));
     resStatus.insert(std::make_pair(405, "Method Not Allowed\r\n"));
@@ -288,23 +288,33 @@ void Response::vertifyDirectorySlash(std::string fileName)
         statusCode = 301;
 }
 
-void Response::searchForFile(Request& req)
+void Response::searchForFile(Config& config, Request& req)
 {
     struct stat st;
-    std::string fileName = req.getPath();
+    std::string fileName;
+    std::string serverRoot;
     char buff3[150];
 
+    std::cout << "before filename => " << fileName << std::endl;
+    serverRoot = config.getClients()[clientFd].getServer().getRoot();
     //seperating filename from querystring
     checkForQueryString(fileName);
+    if (fileName == "/")
+        fileName = serverRoot;
+    else if (serverRoot.length() > 0 && serverRoot.rfind("/") != serverRoot.length() - 1)
+        fileName = serverRoot + "/" + req.getPath();
+    else    
+        fileName = serverRoot + req.getPath();
     req.setPath(req.urlDecode(req.getPath()));
     fileName = req.urlDecode(fileName);
-    if (fileName != "/")
-        fileName.erase(0, 1);
-    else {
+    //if (fileName != "/")
+    //    fileName.erase(0, 1);
+    if (fileName == "/") {
         statusCode = 200;
         setHeader("Content-Type", "text/html");
         return ;
     }
+    std::cout << "fileName => " << fileName << std::endl;
     if (!stat(fileName.c_str(), &st)) {
         if (st.st_mode & S_IFDIR || (!(st.st_mode & S_IRUSR))) {
             statusCode = 403;
@@ -361,12 +371,11 @@ int Response::sendBodyBytes()
     return (0);
 }
 
-void Response::fillBody(Config& config, Request req)
+void Response::fillBody(Config& config, Request& req)
 {
-    std::cout << "status code -> " << statusCode << std::endl;
     if (statusCode == 200 || statusCode == 403)
       checkAutoIndex(config, req);
-    checkErrorPages(config);
+    checkErrorPages(config, req);
     //when matching a location should not enter here!!
     if (statusCode == 200)
         successResponse(req);

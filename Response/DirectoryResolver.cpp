@@ -140,8 +140,10 @@ void Response::listingOrIndex(Config& config, std::string reqPath)
   std::string uri;
   std::string root;
   std::string pathMatch;
+  std::string serverRoot;
+  std::string reqPathAbsolute;
 
-  std::cout << "check auto index!!\n";
+  serverRoot = config.getClients()[clientFd].getServer().getRoot();
   if (locationMatch)
   {
       uri = locationMatch->getURI();
@@ -153,14 +155,17 @@ void Response::listingOrIndex(Config& config, std::string reqPath)
 
       indexFile = pathMatch + locationMatch->getIndex();
   }
-  else
-      indexFile = config.getClients()[clientFd].getServer().getIndex();
+  else 
+  {          
+      indexFile = serverRoot + reqPath + config.getClients()[clientFd].getServer().getIndex();
+  }
 
-  std::string reqPathAsbsolute = currentDirAbsolutePath + reqPath;
-
+  if (serverRoot.length() > 0 && serverRoot.rfind("/") != serverRoot.length() - 1)
+      reqPathAbsolute = config.getClients()[clientFd].getServer().getRoot() + reqPath;
+  
   if (locationMatch)
   {
-      if (!stat(reqPathAsbsolute.c_str(), &reqPathCheck)
+      if (!stat(reqPathAbsolute.c_str(), &reqPathCheck)
             && (reqPathCheck.st_mode & S_IFDIR) && locationMatch->getAutoindex())
       {
           if (!stat(indexFile.c_str(), &st) && st.st_mode & S_IFREG)
@@ -171,19 +176,34 @@ void Response::listingOrIndex(Config& config, std::string reqPath)
       else if (!stat(indexFile.c_str(), &st) && st.st_mode & S_IFREG)
           showIndexFile(indexFile);
   }
+  else 
+  {
+    std::cout << "index file -> " << indexFile << std::endl;
+    if (!stat(reqPathAbsolute.c_str(), &reqPathCheck))
+    {
+        if ((reqPathCheck.st_mode & S_IFDIR)
+            && config.getClients()[clientFd].getServer().getAutoindex())
+            listDirectories(reqPath);
+        else if (!stat(indexFile.c_str(), &st) && st.st_mode & S_IFREG)
+            showIndexFile(indexFile);
+    }
+  }
 }
 
-void Response::checkAutoIndex(Config& config, Request req)
+void Response::checkAutoIndex(Config& config, Request& req)
+{
+    searchLocationsForMatch(config, req); 
+    listingOrIndex(config, req.getPath());
+}
+
+void Response::searchLocationsForMatch(Config& config, Request& req)
 {
     std::vector<Location>::iterator itLocations = config.getClients()[clientFd].getServer().getLocations().begin();
     while (itLocations != config.getClients()[clientFd].getServer().getLocations().end())
     {
         matchReqPathWithLocation(*itLocations, req.getPath(), &locationMatch);
         itLocations++;
-    }
-    if (locationMatch)
-      std::cout << "location matched => " << locationMatch->getURI() << std::endl;
-    listingOrIndex(config, req.getPath());
+    } 
 }
 
 int    Response::checkDefinedErrorPage(std::string rootPath, std::map<int, std::string> error_page)
@@ -209,8 +229,9 @@ int    Response::checkDefinedErrorPage(std::string rootPath, std::map<int, std::
     return (0);
 }
 
-void Response::checkErrorPages(Config& config)
+void Response::checkErrorPages(Config& config, Request& req)
 {
+  searchLocationsForMatch(config, req);
   if(locationMatch)
   {
       if (checkDefinedErrorPage(config.getClients()[clientFd].getServer().getRoot(),
@@ -232,7 +253,12 @@ void    Response::returnDefinedPage(std::string rootPath, std::string errorPageF
 
     errorPageFile.erase(0, 1);
     if (rootPath != "/")
-        errorPageFile = rootPath + errorPageFile;
+    {
+        if (rootPath.rfind("/") != rootPath.length() - 1)
+            errorPageFile = rootPath + "/" + errorPageFile;
+        else
+            errorPageFile = rootPath + errorPageFile; 
+    }
     std::cout << "error page -> " << errorPageFile << std::endl;
     std::ifstream definedPage(errorPageFile.c_str());
     if (!definedPage.is_open())
