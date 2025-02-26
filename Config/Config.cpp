@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Config.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
+/*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/22 11:25:38 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/02/23 11:51:49 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/02/25 16:16:39 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -229,7 +229,7 @@ int Config::acceptConnection(int fd, epoll_event& ev) {
 
 void Config::closeConnection(int fd) {
     epoll_ctl(epoll_fd, EPOLL_CTL_DEL, fd, NULL);
-    std::cout << "closed client : " << fd<<std::endl;
+    // std::cout << "closed client : " << fd<<std::endl;
     Clients.erase(fd);
     close(fd);
 }
@@ -242,6 +242,7 @@ int Config::handleClient(int fd) {
     Clients[fd].getResponse().clearResponse();
     status = Clients[fd].getRequest().readRequest(fd, Clients[fd].getServer(), Servers);
     Clients[fd].getResponse().setStatusCode(status);
+    std::cout << "status -> " << status<<  std::endl;
     if (status == 1) // connection is closed
         closeConnection(fd);
     else if (status == 2) // if file is uploading

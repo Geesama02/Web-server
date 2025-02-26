@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   UploadFile.cpp                                     :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
+/*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/03 11:07:50 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/02/20 09:42:08 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/02/25 15:58:40 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -38,6 +38,7 @@ void UploadFile::setExpectedBytes(long long bytes) { expectedBytes = bytes; }
 void UploadFile::setFirstRead(bool fr) { firstRead = fr; }
 void UploadFile::setState(bool s) { state = s; }
 void UploadFile::setBoundary(std::string name) { boundary = name; }
+void UploadFile::setPath(std::string p) { path = p; }
 
 // Functions
 void UploadFile::newFilename() {
@@ -54,7 +55,7 @@ void UploadFile::newFilename() {
 
 int UploadFile::openFile() {
     newFilename();
-    filename = "../../goinfre/" + filename;
+    filename = path + filename;
     std::cout << "file allocated!!" << std::endl;
     fd = new std::ofstream(filename.c_str());
     if (fd->is_open()) {

@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   DirectoryResolver.cpp                              :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
+/*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/09 09:49:11 by maglagal          #+#    #+#             */
-/*   Updated: 2025/02/23 11:53:48 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/02/25 16:59:51 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -166,8 +166,8 @@ void Response::listingOrIndex(Config& config, std::string reqPath)
 
   if (locationMatch)
   {
-      if (!stat(reqPathAsbsolute.c_str(), &reqPathCheck)
-          && (reqPathCheck.st_mode & S_IFDIR) && locationMatch->getAutoindex())
+          if (!statusCode && !stat(reqPathAsbsolute.c_str(), &reqPathCheck)
+                && (reqPathCheck.st_mode & S_IFDIR) && locationMatch->getAutoindex())
           {
               if (!statusCode && !stat(indexFile.c_str(), &st) && st.st_mode & S_IFREG)
                   showIndexFile(indexFile);
