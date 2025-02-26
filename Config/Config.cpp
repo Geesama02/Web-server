@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Config.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
+/*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/22 11:25:38 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/02/25 16:16:39 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/02/23 11:51:49 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -229,7 +229,7 @@ int Config::acceptConnection(int fd, epoll_event& ev) {
 
 void Config::closeConnection(int fd) {
     epoll_ctl(epoll_fd, EPOLL_CTL_DEL, fd, NULL);
-    // std::cout << "closed client : " << fd<<std::endl;
+    std::cout << "closed client : " << fd<<std::endl;
     Clients.erase(fd);
     close(fd);
 }
@@ -237,12 +237,12 @@ void Config::closeConnection(int fd) {
 int Config::handleClient(int fd) {
     Response res;
     int status;
-    
+
+    std::cout << "------------------------------------------" << std::endl;
     Clients[fd].setTimeout(timeNow());
     Clients[fd].getResponse().clearResponse();
     status = Clients[fd].getRequest().readRequest(fd, Clients[fd].getServer(), Servers);
     Clients[fd].getResponse().setStatusCode(status);
-    std::cout << "status -> " << status<<  std::endl;
     if (status == 1) // connection is closed
         closeConnection(fd);
     else if (status == 2) // if file is uploading
@@ -258,11 +258,12 @@ int Config::handleClient(int fd) {
             std::cout << Clients[fd].getServer().whichServerName(tmp) << ':' << Clients[fd].getServer().getPort()
             << " - " << Clients[fd].getRequest().getMethod() << ' ' << Clients[fd].getRequest().getPath()
             << ' ' << Clients[fd].getRequest().getVersion() << std::endl;
-            if (Clients[fd].getRequest().getMethod() == "GET")
+            if (Clients[fd].getRequest().getMethod() == "GET" && !status)
                 Clients[fd].getResponse().searchForFile(Clients[fd].getRequest());
         }
         Clients[fd].getResponse().sendResponse(*this, Clients[fd].getRequest(), fd);
     }
+    std::cout << "------------------------------------------" << std::endl;
     return (0);
 }
 

@@ -363,9 +363,10 @@ int Response::sendBodyBytes()
 
 void Response::fillBody(Config& config, Request req)
 {
-    if (statusCode != 301)
-        checkAutoIndexAndErrorPages(config, req);
-
+    std::cout << "status code -> " << statusCode << std::endl;
+    if (statusCode == 200 || statusCode == 403)
+      checkAutoIndex(config, req);
+    checkErrorPages(config);
     //when matching a location should not enter here!!
     if (statusCode == 200)
         successResponse(req);

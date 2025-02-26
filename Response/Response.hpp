@@ -81,7 +81,8 @@ class Response {
         static void     matchReqPathWithLocation(Location& loc, std::string reqPath, Location **match);
         void            returnDefinedPage(std::string rootPath, std::string errorPageFile);
         int             checkDefinedErrorPage(std::string rootPath, std::map<int, std::string> error_page);
-        void            checkAutoIndexAndErrorPages(Config& config, Request req);
+        void            checkAutoIndex(Config& config, Request req);
+        void            checkErrorPages(Config& config);
         void            listDirectories(std::string dirName);
         void            showIndexFile(std::string indexFilePath);
         int             comparingReqWithLocation(std::string locationPath, std::string reqPath);
