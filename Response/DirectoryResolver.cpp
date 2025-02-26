@@ -124,6 +124,7 @@ void Response::matchReqPathWithLocation(Location& loc, std::string reqPath, Loca
     index = reqPath.rfind("/");
     if ((index == 0 || index != reqPath.length() - 1) && reqPath.length() != 1)
         reqPath = reqPath + "/";
+
     std::cout << "Request uri => " << reqPath << std::endl;
     std::cout << "location to match => " << uri<<std::endl;
 
@@ -162,7 +163,6 @@ void Response::listingOrIndex(Config& config, std::string reqPath)
       indexFile = config.getClients()[clientFd].getServer().getIndex();
 
   std::string reqPathAsbsolute = currentDirAbsolutePath + reqPath;
-
 
   if (locationMatch)
   {
@@ -233,7 +233,6 @@ void    Response::returnDefinedPage(std::string rootPath, std::string errorPageF
     std::ifstream definedPage(errorPageFile.c_str());
     if (!definedPage.is_open())
     {
-        
         clearResponse();
         if (stat(errorPageFile.c_str(), &st) == -1)
             statusCode = 404;
