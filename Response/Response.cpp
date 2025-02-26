@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/14 17:03:53 by maglagal          #+#    #+#             */
-/*   Updated: 2025/02/25 16:50:02 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/02/26 09:54:50 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -375,6 +375,7 @@ void Response::fillBody(Config& config, Request req)
         redirectionResponse(req, config);
     else
         generateRes(config);
+    
 }
 
 void Response::sendResponse(Config& config, Request& req, int fd)

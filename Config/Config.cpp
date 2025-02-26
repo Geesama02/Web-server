@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/22 11:25:38 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/02/25 16:16:39 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/02/26 10:31:59 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -234,6 +234,16 @@ void Config::closeConnection(int fd) {
     close(fd);
 }
 
+void Config::printLog(int fd) {
+    std::string tmp = Clients[fd].getRequest().getHeaders()["host"];
+    size_t pos = tmp.rfind(':');
+    if (pos != std::string::npos)
+        tmp.erase(pos);
+    std::cout << Clients[fd].getServer().whichServerName(tmp) << ':' << Clients[fd].getServer().getPort()
+    << " - " << Clients[fd].getRequest().getMethod() << ' ' << Clients[fd].getRequest().getPath()
+    << ' ' << Clients[fd].getRequest().getVersion() << std::endl;
+}
+
 int Config::handleClient(int fd) {
     Response res;
     int status;
@@ -251,14 +261,8 @@ int Config::handleClient(int fd) {
         if (!Clients[fd].getRequest().getPath().empty())
         {
             // std::cout << "path -> " << request.getPath() << std::endl;
-            std::string tmp = Clients[fd].getRequest().getHeaders()["host"];
-            size_t pos = tmp.rfind(':');
-            if (pos != std::string::npos)
-                tmp.erase(pos);
-            std::cout << Clients[fd].getServer().whichServerName(tmp) << ':' << Clients[fd].getServer().getPort()
-            << " - " << Clients[fd].getRequest().getMethod() << ' ' << Clients[fd].getRequest().getPath()
-            << ' ' << Clients[fd].getRequest().getVersion() << std::endl;
-            if (Clients[fd].getRequest().getMethod() == "GET")
+            printLog(fd);
+            if (Clients[fd].getRequest().getMethod() == "GET" && status == 0)
                 Clients[fd].getResponse().searchForFile(Clients[fd].getRequest());
         }
         Clients[fd].getResponse().sendResponse(*this, Clients[fd].getRequest(), fd);
