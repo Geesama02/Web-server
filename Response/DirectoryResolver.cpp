@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   DirectoryResolver.cpp                              :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
+/*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/09 09:49:11 by maglagal          #+#    #+#             */
-/*   Updated: 2025/02/23 11:53:48 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/02/25 16:59:51 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -126,7 +126,7 @@ void Response::matchReqPathWithLocation(Location& loc, std::string reqPath, Loca
         pathMatch = root + uri;
     else
         pathMatch = uri;
-    if (uri.length() > 0 && uri[0] == '/' && !strncmp(pathMatch.c_str(), reqPath.c_str(), pathMatch.length()))
+    if (uri.length() > 0 && uri[0] == '/' && !strncmp(uri.c_str(), reqPath.c_str(), uri.length()))
     {  //dir should have a leading slash
         
         if (!*match || (*match && loc.getURI().length() > (*match)->getURI().length()))
@@ -156,15 +156,15 @@ void Response::listingOrIndex(Config& config, std::string reqPath)
 
   if (locationMatch)
   {
-      if (!stat(reqPathAsbsolute.c_str(), &reqPathCheck)
-          && (reqPathCheck.st_mode & S_IFDIR) && locationMatch->getAutoindex())
+          if (!statusCode && !stat(reqPathAsbsolute.c_str(), &reqPathCheck)
+                && (reqPathCheck.st_mode & S_IFDIR) && locationMatch->getAutoindex())
           {
               if (!stat(aIndexFile.c_str(), &st) && st.st_mode & S_IFREG)
                   showIndexFile(aIndexFile);
               else
                   listDirectories(reqPath);
           }
-          else if (!stat(aIndexFile.c_str(), &st) && st.st_mode & S_IFREG)
+          else if (!statusCode && !stat(aIndexFile.c_str(), &st) && st.st_mode & S_IFREG)
               showIndexFile(aIndexFile);
           else if (checkDefinedErrorPage(config.getClients()[clientFd].getServer().getRoot(),
               locationMatch->getErrorPage())) // should Nothing enter just when not found

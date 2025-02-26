@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/30 12:07:04 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/02/25 11:49:30 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/02/26 09:18:46 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,6 +14,7 @@
 // #include "../Response/Response.hpp"
 #include "../Config/Config.hpp"
 #include "../Parser/Parser.hpp"
+// #include "../Config/Location.hpp"
 
 // std::map<int, UploadFile> Request::uploads;
 // std::map<int, Request> Request::unfinishedReqs;
@@ -21,6 +22,7 @@ std::map<int, std::string> Request::reqStatus;
 
 // Constructor
 Request::Request() {
+    currLocation = NULL;
     headersLength = 0;
     state = 1;
     file = NULL;
@@ -43,6 +45,8 @@ void Request::setBody(std::string& b) { body = b; }
 void Request::addUpload(UploadFile& new_upload) {
     file = new UploadFile;
     *file = new_upload;
+    // std::string locationPath = currLocation->getUploadPath();
+    // file->setPath(currLocation->getUploadPath())
 }
 
 // Destructor
@@ -361,8 +365,8 @@ int Request::setupPostBody() {
         return (411); // Missing Content-length
     file.setType("post");
     file.setFilename(".tmp");
+    file.setPath("../../goinfre/");
     addUpload(file);
-    // unfinishedReqs[fd] = *this;
     return (0);
 }
 
@@ -379,7 +383,6 @@ int Request::continuePostBody(std::string str) {
     }
     else
         return (2);
-    // unfinishedReqs.erase(fd);
     return (status);
 }
 
@@ -424,7 +427,26 @@ int Request::setupBinaryFile() {
     else
         return (411); // Missing Content-length
     file.setType("binary");
+    int ret = joinPath(currLocation, file);
+    if (ret != 0)
+        return (ret);
     addUpload(file);
+    return (0);
+}
+
+int Request::joinPath(Location* location, UploadFile& file) {
+    if (!location || location->getUploadPath().empty())
+        return (403);
+    std::string locationPath = location->getUploadPath();
+    std::string locationRoot = location->getRoot();
+    if (*locationRoot.rbegin() != '/')
+        locationRoot += '/';
+    if (*locationPath.rbegin() != '/')
+        locationPath += '/';
+    if (*locationPath.begin() == '/')
+        locationPath.erase(0, 1);
+    // std::cout << "Path -> " << locationRoot + locationPath << std::endl;
+    file.setPath(locationRoot + locationPath);
     return (0);
 }
 
@@ -437,7 +459,7 @@ int Request::handlePostReq() {
     else if (method == "POST" 
             && Headers.find("transfer-encoding") != Headers.end()) {
         if (Headers["transfer-encoding"] == "chunked")
-            setupChunkedFile();
+            return (setupChunkedFile());
         else
             return (501);
     }
@@ -451,9 +473,8 @@ int Request::handlePostReq() {
             && Headers.find("content-length") != Headers.end()) {
         return (setupPostBody());
     }
-    else if (method == "POST") {
+    else if (method == "POST")
         return (400);
-    }
     return (0);
 }
 
@@ -493,6 +514,15 @@ void Request::clearReq() {
     path.clear();
     version.clear();
     headersLength = 0;
+    currLocation = NULL;
+}
+
+Location *Request::getMatchedLocation(std::string path, Server& server) {
+    Location *loc = NULL;
+    for (std::vector<Location>::iterator it = server.getLocations().begin(); it != server.getLocations().end(); it++) {
+        Response::matchReqPathWithLocation(*it, path, &loc);
+    }
+    return (loc);
 }
 
 int Request::readHeaders(std::string& str, Server& server, std::vector<Server>& Servers) {
@@ -506,16 +536,18 @@ int Request::readHeaders(std::string& str, Server& server, std::vector<Server>& 
         if (Headers.find("host") != Headers.end())
             server = getServer(server, Servers);
         str = str.substr(stop_p + 4);
-        // std::cout << Headers["content-length"] << std::endl;
+        currLocation = getMatchedLocation(path, server);
+        if (currLocation)
+            std::cout << "Location is -> " << currLocation->getURI() << std::endl;
         if (Headers.find("host") == Headers.end() || (method == "POST"
             && Headers.find("content-length") != Headers.end()
             && !isNumber(Headers["content-length"])))
             return (400); // Bad Request
         else if (method == "POST"
             && Headers.find("content-length") != Headers.end()
-            && strToDecimal(Headers["content-length"]) > server.getClientMaxBodySize())
+            && strToDecimal(Headers["content-length"]) > server.getClientMaxBodySize()
+            && server.getClientMaxBodySize() != 0)
             return (413); // Request Too Big
-        // std::cout << "inside\n";
         int res = handlePostReq();
         if (res != 0)
             return (res);
@@ -531,6 +563,9 @@ int Request::setupChunkedFile() {
     
     file.setType("chunked");
     addUpload(file);
+    int ret = joinPath(currLocation, file);
+    if (ret != 0)
+        return (ret);
     return (0);
 }
 
@@ -544,6 +579,9 @@ int Request::setupFile() {
     std::string boundary = Headers["content-type"].substr(pos + 9);
     file.setType("multipart");
     file.setBoundary(boundary);
+    int ret = joinPath(currLocation, file);
+    if (ret != 0)
+        return (ret);
     addUpload(file);
     return (0);
 }

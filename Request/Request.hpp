@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/30 11:15:32 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/02/25 10:50:01 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/02/25 15:44:13 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,12 +29,14 @@
 
 class Response;
 class Server;
+class Location;
 
 class Request {
     private:
         std::map<std::string, std::string> Headers;
         static std::map<int, std::string>  reqStatus;
         UploadFile                         *file;
+        Location                           *currLocation;
         int                                state;
         int                                headersLength;
         std::string                        holder;
@@ -95,6 +97,8 @@ class Request {
         int handleReqLine(std::stringstream& s);
         std::string urlDecode(std::string path);
         int checkValidPath(std::string& path);
+        Location* getMatchedLocation(std::string path, Server& server);
+        int joinPath(Location* location, UploadFile& file);
 
         // Destructor
         ~Request();

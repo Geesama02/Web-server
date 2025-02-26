@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/22 10:25:22 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/02/16 10:58:25 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/02/25 16:33:33 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,7 +23,7 @@ Server::Server() {
     // std::vector<int> err;
     // err.push_back(404);
     // error_page.insert(std::pair<std::vector<int>, std::string>(err, "/Error_pages/404.html"));
-    client_max_body_size = 1024;
+    client_max_body_size = 0;
     index = "index.html";
 }
 
