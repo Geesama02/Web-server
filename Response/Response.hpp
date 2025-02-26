@@ -74,6 +74,7 @@ class Response {
         void            setHeader( std::string key, std::string value );
         
         //other
+        void            handleDeleteRequest(Config& config, Request& req);
         void            listingOrIndex(Config&config, std::string reqPath);
         void            fillBody(Config& config, Request& req);
         void            initializeContentHeader();
@@ -87,7 +88,7 @@ class Response {
         void            listDirectories(std::string dirName);
         void            showIndexFile(std::string indexFilePath);
         int             comparingReqWithLocation(std::string locationPath, std::string reqPath);
-        void            vertifyDirectorySlash(std::string fileName);
+        void            vertifyDirectorySlash(std::string fileName, Request& req);
         std::string     getDate();
         void            generateRes(Config& config);
         void            initializeStatusRes();
