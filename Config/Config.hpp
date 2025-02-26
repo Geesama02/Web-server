@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/21 15:07:06 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/02/22 16:00:22 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/02/26 10:30:30 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -49,6 +49,7 @@ class Config {
         static  long long timeNow();
         int     monitorTimeout();
         void    closeConnection(int fd);
+        void    printLog(int fd);
 };
 
 #endif
