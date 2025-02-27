@@ -327,6 +327,8 @@ void Response::searchForFile(Config& config, Request& req)
         {
             statusCode = 403;
             vertifyDirectorySlash(fileName, req);
+            if (statusCode == 403)
+                checkAutoIndex(config, req);
             return ;
         }
         else if ((st.st_mode & S_IFREG) && (st.st_mode & S_IRUSR)) {
@@ -409,8 +411,8 @@ void Response::handleDeleteRequest(Config& config, Request& req)
 
 void Response::fillBody(Config& config, Request& req)
 {
-    if (statusCode == 200 || statusCode == 403)
-      checkAutoIndex(config, req);
+     //if (statusCode == 200 || statusCode == 403)
+     // checkAutoIndex(config, req);
     checkErrorPages(config, req);
     //when matching a location should not enter here!!
     if (statusCode == 200)

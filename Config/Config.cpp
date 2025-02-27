@@ -254,7 +254,6 @@ int Config::handleClient(int fd) {
     status = Clients[fd].getRequest().readRequest(fd, Clients[fd].getServer(), Servers);
     Clients[fd].getResponse().setStatusCode(status);
     Clients[fd].getResponse().setClientFd(fd);
-    std::cout << "request status --> " << status << std::endl;
     std::cout << "Requets path -> " << Clients[fd].getRequest().getPath() << std::endl; 
     if (status == 1) // connection is closed
         closeConnection(fd);
@@ -265,9 +264,11 @@ int Config::handleClient(int fd) {
         {
             // std::cout << "path -> " << request.getPath() << std::endl;
             printLog(fd);
-            if (Clients[fd].getRequest().getMethod() == "GET" && status == 0)
-                Clients[fd].getResponse().searchForFile(Clients[fd].getRequest());
+            if (status == 0) {
+                Clients[fd].getResponse().searchForFile(*this, Clients[fd].getRequest());
+            }
         }
+        std::cout << "request status --> " << status << std::endl;
         Clients[fd].getResponse().sendResponse(*this, Clients[fd].getRequest(), fd);
     }
     std::cout << "------------------------------------------" << std::endl;
