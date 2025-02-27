@@ -139,7 +139,6 @@ std::string Response::getDate()
 
 void Response::generateRes(Config& config)
 {
-    std::cout << "response to generate !!!\n";
     char buff[150];
     std::string statusCodeStr;
     sprintf(buff, "%d", statusCode);
@@ -168,34 +167,25 @@ void Response::generateRes(Config& config)
         Headers["Location"] = config.getClients()[clientFd].getRequest().getFileName();
     if (statusCode >= 500)
         Headers["Connection"] = "close";
-    std::cout << "generate Res!!" << std::endl;
 }
 
 void Response::successResponse(Request req)
 {
     char contentLengthHeader[150];
     statusMssg += "200 OK\r\n";
-    //if (req.getPath() == "/")
-    //{
-        //body = "<!DOCTYPE html>"
-            //"<html><head></head><body><form method=\"post\" enctype=\"multipart/form-data\">"
-            //"<input type=\"file\" name=\"file\">"
-            //"<button>Upload</button>"
-            //"</form></body></html>";
-        //std::sprintf(contentLengthHeader, "%ld", body.length());
-        //Headers["Content-Length"] = contentLengthHeader;
-        //Headers["Date"] = getDate();
-    //}
-    //else {
-        if (!body.empty()) {
-            std::sprintf(contentLengthHeader, "%ld", body.length());
-            Headers["Content-Length"] = contentLengthHeader;
-        }
-        if (!file)
-            file = new std::ifstream(req.getPath().erase(0, 1).c_str(), std::ios::binary);
-        Headers["Accept-Ranges"] = "bytes";
-        Headers["Date"] = getDate();
-    //}
+    
+    if (!body.empty())
+    {
+        std::sprintf(contentLengthHeader, "%ld", body.length());
+        Headers["Content-Length"] = contentLengthHeader;
+    }
+    std::map<std::string, std::string>::iterator it = Headers.find("Content-Type");
+    if (it == Headers.end())
+        Headers["Content-Type"] = "text/html";
+    if (!file)
+        file = new std::ifstream(req.getPath().erase(0, 1).c_str(), std::ios::binary);
+    Headers["Accept-Ranges"] = "bytes";
+    Headers["Date"] = getDate();
 }
 
 void    Response::redirectionResponse(Request req, Config& config)

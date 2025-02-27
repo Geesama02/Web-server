@@ -45,6 +45,7 @@ void    Response::showIndexFile(std::string indexFilePath)
       statusCode = 200;
     while (std::getline(indexFile, buff))
         body += buff;
+    indexFile.close();
 }
 
 std::string Response::urlEncode(std::string path)
@@ -236,7 +237,8 @@ void Response::checkErrorPages(Config& config, Request& req)
   }
 }
 
-void    Response::returnDefinedPage(std::string rootPath, std::string errorPageFile) {
+void    Response::returnDefinedPage(std::string rootPath, std::string errorPageFile)
+{
     std::string buffer;
     struct stat st;
 
@@ -261,6 +263,7 @@ void    Response::returnDefinedPage(std::string rootPath, std::string errorPageF
     }
     while (std::getline(definedPage, buffer))
         body += buffer;
+    definedPage.close();
 }
 
 int Response::unlink_cb(const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf)
