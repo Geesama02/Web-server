@@ -28,6 +28,7 @@
 #include <sys/types.h>
 #include <fstream>
 #include <iomanip>
+#include <ftw.h>
 
 // #include "../Request/Request.hpp"
 // #include "../Config/Config.hpp"
@@ -74,6 +75,8 @@ class Response {
         void            setHeader( std::string key, std::string value );
         
         //other
+        static int             unlink_cb(const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf);
+        int             rmrf(char *path);
         void            handleDeleteRequest(Config& config, Request& req);
         void            listingOrIndex(Config&config, std::string reqPath);
         void            fillBody(Config& config, Request& req);
@@ -88,7 +91,7 @@ class Response {
         void            listDirectories(std::string dirName);
         void            showIndexFile(std::string indexFilePath);
         int             comparingReqWithLocation(std::string locationPath, std::string reqPath);
-        void            vertifyDirectorySlash(std::string fileName, Request& req);
+        void            verifyDirectorySlash(std::string fileName, Request& req);
         std::string     getDate();
         void            generateRes(Config& config);
         void            initializeStatusRes();

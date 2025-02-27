@@ -140,7 +140,6 @@ std::string Response::getDate()
 
 void Response::generateRes(Config& config)
 {
-    std::cout << "response to generate !!!\n";
     char buff[150];
     std::string statusCodeStr;
     sprintf(buff, "%d", statusCode);
@@ -169,34 +168,25 @@ void Response::generateRes(Config& config)
         Headers["Location"] = config.getClients()[clientFd].getRequest().getFileName();
     if (statusCode >= 500)
         Headers["Connection"] = "close";
-    std::cout << "generate Res!!" << std::endl;
 }
 
 void Response::successResponse(Request req)
 {
     char contentLengthHeader[150];
     statusMssg += "200 OK\r\n";
-    //if (req.getPath() == "/")
-    //{
-        //body = "<!DOCTYPE html>"
-            //"<html><head></head><body><form method=\"post\" enctype=\"multipart/form-data\">"
-            //"<input type=\"file\" name=\"file\">"
-            //"<button>Upload</button>"
-            //"</form></body></html>";
-        //std::sprintf(contentLengthHeader, "%ld", body.length());
-        //Headers["Content-Length"] = contentLengthHeader;
-        //Headers["Date"] = getDate();
-    //}
-    //else {
-        if (!body.empty()) {
-            std::sprintf(contentLengthHeader, "%ld", body.length());
-            Headers["Content-Length"] = contentLengthHeader;
-        }
-        if (!file)
-            file = new std::ifstream(req.getPath().erase(0, 1).c_str(), std::ios::binary);
-        Headers["Accept-Ranges"] = "bytes";
-        Headers["Date"] = getDate();
-    //}
+    
+    if (!body.empty())
+    {
+        std::sprintf(contentLengthHeader, "%ld", body.length());
+        Headers["Content-Length"] = contentLengthHeader;
+    }
+    std::map<std::string, std::string>::iterator it = Headers.find("Content-Type");
+    if (it == Headers.end())
+        Headers["Content-Type"] = "text/html";
+    if (!file)
+        file = new std::ifstream(req.getPath().erase(0, 1).c_str(), std::ios::binary);
+    Headers["Accept-Ranges"] = "bytes";
+    Headers["Date"] = getDate();
 }
 
 void    Response::redirectionResponse(Request req, Config& config)
@@ -290,7 +280,7 @@ void Response::checkForQueryString(std::string& fileName)
     }
 }
 
-void Response::vertifyDirectorySlash(std::string fileName, Request& req)
+void Response::verifyDirectorySlash(std::string fileName, Request& req)
 {
     if (fileName.rfind("/") != fileName.length() - 1)
     {
@@ -314,19 +304,20 @@ void Response::searchForFile(Config& config, Request& req)
     checkForQueryString(fileName);
     if (fileName == "/")
         fileName = serverRoot;
-    else if (serverRoot.rfind("/") != serverRoot.length() - 1)
-        fileName = serverRoot + req.getPath();
-    else    
-        fileName = serverRoot + req.getPath();
+    else if (serverRoot.length() > 0 && serverRoot.rfind("/") == serverRoot.length() - 1) 
+        serverRoot.erase(serverRoot.length() - 1);
+    fileName = serverRoot + req.getPath();
     req.setPath(req.urlDecode(req.getPath()));
     fileName = req.urlDecode(fileName); 
-    std::cout << "Filename -> "<< fileName << std::endl;
+    std::cout << "file request -> " << fileName << std::endl;
     if (!stat(fileName.c_str(), &st))
     {
         if (st.st_mode & S_IFDIR || (!(st.st_mode & S_IRUSR)))
         {
             statusCode = 403;
-            vertifyDirectorySlash(fileName, req);
+            verifyDirectorySlash(fileName, req);
+            if (statusCode == 403)
+                checkAutoIndex(config, req);
             return ;
         }
         else if ((st.st_mode & S_IFREG) && (st.st_mode & S_IRUSR)) {
@@ -393,10 +384,11 @@ void Response::handleDeleteRequest(Config& config, Request& req)
       requestedPath = serverRoot + "/" + req.getPath();
   else
       requestedPath = serverRoot + req.getPath();
+  char requestPath[200];
+  std::strcpy(requestPath, requestedPath.c_str());
   if (statusCode == 204)
   {
-    //   std::cout << "re" << requestedPath << std::endl;
-      if (remove(requestedPath.c_str()) == -1)
+      if (rmrf(requestPath) == -1)
       {
         std::cout << "errno -> " << strerror(errno) << std::endl;
           clearResponse();
@@ -410,8 +402,8 @@ void Response::handleDeleteRequest(Config& config, Request& req)
 
 void Response::fillBody(Config& config, Request& req)
 {
-    if (statusCode == 200 || statusCode == 403)
-      checkAutoIndex(config, req);
+     //if (statusCode == 200 || statusCode == 403)
+     // checkAutoIndex(config, req);
     checkErrorPages(config, req);
     //when matching a location should not enter here!!
     if (statusCode == 200)
@@ -430,7 +422,7 @@ void Response::sendResponse(Config& config, Request& req, int fd)
     std::cout << "status code -> " << statusCode << std::endl;
     if (statusCode == 204)
         handleDeleteRequest(config, req);
-    if (req.getPath().find("/cgi-bin/") != std::string::npos && statusCode == 200) {
+    else if (req.getPath().find("/cgi-bin/") != std::string::npos && statusCode == 200) {
         int status;
         status = config.getClients()[fd].getCGI().execute_cgi_script(config, *this, clientFd, req);
         if (fd != 0)
