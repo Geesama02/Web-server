@@ -391,7 +391,15 @@ void Response::handleDeleteRequest(Config& config, Request& req)
   else
       requestedPath = serverRoot + req.getPath();
   if (statusCode == 204)
-      remove(requestedPath.c_str());
+  {
+      if (remove(requestedPath.c_str()) == -1)
+      {
+          clearResponse();
+          statusCode = 500;
+          sendResponse(config, req, clientFd);
+          return ;
+      }      
+  }
   Headers.erase("Content-Type");
   Headers.erase("Content-Length");
 }
