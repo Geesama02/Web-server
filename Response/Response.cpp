@@ -289,7 +289,7 @@ void Response::checkForQueryString(std::string& fileName)
     }
 }
 
-void Response::vertifyDirectorySlash(std::string fileName, Request& req)
+void Response::verifyDirectorySlash(std::string fileName, Request& req)
 {
     if (fileName.rfind("/") != fileName.length() - 1)
     {
@@ -313,11 +313,9 @@ void Response::searchForFile(Config& config, Request& req)
     checkForQueryString(fileName);
     if (fileName == "/")
         fileName = serverRoot;
-    else if (serverRoot.length() > 0 && serverRoot.rfind("/") != serverRoot.length() - 1)
-        fileName = serverRoot + "/" + req.getPath();
-    else    
-        fileName = serverRoot + req.getPath();
-
+    else if (serverRoot.length() > 0 && serverRoot.rfind("/") == serverRoot.length() - 1) 
+        serverRoot.erase(serverRoot.length() - 1);
+    fileName = serverRoot + req.getPath();
     req.setPath(req.urlDecode(req.getPath()));
     fileName = req.urlDecode(fileName); 
     std::cout << "file request -> " << fileName << std::endl;
@@ -326,7 +324,7 @@ void Response::searchForFile(Config& config, Request& req)
         if (st.st_mode & S_IFDIR || (!(st.st_mode & S_IRUSR)))
         {
             statusCode = 403;
-            vertifyDirectorySlash(fileName, req);
+            verifyDirectorySlash(fileName, req);
             if (statusCode == 403)
                 checkAutoIndex(config, req);
             return ;
@@ -430,7 +428,7 @@ void Response::sendResponse(Config& config, Request& req, int fd)
 {
     if (statusCode == 204)
         handleDeleteRequest(config, req);
-    if (req.getPath().find("/cgi-bin/") != std::string::npos && statusCode == 200) {
+    else if (req.getPath().find("/cgi-bin/") != std::string::npos && statusCode == 200) {
         int status;
         status = config.getClients()[fd].getCGI().execute_cgi_script(config, *this, clientFd, req);
         if (fd != 0)

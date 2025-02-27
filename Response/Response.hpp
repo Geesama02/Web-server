@@ -91,7 +91,7 @@ class Response {
         void            listDirectories(std::string dirName);
         void            showIndexFile(std::string indexFilePath);
         int             comparingReqWithLocation(std::string locationPath, std::string reqPath);
-        void            vertifyDirectorySlash(std::string fileName, Request& req);
+        void            verifyDirectorySlash(std::string fileName, Request& req);
         std::string     getDate();
         void            generateRes(Config& config);
         void            initializeStatusRes();

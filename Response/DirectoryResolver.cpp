@@ -134,14 +134,13 @@ void Response::matchReqPathWithLocation(Location& loc, std::string reqPath, Loca
 void Response::listingOrIndex(Config& config, std::string reqPath)
 {
   struct stat st;
-  struct stat reqPathCheck;
+//  struct stat reqPathCheck;
   std::string locationPath;
   std::string indexFile;
   std::string uri;
   std::string root;
   std::string pathMatch;
   std::string serverRoot;
-  std::string reqPathAbsolute;
 
   serverRoot = config.getClients()[clientFd].getServer().getRoot();
   if (locationMatch)
@@ -152,18 +151,15 @@ void Response::listingOrIndex(Config& config, std::string reqPath)
           pathMatch = root + uri;
       else
           pathMatch = uri;
-
+      
       indexFile = pathMatch + locationMatch->getIndex();
   }
   else 
       indexFile = serverRoot + reqPath + config.getClients()[clientFd].getServer().getIndex();
 
-  reqPathAbsolute = config.getClients()[clientFd].getServer().getRoot() + reqPath;
-  
   if (locationMatch)
   {
-      if (!stat(reqPathAbsolute.c_str(), &reqPathCheck)
-            && (reqPathCheck.st_mode & S_IFDIR) && locationMatch->getAutoindex())
+      if (locationMatch->getAutoindex())
       {
           if (!stat(indexFile.c_str(), &st) && st.st_mode & S_IFREG)
               showIndexFile(indexFile);
@@ -175,16 +171,11 @@ void Response::listingOrIndex(Config& config, std::string reqPath)
   }
   else 
   {
-    std::cout << "index file -> " << indexFile << std::endl;
-    std::cout << "request -> " << reqPathAbsolute << std::endl;
-    if (!stat(reqPathAbsolute.c_str(), &reqPathCheck))
-    {
-        if (!stat(indexFile.c_str(), &st) && st.st_mode & S_IFREG)
-            showIndexFile(indexFile);
-        else if ((reqPathCheck.st_mode & S_IFDIR)
-            && config.getClients()[clientFd].getServer().getAutoindex())
-            listDirectories(reqPath);
-    }
+      std::cout << "index file -> " << indexFile << std::endl;
+      if (!stat(indexFile.c_str(), &st) && st.st_mode & S_IFREG)
+          showIndexFile(indexFile);
+      else if (config.getClients()[clientFd].getServer().getAutoindex())
+          listDirectories(reqPath);
   }
 }
 
