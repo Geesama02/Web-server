@@ -74,19 +74,21 @@ class Response {
         void            setHeader( std::string key, std::string value );
         
         //other
+        void            handleDeleteRequest(Config& config, Request& req);
         void            listingOrIndex(Config&config, std::string reqPath);
-        void            fillBody(Config& config, Request req);
+        void            fillBody(Config& config, Request& req);
         void            initializeContentHeader();
         void            checkForFileExtension(std::string fileName);
         static void     matchReqPathWithLocation(Location& loc, std::string reqPath, Location **match);
         void            returnDefinedPage(std::string rootPath, std::string errorPageFile);
         int             checkDefinedErrorPage(std::string rootPath, std::map<int, std::string> error_page);
-        void            checkAutoIndex(Config& config, Request req);
-        void            checkErrorPages(Config& config);
+        void            checkAutoIndex(Config& config, Request& req);
+        void            checkErrorPages(Config& config, Request& req);
+        void            searchLocationsForMatch(Config& config, Request& req);
         void            listDirectories(std::string dirName);
         void            showIndexFile(std::string indexFilePath);
         int             comparingReqWithLocation(std::string locationPath, std::string reqPath);
-        void            vertifyDirectorySlash(std::string fileName);
+        void            vertifyDirectorySlash(std::string fileName, Request& req);
         std::string     getDate();
         void            generateRes(Config& config);
         void            initializeStatusRes();
@@ -98,7 +100,7 @@ class Response {
         void            rangeResponse(Request req);
         void            sendResponse(Config& config, Request& req, int fd);
         int             sendBodyBytes();
-        void            searchForFile(Request& Req);
+        void            searchForFile(Config& config, Request& Req);
         std::string     urlEncode(std::string path);
 };
 
