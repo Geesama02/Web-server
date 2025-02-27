@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/30 11:15:32 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/02/25 15:44:13 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/02/26 16:37:45 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -99,6 +99,7 @@ class Request {
         int checkValidPath(std::string& path);
         Location* getMatchedLocation(std::string path, Server& server);
         int joinPath(Location* location, UploadFile& file);
+        int checkAllowedMethods();
 
         // Destructor
         ~Request();

@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/14 17:03:53 by maglagal          #+#    #+#             */
-/*   Updated: 2025/02/25 16:50:02 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/02/26 15:30:51 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -419,6 +419,7 @@ void Response::fillBody(Config& config, Request& req)
         redirectionResponse(req, config);
     else
         generateRes(config);
+    
 }
 
 void Response::sendResponse(Config& config, Request& req, int fd)
@@ -446,9 +447,6 @@ void Response::sendResponse(Config& config, Request& req, int fd)
     finalRes += "\r\n";
     if (!body.empty())
         finalRes += body;
-    std::cout << "-------------------------------" << std::endl;
-    std::cout << finalRes << std::endl;
-    std::cout << "-------------------------------" << std::endl;
     send(clientFd, finalRes.c_str(), finalRes.length(), 0);
     if (statusCode >= 500)
         config.closeConnection(fd);
