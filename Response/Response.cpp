@@ -320,6 +320,7 @@ void Response::searchForFile(Config& config, Request& req)
 
     req.setPath(req.urlDecode(req.getPath()));
     fileName = req.urlDecode(fileName); 
+    std::cout << "file request -> " << fileName << std::endl;
     if (!stat(fileName.c_str(), &st))
     {
         if (st.st_mode & S_IFDIR || (!(st.st_mode & S_IRUSR)))
@@ -390,9 +391,11 @@ void Response::handleDeleteRequest(Config& config, Request& req)
       requestedPath = serverRoot + "/" + req.getPath();
   else
       requestedPath = serverRoot + req.getPath();
+  char requestPath[200];
+  std::strcpy(requestPath, requestedPath.c_str());
   if (statusCode == 204)
   {
-      if (remove(requestedPath.c_str()) == -1)
+      if (rmrf(requestPath) == -1)
       {
           clearResponse();
           statusCode = 500;
@@ -406,7 +409,6 @@ void Response::handleDeleteRequest(Config& config, Request& req)
 
 void Response::fillBody(Config& config, Request& req)
 {
-  std::cout << "status code -> " << statusCode << std::endl;
     if (statusCode == 200 || statusCode == 403)
       checkAutoIndex(config, req);
     checkErrorPages(config, req);
