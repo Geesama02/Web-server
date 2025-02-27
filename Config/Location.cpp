@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/22 11:17:32 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/02/24 15:13:48 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/02/27 12:45:00 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,9 +19,8 @@ Location::Location() {
     root = "/";
     index = "index.html";
     autoindex = true;
-    allowed_methods.push_back("POST");
+    methodsFlag = false;
     allowed_methods.push_back("GET");
-    allowed_methods.push_back("DELETE");
 }
 
 Location::Location(Server& copy) {
@@ -30,9 +29,8 @@ Location::Location(Server& copy) {
     error_page = copy.getErrorPage();
     index = copy.getIndex();
     autoindex = copy.getAutoindex();
-    allowed_methods.push_back("POST");
+    methodsFlag = false;
     allowed_methods.push_back("GET");
-    allowed_methods.push_back("DELETE");
     redirect = copy.getRedirect();
 }
 
@@ -43,6 +41,7 @@ std::string Location::getUploadPath() { return uploadPath; }
 std::map<int, std::string>& Location::getErrorPage() { return error_page; }
 std::string Location::getIndex() { return index; }
 bool Location::getAutoindex() { return autoindex; }
+bool Location::getMethodsFlag() { return methodsFlag; }
 std::vector<std::string>& Location::getAllowedMethods() { return allowed_methods; }
 std::map<int, std::string> Location::getRedirect() { return redirect; }
 std::vector<std::string>& Location::getCgiPath() { return cgi_path; }
@@ -59,6 +58,7 @@ void Location::addErrorPage(int code, std::string path) {
 }
 void Location::setIndex(std::string& str) { index = str; }
 void Location::setAutoindex(bool n_autoindex) { autoindex = n_autoindex; }
+void Location::setMethodsFlag(bool flag) { methodsFlag = flag; }
 void Location::setAllowedMethods(std::vector<std::string>& methods) { allowed_methods = methods; }
 void Location::setRedirect(int code, std::string page) { 
     if (redirect.size() == 0)

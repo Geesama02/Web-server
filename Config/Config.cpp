@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Config.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
+/*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/22 11:25:38 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/02/23 11:51:49 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/02/27 09:42:55 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -265,8 +265,8 @@ int Config::handleClient(int fd) {
         {
             // std::cout << "path -> " << request.getPath() << std::endl;
             printLog(fd);
-            if (Clients[fd].getRequest().getMethod() == "GET" && status == 0)
-                Clients[fd].getResponse().searchForFile(Clients[fd].getRequest());
+            if (status == 0)
+                Clients[fd].getResponse().searchForFile(*this, Clients[fd].getRequest());
         }
         Clients[fd].getResponse().sendResponse(*this, Clients[fd].getRequest(), fd);
     }

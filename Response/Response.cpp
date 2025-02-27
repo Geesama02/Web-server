@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/14 17:03:53 by maglagal          #+#    #+#             */
-/*   Updated: 2025/02/26 15:30:51 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/02/27 14:52:05 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -76,6 +76,7 @@ void Response::initializeStatusRes()
     resStatus.insert(std::make_pair(411, "Length Required\r\n"));
     resStatus.insert(std::make_pair(413, "Content Too Large\r\n"));
     resStatus.insert(std::make_pair(414, "URI Too Long\r\n"));
+    resStatus.insert(std::make_pair(415, "Unsupported Media Type\r\n"));
     resStatus.insert(std::make_pair(500, "Internal Server Error\r\n"));
     resStatus.insert(std::make_pair(501, "Not Implemented\r\n"));
     resStatus.insert(std::make_pair(502, "Bad Gateway\r\n"));
@@ -313,13 +314,13 @@ void Response::searchForFile(Config& config, Request& req)
     checkForQueryString(fileName);
     if (fileName == "/")
         fileName = serverRoot;
-    else if (serverRoot.length() > 0 && serverRoot.rfind("/") != serverRoot.length() - 1)
-        fileName = serverRoot + "/" + req.getPath();
+    else if (serverRoot.rfind("/") != serverRoot.length() - 1)
+        fileName = serverRoot + req.getPath();
     else    
         fileName = serverRoot + req.getPath();
-
     req.setPath(req.urlDecode(req.getPath()));
     fileName = req.urlDecode(fileName); 
+    std::cout << "Filename -> "<< fileName << std::endl;
     if (!stat(fileName.c_str(), &st))
     {
         if (st.st_mode & S_IFDIR || (!(st.st_mode & S_IRUSR)))
@@ -336,8 +337,10 @@ void Response::searchForFile(Config& config, Request& req)
                 checkForFileExtension(fileName);
                 return ;
             }
-            if (req.getMethod() == "DELETE")
+            std::cout << "HEERE\n";
+            if (req.getMethod() == "DELETE") {
                 statusCode = 204;
+            }
             else
                 statusCode = 200;
             sprintf(buff3, "%ld", st.st_size);
@@ -392,11 +395,12 @@ void Response::handleDeleteRequest(Config& config, Request& req)
       requestedPath = serverRoot + req.getPath();
   if (statusCode == 204)
   {
+    //   std::cout << "re" << requestedPath << std::endl;
       if (remove(requestedPath.c_str()) == -1)
       {
+        std::cout << "errno -> " << strerror(errno) << std::endl;
           clearResponse();
           statusCode = 500;
-          sendResponse(config, req, clientFd);
           return ;
       }      
   }
@@ -406,7 +410,6 @@ void Response::handleDeleteRequest(Config& config, Request& req)
 
 void Response::fillBody(Config& config, Request& req)
 {
-  std::cout << "status code -> " << statusCode << std::endl;
     if (statusCode == 200 || statusCode == 403)
       checkAutoIndex(config, req);
     checkErrorPages(config, req);
@@ -424,6 +427,7 @@ void Response::fillBody(Config& config, Request& req)
 
 void Response::sendResponse(Config& config, Request& req, int fd)
 {
+    std::cout << "status code -> " << statusCode << std::endl;
     if (statusCode == 204)
         handleDeleteRequest(config, req);
     if (req.getPath().find("/cgi-bin/") != std::string::npos && statusCode == 200) {
