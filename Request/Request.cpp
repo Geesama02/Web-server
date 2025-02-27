@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/30 12:07:04 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/02/26 09:18:46 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/02/26 16:37:34 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -160,6 +160,8 @@ int Request::handleReqLine(std::stringstream& s) {
             return (505);
         if (*holder[1].begin() != '/' || !checkValidPath(holder[1]))
             return (400);
+        if (holder[0] != "GET" && holder[0] != "POST" && holder[0] != "DELETE")
+            return (405);
         headersLength += line.size() + 1;
         setMethod(holder[0]);
         setPath(holder[1]);
@@ -525,6 +527,21 @@ Location *Request::getMatchedLocation(std::string path, Server& server) {
     return (loc);
 }
 
+int Request::checkAllowedMethods() {
+    if (currLocation) {
+        for (std::vector<std::string>::iterator it = currLocation->getAllowedMethods().begin(); it != currLocation->getAllowedMethods().end(); it++) {
+            if (*it == method)
+                return (0);
+        }
+        return (403);
+    }
+    else {
+        if (method != "GET")
+            return (403);
+    }
+    return (0);
+}
+
 int Request::readHeaders(std::string& str, Server& server, std::vector<Server>& Servers) {
     if (!file) {
         int status;
@@ -537,8 +554,10 @@ int Request::readHeaders(std::string& str, Server& server, std::vector<Server>& 
             server = getServer(server, Servers);
         str = str.substr(stop_p + 4);
         currLocation = getMatchedLocation(path, server);
-        //if (currLocation)
-            //std::cout << "Location is -> " << currLocation->getURI() << std::endl;
+        if (currLocation)
+            std::cout << "Location is -> " << currLocation->getURI() << std::endl;
+        if (checkAllowedMethods())
+            return (403);
         if (Headers.find("host") == Headers.end() || (method == "POST"
             && Headers.find("content-length") != Headers.end()
             && !isNumber(Headers["content-length"])))
