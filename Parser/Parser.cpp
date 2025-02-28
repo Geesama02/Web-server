@@ -472,13 +472,21 @@ int Parser::setAllowedMethodsVar(std::vector<std::string>& holder, Location& tmp
     }
     if (index < holder.size() && *holder[index].rbegin() == ';')
     {
+        if (holder[index] == ";" && !tmp_holder.empty()) {
+            
+            tmp_location.setAllowedMethods(tmp_holder);
+            index++;
+            return (0);
+        }
         holder[index].erase(holder[index].end() - 1);
-        if (holder[index].empty() || !isValidValue(holder[index]) || tmp_holder.empty())
+        if (holder[index].empty() || !isValidValue(holder[index]))
             return (1);
         if (holder[index] == "POST" || holder[index] == "GET" || holder[index] == "DELETE")
             tmp_holder.push_back(holder[index]);
         else
             return (1);
+        std::cout << tmp_holder[0] << std::endl;
+        std::cout << tmp_holder[1] << std::endl;
         tmp_location.setAllowedMethods(tmp_holder);
         index++;
     }
@@ -548,7 +556,7 @@ int Parser::skipLocation(std::vector<std::string>& holder, size_t& index) {
                     retValue = setAllowedMethodsVar(holder, tmp_location, index);
                 else if (holder[index] == "cgi_path" && !(cPathCount++))
                     retValue = setCgiPathVar(holder, tmp_location, index);
-                else if (holder[index] == "cgi_ext" && !(aMethodsCount++))
+                else if (holder[index] == "cgi_ext" && !(cExtCount++))
                     retValue = setCgiExtVar(holder, tmp_location, index);
                 else if (holder[index] == "}") {
                     index++;

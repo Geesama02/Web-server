@@ -527,9 +527,11 @@ Location *Request::getMatchedLocation(std::string path, Server& server) {
     return (loc);
 }
 
-int Request::checkAllowedMethods() {
+int Request::checkAllowedMethods()
+{
     if (currLocation) {
-        for (std::vector<std::string>::iterator it = currLocation->getAllowedMethods().begin(); it != currLocation->getAllowedMethods().end(); it++) {
+        for (std::vector<std::string>::iterator it = currLocation->getAllowedMethods().begin(); it != currLocation->getAllowedMethods().end(); it++)
+        {
             if (*it == method)
                 return (0);
         }

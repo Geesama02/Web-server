@@ -21,6 +21,7 @@ std::map<std::string, std::string> Response::ContentTypeHeader;
 //constructor
 Response::Response() {
     file = NULL;
+    FileType = 0;
     initializeContentHeader();
     initializeStatusRes();
     Headers["Content-Type"] = "text/html";
@@ -62,6 +63,9 @@ void Response::setHeader( std::string key, std::string value ) { Headers[key] = 
 void Response::initializeStatusRes()
 {
     locationMatch = NULL;
+    errorPage = NULL;
+    indexFile = NULL;
+    file = NULL;
     resStatus.insert(std::make_pair(200, "OK\r\n"));
     resStatus.insert(std::make_pair(201, "Created\r\n"));
     resStatus.insert(std::make_pair(204, "No Content\r\n"));
@@ -118,12 +122,28 @@ void    Response::clearResponse()
     Headers["Date"] = "0";
     statusMssg = "HTTP/1.1 ";
     statusCode = 0;
+    FileType = 0;
     locationMatch = NULL;
     body.clear();
     finalRes.clear();
     if (file)
+    {
+        file->close();
         delete file;
+    }
+    if (indexFile)
+    {
+        indexFile->close();
+        delete indexFile;
+    }
+    if (errorPage)
+    {
+        errorPage->close();
+        delete errorPage;
+    }
     file = NULL;
+    errorPage = NULL;
+    indexFile = NULL;
 }
 
 std::string Response::getDate()
@@ -182,7 +202,7 @@ void Response::successResponse(Request req)
     std::map<std::string, std::string>::iterator it = Headers.find("Content-Type");
     if (it == Headers.end())
         Headers["Content-Type"] = "text/html";
-    if (!file)
+    if (!file && FileType)
         file = new std::ifstream(req.getPath().erase(0, 1).c_str(), std::ios::binary);
     Headers["Accept-Ranges"] = "bytes";
     Headers["Date"] = getDate();
@@ -331,6 +351,8 @@ void Response::searchForFile(Config& config, Request& req)
                 statusCode = 204;
             else
                 statusCode = 200;
+            if (statusCode == 200)
+                FileType = 1;
             sprintf(buff3, "%ld", st.st_size);
             setHeader("Content-Length", buff3);
              //if (st.st_mode & S_IFDIR)
@@ -389,7 +411,6 @@ void Response::handleDeleteRequest(Config& config, Request& req)
       {
           clearResponse();
           statusCode = 500;
-          sendResponse(config, req, clientFd);
           return ;
       }      
   }

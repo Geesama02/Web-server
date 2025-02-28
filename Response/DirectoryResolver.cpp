@@ -40,12 +40,12 @@ int    Response::comparingReqWithLocation(std::string locationPath, std::string 
 
 void    Response::showIndexFile(std::string indexFilePath)
 {
-    std::ifstream indexFile(indexFilePath.c_str());
+    indexFile = new std::ifstream(indexFilePath.c_str());
     std::string buff;
       statusCode = 200;
-    while (std::getline(indexFile, buff))
+    while (std::getline(*indexFile, buff))
         body += buff;
-    indexFile.close();
+    indexFile->close();
 }
 
 std::string Response::urlEncode(std::string path)
@@ -86,7 +86,8 @@ void Response::listDirectories(std::string reqPath)
                 "<h1>Webserv</h1>"
                 "<hr></hr>";
     
-    while ((stDir = readdir(dir))) {
+    while ((stDir = readdir(dir)))
+    {
         direntName = stDir->d_name;
         if (direntName != ".") {
             direntPath = reqPath + direntName;
@@ -102,11 +103,11 @@ void Response::listDirectories(std::string reqPath)
             lDirectoriesPage += row;
         }
     }
-
     lDirectoriesPage += "</body>";
     lDirectoriesPage += "</html>";
     
     body = lDirectoriesPage;
+    closedir(dir);
 }
 
 void Response::matchReqPathWithLocation(Location& loc, std::string reqPath, Location **match)
@@ -251,8 +252,8 @@ void    Response::returnDefinedPage(std::string rootPath, std::string errorPageF
             errorPageFile = rootPath + errorPageFile; 
     }
     std::cout << "error page -> " << errorPageFile << std::endl;
-    std::ifstream definedPage(errorPageFile.c_str());
-    if (!definedPage.is_open())
+    errorPage = new std::ifstream(errorPageFile.c_str());
+    if (!errorPage->is_open())
     {
         clearResponse();
         if (stat(errorPageFile.c_str(), &st) == -1)
@@ -261,18 +262,19 @@ void    Response::returnDefinedPage(std::string rootPath, std::string errorPageF
             statusCode = 403;
         return ;
     }
-    while (std::getline(definedPage, buffer))
+    while (std::getline(*errorPage, buffer))
         body += buffer;
-    definedPage.close();
+    errorPage->close();
 }
 
-int Response::unlink_cb(const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf)
+int Response::callbackRemove(const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf)
 {
     (void)sb;
     (void)ftwbuf;
     (void)typeflag;
-    int rv = remove(fpath);
+    int rv;
 
+    rv = remove(fpath);
     if (rv)
         perror(fpath);
 
@@ -281,5 +283,5 @@ int Response::unlink_cb(const char *fpath, const struct stat *sb, int typeflag, 
 
 int Response::rmrf(char *path)
 {
-    return nftw(path, unlink_cb, 64, FTW_DEPTH | FTW_PHYS);
+    return nftw(path, callbackRemove, 64, FTW_DEPTH | FTW_PHYS);
 }

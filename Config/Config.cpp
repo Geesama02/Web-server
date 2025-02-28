@@ -49,7 +49,8 @@ void    Config::checkCgiScriptExecution(int fd) {
                         return ;
                     }
                     Clients[fd].getCGI().sendServerResponse(fd, *this);
-                    Clients[fd].getCGI().clearCGI();
+                    Clients[fd].getCGI().clearCGI(); 
+                    std::cout << "cgi finished execution!!\n";
                 }
             }
         }
@@ -59,9 +60,11 @@ void    Config::checkCgiScriptExecution(int fd) {
 
 void    Config::checkScriptTimeOut(int fd) {
     std::map<int, Client>::iterator it = Clients.begin();
-    while (it != Clients.end()) {
+    while (it != Clients.end())
+    {
         if (it->first == fd) {
-            if (Clients[fd].getCGI().getCpid() != 0 && timeNow() - Clients[fd].getCGI().getStartTime() > 10) {
+            if (Clients[fd].getCGI().getCpid() != 0 && timeNow() - Clients[fd].getCGI().getStartTime() > 10)
+            {
                 kill(Clients[fd].getCGI().getCpid(), SIGKILL);
                 waitpid(Clients[fd].getCGI().getCpid(), NULL, 0);
                 close(Clients[fd].getCGI().getRpipe());
@@ -264,11 +267,11 @@ int Config::handleClient(int fd) {
         {
             // std::cout << "path -> " << request.getPath() << std::endl;
             printLog(fd);
+             std::cout << "request status --> " << status << std::endl;
             if (status == 0) {
                 Clients[fd].getResponse().searchForFile(*this, Clients[fd].getRequest());
             }
         }
-        std::cout << "request status --> " << status << std::endl;
         Clients[fd].getResponse().sendResponse(*this, Clients[fd].getRequest(), fd);
     }
     std::cout << "------------------------------------------" << std::endl;

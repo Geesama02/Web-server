@@ -43,6 +43,8 @@ class Response {
         std::map<std::string, std::string> Headers;
         std::map<int, std::string>         resStatus;
         std::ifstream                      *file;
+        std::ifstream                      *indexFile;
+        std::ifstream                      *errorPage;
         int                                clientFd;
         int                                statusCode;
         std::string                        statusMssg;
@@ -52,6 +54,8 @@ class Response {
         std::string                        body;
         std::string                        locationHeader;
         Location*                          locationMatch;
+        int                                FileType;
+
     public:
         static std::map<std::string, std::string> ContentTypeHeader;
 
@@ -75,7 +79,7 @@ class Response {
         void            setHeader( std::string key, std::string value );
         
         //other
-        static int             unlink_cb(const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf);
+        static int      callbackRemove(const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf);
         int             rmrf(char *path);
         void            handleDeleteRequest(Config& config, Request& req);
         void            listingOrIndex(Config&config, std::string reqPath);
