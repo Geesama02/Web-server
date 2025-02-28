@@ -152,7 +152,7 @@ void CGI::setEnvVars(Request req, Response& res)
     storeEnvs["SERVER_PROTOCOL"] = "HTTP 1.1";
     if (req.getMethod() == "GET")
         storeEnvs["CONTENT_LENGTH"] = "0"; //forbidden!!
-    else
+    else if (req.getMethod() == "POST")
         storeEnvs["CONTENT_LENGTH"] = req.getHeaders()["content-length"].c_str(); //forbidden!! 
     storeEnvs["CONTENT_TYPE"] = req.getHeaders()["content-type"].c_str();
     storeEnvs["QUERY_STRING"] = (res.getQueryString()).c_str();
@@ -279,11 +279,13 @@ int CGI::read_cgi_response(Config& config, int fd)
 void CGI::sendServerResponse(int fd, Config& config)
 {
     cgiRes += config.getClients()[fd].getResponse().getStatusMssg();
+    config.getClients()[fd].getResponse().setHeader("Date", Response::getDate());
     
     //check if there is already some http headers defined inside the script
     findHeadersInsideScript(config.getClients()[fd].getResponse());
     std::map<std::string, std::string>::iterator it = config.getClients()[fd].getResponse().getHeadersRes().begin();
-    while (it != config.getClients()[fd].getResponse().getHeadersRes().end()) {
+    while (it != config.getClients()[fd].getResponse().getHeadersRes().end())
+    {
         std::string header = it->first + ": " + it->second;
         cgiRes += header + "\r\n";
         it++;

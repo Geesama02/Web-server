@@ -70,6 +70,8 @@ class Response {
         std::string                         getStatusMssg();
         std::map<std::string, std::string>& getHeadersRes( );
         std::string                         getHeader( std::string key );
+        std::ifstream&                      getFile();
+        std::ifstream&                      getIndexFile();
 
         //setters
         void            setClientFd(int nFd);
@@ -77,38 +79,40 @@ class Response {
         void            setQueryString(std::string value);
         void            setStatusMssg(std::string value);
         void            setHeader( std::string key, std::string value );
+        void            setFile(std::ifstream *nFile);
+        void            setIndexFile(std::ifstream *nIndexFile);
         
         //other
-        static int      callbackRemove(const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf);
-        int             rmrf(char *path);
-        void            handleDeleteRequest(Config& config, Request& req);
-        void            listingOrIndex(Config&config, std::string reqPath);
-        void            fillBody(Config& config, Request& req);
-        void            initializeContentHeader();
-        void            checkForFileExtension(std::string fileName);
-        static void     matchReqPathWithLocation(Location& loc, std::string reqPath, Location **match);
-        void            returnDefinedPage(std::string rootPath, std::string errorPageFile);
-        int             checkDefinedErrorPage(std::string rootPath, std::map<int, std::string> error_page);
-        void            checkAutoIndex(Config& config, Request& req);
-        void            checkErrorPages(Config& config, Request& req);
-        void            searchLocationsForMatch(Config& config, Request& req);
-        void            listDirectories(std::string dirName);
-        void            showIndexFile(std::string indexFilePath);
-        int             comparingReqWithLocation(std::string locationPath, std::string reqPath);
-        void            verifyDirectorySlash(std::string fileName, Request& req);
-        std::string     getDate();
-        void            generateRes(Config& config);
-        void            initializeStatusRes();
-        void            addHeadersToResponse();
-        void            clearResponse();
-        void            checkForQueryString(std::string& fileName);
-        void            successResponse(Request req);
-        void            redirectionResponse(Request req, Config& config);
-        void            rangeResponse(Request req);
-        void            sendResponse(Config& config, Request& req, int fd);
-        int             sendBodyBytes();
-        void            searchForFile(Config& config, Request& Req);
-        std::string     urlEncode(std::string path);
+        static int          callbackRemove(const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf);
+        static void         matchReqPathWithLocation(Location& loc, std::string reqPath, Location **match);
+        static std::string  getDate();
+        int                 rmrf(char *path);
+        void                handleDeleteRequest(Config& config, Request& req);
+        void                listingOrIndex(Config&config, std::string reqPath);
+        void                fillBody(Config& config, Request& req);
+        void                initializeContentHeader();
+        void                checkForFileExtension(std::string fileName);
+        void                returnDefinedPage(std::string rootPath, std::string errorPageFile);
+        int                 checkDefinedErrorPage(std::string rootPath, std::map<int, std::string> error_page);
+        void                checkAutoIndex(Config& config, Request& req);
+        void                checkErrorPages(Config& config, Request& req);
+        void                searchLocationsForMatch(Config& config, Request& req);
+        void                listDirectories(std::string dirName);
+        void                showIndexFile(std::string indexFilePath);
+        int                 comparingReqWithLocation(std::string locationPath, std::string reqPath);
+        void                verifyDirectorySlash(std::string fileName, Request& req);
+        void                generateRes(Config& config);
+        void                initializeStatusRes();
+        void                addHeadersToResponse();
+        void                clearResponse();
+        void                checkForQueryString(std::string& fileName);
+        void                successResponse(Request req);
+        void                redirectionResponse(Request req, Config& config);
+        void                rangeResponse(Request req);
+        void                sendResponse(Config& config, Request& req, int fd);
+        int                 sendBodyBytes();
+        void                searchForFile(Config& config, Request& Req);
+        std::string         urlEncode(std::string path);
 };
 
 #endif

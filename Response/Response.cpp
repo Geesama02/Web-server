@@ -19,11 +19,14 @@
 std::map<std::string, std::string> Response::ContentTypeHeader;
 
 //constructor
-Response::Response() {
-    file = NULL;
+Response::Response()
+{
     FileType = 0;
     initializeContentHeader();
     initializeStatusRes();
+    file = NULL;
+    indexFile = NULL;
+    errorPage = NULL;
     Headers["Content-Type"] = "text/html";
     Headers["Connection"] = "keep-alive";
     Headers["Server"] = "Webserv";
@@ -37,27 +40,47 @@ Response::Response() {
 }
 
 //Destructor
-Response::~Response() {
-    if (file) {
+Response::~Response() 
+{
+    if (file)
+    {
         file->close();
         delete file;
     }
+    if (indexFile)
+    {
+        indexFile->close();
+        delete indexFile;
+    }
+    if (errorPage)
+    {
+        errorPage->close();
+        delete errorPage;
+    }
+    file = NULL;
+    indexFile = NULL;
+    errorPage = NULL;
 }
 
 //getters
 std::map<std::string, std::string>& Response::getHeadersRes() { return Headers; }
 int                                 Response::getClientFd() { return clientFd; }
 std::string                         Response::getQueryString() { return queryString; }
-int                                 Response::getStatusCode() { return statusCode; };
-std::string                         Response::getStatusMssg() { return statusMssg; };
+int                                 Response::getStatusCode() { return statusCode; }
+std::string                         Response::getStatusMssg() { return statusMssg; }
 std::string                         Response::getHeader( std::string key ) { return Headers[key]; };
+std::ifstream&                      Response::getFile() { return file; }
+std::ifstream&                      Response::getIndexFile() { return indexFile; }
 
 //setters
-void Response::setClientFd( int nFd ) { clientFd = nFd; }
-void Response::setQueryString( std::string value ) { queryString = value; }
-void Response::setStatusCode(int value) { statusCode = value; };
-void Response::setStatusMssg( std::string value ) { statusMssg = value; };
-void Response::setHeader( std::string key, std::string value ) { Headers[key] = value; };
+void                                Response::setClientFd( int nFd ) { clientFd = nFd; }
+void                                Response::setQueryString( std::string value ) { queryString = value; }
+void                                Response::setStatusCode(int value) { statusCode = value; };
+void                                Response::setStatusMssg( std::string value ) { statusMssg = value; };
+void                                Response::setHeader( std::string key, std::string value ) { Headers[key] = value; };
+void                                Response::setFile(std::ifstream *nFile) { file = nFile; }
+void                                Response::setIndexFile(std::ifstream *nIndexFile) { indexFile = nIndexFile; }
+
 
 //other
 void Response::initializeStatusRes()
@@ -439,8 +462,9 @@ void Response::sendResponse(Config& config, Request& req, int fd)
 {
     if (statusCode == 204)
         handleDeleteRequest(config, req);
-    else if (req.getPath().find("/cgi-bin/") != std::string::npos && statusCode == 200) {
-        int status;
+    else if (req.getPath().find("/cgi-bin/") != std::string::npos && statusCode == 200)
+    {
+        int status = 0;
         status = config.getClients()[fd].getCGI().execute_cgi_script(config, *this, clientFd, req);
         if (fd != 0)
         {

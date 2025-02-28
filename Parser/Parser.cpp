@@ -485,8 +485,6 @@ int Parser::setAllowedMethodsVar(std::vector<std::string>& holder, Location& tmp
             tmp_holder.push_back(holder[index]);
         else
             return (1);
-        std::cout << tmp_holder[0] << std::endl;
-        std::cout << tmp_holder[1] << std::endl;
         tmp_location.setAllowedMethods(tmp_holder);
         index++;
     }

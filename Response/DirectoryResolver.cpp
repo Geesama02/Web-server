@@ -136,7 +136,6 @@ void Response::matchReqPathWithLocation(Location& loc, std::string reqPath, Loca
 void Response::listingOrIndex(Config& config, std::string reqPath)
 {
   struct stat st;
-//  struct stat reqPathCheck;
   std::string locationPath;
   std::string indexFile;
   std::string uri;
@@ -227,14 +226,14 @@ void Response::checkErrorPages(Config& config, Request& req)
   {
       if (checkDefinedErrorPage(config.getClients()[clientFd].getServer().getRoot(),
             locationMatch->getErrorPage()))
-      { // should Nothing enter just when not found
+      { 
           return ;
       }
   }
   else
   {
-    checkDefinedErrorPage(config.getClients()[clientFd].getServer().getRoot(),
-      config.getClients()[clientFd].getServer().getErrorPage());
+      checkDefinedErrorPage(config.getClients()[clientFd].getServer().getRoot(),
+        config.getClients()[clientFd].getServer().getErrorPage());
   }
 }
 

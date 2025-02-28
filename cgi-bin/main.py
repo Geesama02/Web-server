@@ -11,7 +11,7 @@ body = sys.stdin.read(content_length)
  #
  ## Print the HTTP response header
  #
-  #Print the received body
+  #Print the received bod
 print("Content-Type: text/plain")
 print()
 print(body)
