@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/14 17:03:53 by maglagal          #+#    #+#             */
-/*   Updated: 2025/02/27 14:52:05 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/02/28 10:36:06 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -309,7 +309,7 @@ void Response::searchForFile(Config& config, Request& req)
     fileName = serverRoot + req.getPath();
     req.setPath(req.urlDecode(req.getPath()));
     fileName = req.urlDecode(fileName); 
-    std::cout << "file request -> " << fileName << std::endl;
+    // std::cout << "file request -> " << fileName << std::endl;
     if (!stat(fileName.c_str(), &st))
     {
         if (st.st_mode & S_IFDIR || (!(st.st_mode & S_IRUSR)))
@@ -414,12 +414,11 @@ void Response::fillBody(Config& config, Request& req)
         redirectionResponse(req, config);
     else
         generateRes(config);
-    
 }
 
 void Response::sendResponse(Config& config, Request& req, int fd)
 {
-    std::cout << "status code -> " << statusCode << std::endl;
+    // std::cout << "status code -> " << statusCode << std::endl;
     if (statusCode == 204)
         handleDeleteRequest(config, req);
     else if (req.getPath().find("/cgi-bin/") != std::string::npos && statusCode == 200) {

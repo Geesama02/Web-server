@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/21 14:31:56 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/02/27 14:31:24 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/02/28 15:35:03 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -473,8 +473,13 @@ int Parser::setAllowedMethodsVar(std::vector<std::string>& holder, Location& tmp
     }
     if (index < holder.size() && *holder[index].rbegin() == ';')
     {
+        if (holder[index] == ";" && !tmp_holder.empty()) {
+            tmp_location.setAllowedMethods(tmp_holder);
+            index++;
+            return (0);
+        }
         holder[index].erase(holder[index].end() - 1);
-        if (holder[index].empty() || !isValidValue(holder[index]) || tmp_holder.empty())
+        if (holder[index].empty() || !isValidValue(holder[index]))
             return (1);
         if (holder[index] == "POST" || holder[index] == "GET" || holder[index] == "DELETE")
             tmp_holder.push_back(holder[index]);
@@ -549,14 +554,14 @@ int Parser::skipLocation(std::vector<std::string>& holder, size_t& index) {
                     retValue = setAllowedMethodsVar(holder, tmp_location, index);
                 else if (holder[index] == "cgi_path" && !(cPathCount++) && (tmp_location.getURI() == "/cgi-bin" || tmp_location.getURI() == "/cgi-bin/"))
                     retValue = setCgiPathVar(holder, tmp_location, index);
-                else if (holder[index] == "cgi_ext" && !(aMethodsCount++) && (tmp_location.getURI() == "/cgi-bin" || tmp_location.getURI() == "/cgi-bin/"))
+                else if (holder[index] == "cgi_ext" && !(cExtCount++) && (tmp_location.getURI() == "/cgi-bin" || tmp_location.getURI() == "/cgi-bin/"))
                     retValue = setCgiExtVar(holder, tmp_location, index);
                 else if (holder[index] == "}" && tmp_location.getCgiExt().size() == tmp_location.getCgiPath().size()) {
                     index++;
                     return (0);
                 }
                 else 
-                    return (1);
+                    return (std::cout << "Inside\n",1);
                 if (retValue)
                     return (1);
             }

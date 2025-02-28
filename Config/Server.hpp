@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
+/*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/21 15:09:59 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/02/16 10:57:04 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/02/28 11:49:33 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -63,6 +63,7 @@ class Server {
         // Functions
         int initServer(std::vector<Server>& Servers, std::vector<Server>::iterator it);
         int checkPortDup(std::vector<Server>& Servers, std::vector<Server>::iterator it);
+        int checkNameDup(std::vector<Server>& Servers, std::vector<Server>::iterator it, std::string& s_name);
 
         // Destructor
         ~Server();

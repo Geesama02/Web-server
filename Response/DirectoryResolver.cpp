@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/09 09:49:11 by maglagal          #+#    #+#             */
-/*   Updated: 2025/02/26 16:28:03 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/02/28 12:32:00 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -105,7 +105,7 @@ void Response::listDirectories(std::string reqPath)
 
     lDirectoriesPage += "</body>";
     lDirectoriesPage += "</html>";
-    
+    closedir(dir);
     body = lDirectoriesPage;
 }
 
@@ -172,7 +172,7 @@ void Response::listingOrIndex(Config& config, std::string reqPath)
   }
   else 
   {
-      std::cout << "index file -> " << indexFile << std::endl;
+    //   std::cout << "index file -> " << indexFile << std::endl;
       if (!stat(indexFile.c_str(), &st) && st.st_mode & S_IFREG)
           showIndexFile(indexFile);
       else if (config.getClients()[clientFd].getServer().getAutoindex())
