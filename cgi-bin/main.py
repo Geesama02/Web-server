@@ -12,7 +12,7 @@ body = sys.stdin.read(content_length)
  ## Print the HTTP response header
  #
   #Print the received bod
-print("Content-Type: text/plain")
+print("Content-Type: text/html")
 print()
 print(body)
 #!/usr/bin/env python3

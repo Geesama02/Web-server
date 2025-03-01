@@ -51,8 +51,10 @@ void    Response::showIndexFile(std::string indexFilePath)
 std::string Response::urlEncode(std::string path)
 {
     std::string res;
-    for (std::string::iterator i = path.begin(); i != path.end(); i++) {
-        if (!isalnum(*i) && *i != '-' && *i != '_' && *i != '.' && *i != '~' && *i != '/') {
+    for (std::string::iterator i = path.begin(); i != path.end(); i++)
+    {
+        if (!isalnum(*i) && *i != '-' && *i != '_' && *i != '.' && *i != '~' && *i != '/')
+        {
             int n = static_cast<int>(*i);
             std::stringstream s;
             s << '%' << std::setw(2) << std::setfill('0') << std::uppercase 
@@ -76,6 +78,7 @@ void Response::listDirectories(std::string reqPath)
     std::string EncodedPath;
 
     statusCode = 200;
+    Headers["Content-Type"] = "text/html";
     DIR *dir = opendir(dirAsbolute.c_str());
     std::string lDirectoriesPage = "<!DOCTYPE html>"
                 "<html>"
@@ -89,12 +92,13 @@ void Response::listDirectories(std::string reqPath)
     while ((stDir = readdir(dir)))
     {
         direntName = stDir->d_name;
-        if (direntName != ".") {
+        if (direntName != ".")
+        {
             direntPath = reqPath + direntName;
             EncodedPath = urlEncode(reqPath + direntName);
-            // std::cout << "direntPath -> " << direntPath << std::endl;
             std::string absoluteDirentPath = currentDirAbsolutePath + direntPath;
-            if (!stat(absoluteDirentPath.c_str(), &st) && st.st_mode & S_IFDIR) {
+            if (!stat(absoluteDirentPath.c_str(), &st) && st.st_mode & S_IFDIR)
+            {
                 EncodedPath += "/";
                 direntName += "/";
             }
@@ -196,21 +200,21 @@ void Response::searchLocationsForMatch(Config& config, Request& req)
     } 
 }
 
-int    Response::checkDefinedErrorPage(std::string rootPath, std::map<int, std::string> error_page)
+int    Response::checkDefinedErrorPage(Config& config, std::string rootPath, std::map<int, std::string> error_page)
 {
     std::map<int, std::string>::iterator it = error_page.begin();
     while (it != error_page.end())
     {
         if (it->first == statusCode)
         {
-            if (!it->second.empty() && it->second.rfind("/") != 0)
+            if (!it->second.empty() && it->second.find("/") != 0)
             {
                 statusCode = 302;
                 locationHeader = it->second;
             }
             else
             {
-              returnDefinedPage(rootPath, it->second);
+              returnDefinedPage(config, rootPath, it->second);
               return (1);
             }
         }
@@ -222,9 +226,9 @@ int    Response::checkDefinedErrorPage(std::string rootPath, std::map<int, std::
 void Response::checkErrorPages(Config& config, Request& req)
 {
   searchLocationsForMatch(config, req);
-  if(locationMatch)
+  if (locationMatch)
   {
-      if (checkDefinedErrorPage(config.getClients()[clientFd].getServer().getRoot(),
+      if (checkDefinedErrorPage(config, config.getClients()[clientFd].getServer().getRoot(),
             locationMatch->getErrorPage()))
       { 
           return ;
@@ -232,33 +236,50 @@ void Response::checkErrorPages(Config& config, Request& req)
   }
   else
   {
-      checkDefinedErrorPage(config.getClients()[clientFd].getServer().getRoot(),
+      checkDefinedErrorPage(config, config.getClients()[clientFd].getServer().getRoot(),
         config.getClients()[clientFd].getServer().getErrorPage());
   }
 }
 
-void    Response::returnDefinedPage(std::string rootPath, std::string errorPageFile)
+void    Response::returnDefinedPage(Config& config, std::string rootPath, std::string errorPageFile)
 {
+    (void)config;
     std::string buffer;
     struct stat st;
+    std::string relativeErrorPage = errorPageFile;
 
-    errorPageFile.erase(0, 1);
     if (rootPath != "/")
     {
-        if (rootPath.rfind("/") != rootPath.length() - 1)
-            errorPageFile = rootPath + "/" + errorPageFile;
-        else
-            errorPageFile = rootPath + errorPageFile; 
+        if (rootPath.rfind("/") == rootPath.length() - 1)
+            rootPath.erase(0, 1);
+        errorPageFile = rootPath + errorPageFile; 
     }
-    std::cout << "error page -> " << errorPageFile << std::endl;
+    int res = stat(errorPageFile.c_str(), &st);
+    if (!res && (st.st_mode & S_IRUSR) && (st.st_mode & S_IFDIR))
+    {
+        clearResponse();
+        statusCode = 301;
+        locationHeader = relativeErrorPage;
+        return ;
+    }
+    else if (!res && !(st.st_mode & S_IRUSR))
+    {
+        clearResponse();
+        statusCode = 403;
+        return ; 
+    }
+    else if (res == -1)
+    {
+        clearResponse();
+        statusCode = 404;
+        return ;
+    }
     errorPage = new std::ifstream(errorPageFile.c_str());
     if (!errorPage->is_open())
     {
+        std::cerr << "Error: Opening the Error file" << std::endl;
         clearResponse();
-        if (stat(errorPageFile.c_str(), &st) == -1)
-            statusCode = 404;
-        else if (!stat(errorPageFile.c_str(), &st) && !(st.st_mode & S_IRUSR))
-            statusCode = 403;
+        statusCode = 500;
         return ;
     }
     while (std::getline(*errorPage, buffer))
@@ -271,8 +292,8 @@ int Response::callbackRemove(const char *fpath, const struct stat *sb, int typef
     (void)sb;
     (void)ftwbuf;
     (void)typeflag;
-    int rv;
 
+    int rv;
     rv = remove(fpath);
     if (rv)
         perror(fpath);

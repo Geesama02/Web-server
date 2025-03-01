@@ -92,8 +92,8 @@ class Response {
         void                fillBody(Config& config, Request& req);
         void                initializeContentHeader();
         void                checkForFileExtension(std::string fileName);
-        void                returnDefinedPage(std::string rootPath, std::string errorPageFile);
-        int                 checkDefinedErrorPage(std::string rootPath, std::map<int, std::string> error_page);
+        void                returnDefinedPage(Config& config, std::string rootPath, std::string errorPageFile);
+        int                 checkDefinedErrorPage(Config& config, std::string rootPath, std::map<int, std::string> error_page);
         void                checkAutoIndex(Config& config, Request& req);
         void                checkErrorPages(Config& config, Request& req);
         void                searchLocationsForMatch(Config& config, Request& req);

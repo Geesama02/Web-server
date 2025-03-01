@@ -69,8 +69,8 @@ std::string                         Response::getQueryString() { return queryStr
 int                                 Response::getStatusCode() { return statusCode; }
 std::string                         Response::getStatusMssg() { return statusMssg; }
 std::string                         Response::getHeader( std::string key ) { return Headers[key]; };
-std::ifstream&                      Response::getFile() { return file; }
-std::ifstream&                      Response::getIndexFile() { return indexFile; }
+std::ifstream&                      Response::getFile() { return *file; }
+std::ifstream&                      Response::getIndexFile() { return *indexFile; }
 
 //setters
 void                                Response::setClientFd( int nFd ) { clientFd = nFd; }
@@ -222,22 +222,26 @@ void Response::successResponse(Request req)
         std::sprintf(contentLengthHeader, "%ld", body.length());
         Headers["Content-Length"] = contentLengthHeader;
     }
-    std::map<std::string, std::string>::iterator it = Headers.find("Content-Type");
-    if (it == Headers.end())
-        Headers["Content-Type"] = "text/html";
     if (!file && FileType)
+    {
+        Headers["Accept-Ranges"] = "bytes";
         file = new std::ifstream(req.getPath().erase(0, 1).c_str(), std::ios::binary);
-    Headers["Accept-Ranges"] = "bytes";
+    }
     Headers["Date"] = getDate();
 }
 
 void    Response::redirectionResponse(Request req, Config& config)
 {
     char buff[150];
+    char portChar[150];
+    int  port;
     std::string statusCodeStr;
     sprintf(buff, "%d", statusCode);
     statusCodeStr = buff;
     statusMssg += statusCodeStr + " " + resStatus[statusCode];
+    port = config.getClients()[clientFd].getServer().getPort(); 
+    sprintf(portChar, "%d", port);
+    std::string host = config.getClients()[clientFd].getServer().getHost() + ":" + portChar;
     if (body.empty())
     {
         body = "<!DOCTYPE html>"
@@ -249,14 +253,11 @@ void    Response::redirectionResponse(Request req, Config& config)
                 "</body>"
                 "</html>";
     }
-    if (statusCode == 301) 
-    {
-        int port = config.getClients()[clientFd].getServer().getPort(); 
-        char portChar[150];
-        sprintf(portChar, "%d", port);
-        std::string host = config.getClients()[clientFd].getServer().getHost() + ":" + portChar;
+    if (statusCode == 301 && locationHeader.length() == 0)
         locationHeader = "http://" + host + req.getPath() + "/";
-    }
+    else if(statusCode == 301 && locationHeader.length() > 0)
+        locationHeader = "http://" + host + locationHeader + "/";
+    std::cout << "location header  -> " << locationHeader << std::endl;
     setHeader("Location", locationHeader);
     char contentLengthHeader[150];
     std::sprintf(contentLengthHeader, "%ld", body.length());

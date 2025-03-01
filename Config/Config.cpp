@@ -268,7 +268,8 @@ int Config::handleClient(int fd) {
     status = Clients[fd].getRequest().readRequest(fd, Clients[fd].getServer(), Servers);
     Clients[fd].getResponse().setStatusCode(status);
     Clients[fd].getResponse().setClientFd(fd);
-    std::cout << "Requets path -> " << Clients[fd].getRequest().getPath() << std::endl; 
+    std::cout << "request status -> " << status << std::endl;
+    //std::cout << "Requets path -> " << Clients[fd].getRequest().getPath() << std::endl; 
     if (status == 1) // connection is closed
         closeConnection(fd);
     else if (status == 2) // if file is uploading
@@ -278,7 +279,6 @@ int Config::handleClient(int fd) {
         {
             // std::cout << "path -> " << request.getPath() << std::endl;
             printLog(fd);
-             std::cout << "request status --> " << status << std::endl;
             if (status == 0) {
                 Clients[fd].getResponse().searchForFile(*this, Clients[fd].getRequest());
             }
