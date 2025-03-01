@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/30 12:07:04 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/02/26 16:37:34 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/02/27 15:24:28 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -527,17 +527,22 @@ Location *Request::getMatchedLocation(std::string path, Server& server) {
     return (loc);
 }
 
-int Request::checkAllowedMethods()
-{
+int Request::checkAllowedMethods(std::string& str) {
     if (currLocation) {
-        for (std::vector<std::string>::iterator it = currLocation->getAllowedMethods().begin(); it != currLocation->getAllowedMethods().end(); it++)
-        {
-            if (*it == method)
+        for (std::vector<std::string>::iterator it = currLocation->getAllowedMethods().begin(); it != currLocation->getAllowedMethods().end(); it++) {
+            if (*it == method) {
+                if (!str.empty() && method == "DELETE")
+                    return (415);
                 return (0);
+            }
         }
+        if (method == "DELETE" && !currLocation->getMethodsFlag())
+            return (405);
         return (403);
     }
     else {
+        if (method == "DELETE")
+            return (405);
         if (method != "GET")
             return (403);
     }
@@ -558,8 +563,8 @@ int Request::readHeaders(std::string& str, Server& server, std::vector<Server>& 
         currLocation = getMatchedLocation(path, server);
         if (currLocation)
             std::cout << "Location is -> " << currLocation->getURI() << std::endl;
-        if (checkAllowedMethods())
-            return (403);
+        if ((status = checkAllowedMethods(str)) != 0)
+            return (status);
         if (Headers.find("host") == Headers.end() || (method == "POST"
             && Headers.find("content-length") != Headers.end()
             && !isNumber(Headers["content-length"])))

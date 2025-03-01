@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/21 14:31:56 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/02/24 16:02:40 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/02/27 14:31:24 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -463,6 +463,7 @@ int Parser::setErrVar(std::vector<std::string>& holder, Location& tmp_location, 
 int Parser::setAllowedMethodsVar(std::vector<std::string>& holder, Location& tmp_location, size_t& index) {
     std::vector<std::string> tmp_holder;
     index++;
+    tmp_location.setMethodsFlag(true);
     while(index < holder.size() && *holder[index].rbegin() != ';') {
         if (holder[index] == "POST" || holder[index] == "GET" || holder[index] == "DELETE")
             tmp_holder.push_back(holder[index]);
@@ -473,7 +474,6 @@ int Parser::setAllowedMethodsVar(std::vector<std::string>& holder, Location& tmp
     if (index < holder.size() && *holder[index].rbegin() == ';')
     {
         if (holder[index] == ";" && !tmp_holder.empty()) {
-            
             tmp_location.setAllowedMethods(tmp_holder);
             index++;
             return (0);
@@ -552,11 +552,11 @@ int Parser::skipLocation(std::vector<std::string>& holder, size_t& index) {
                     retValue = setErrVar(holder, tmp_location, index);
                 else if (holder[index] == "allowed_methods" && !(aMethodsCount++))
                     retValue = setAllowedMethodsVar(holder, tmp_location, index);
-                else if (holder[index] == "cgi_path" && !(cPathCount++))
+                else if (holder[index] == "cgi_path" && !(cPathCount++) && (tmp_location.getURI() == "/cgi-bin" || tmp_location.getURI() == "/cgi-bin/"))
                     retValue = setCgiPathVar(holder, tmp_location, index);
-                else if (holder[index] == "cgi_ext" && !(cExtCount++))
+                else if (holder[index] == "cgi_ext" && !(cExtCount++) && (tmp_location.getURI() == "/cgi-bin" || tmp_location.getURI() == "/cgi-bin/"))
                     retValue = setCgiExtVar(holder, tmp_location, index);
-                else if (holder[index] == "}") {
+                else if (holder[index] == "}" && tmp_location.getCgiExt().size() == tmp_location.getCgiPath().size()) {
                     index++;
                     return (0);
                 }
@@ -614,11 +614,11 @@ int Parser::handleLocation(std::vector<std::string>& holder, Server& tmp_server,
                 }
                 else if (holder[index] == "allowed_methods")
                     retValue = setAllowedMethodsVar(holder, tmp_location, index);
-                else if (holder[index] == "cgi_path")
+                else if (holder[index] == "cgi_path" && (tmp_location.getURI() == "/cgi-bin" || tmp_location.getURI() == "/cgi-bin/"))
                     retValue = setCgiPathVar(holder, tmp_location, index);
-                else if (holder[index] == "cgi_ext")
+                else if (holder[index] == "cgi_ext" && (tmp_location.getURI() == "/cgi-bin" || tmp_location.getURI() == "/cgi-bin/"))
                     retValue = setCgiExtVar(holder, tmp_location, index);
-                else if (holder[index] == "}") {
+                else if (holder[index] == "}" && tmp_location.getCgiPath().size() == tmp_location.getCgiExt().size()) {
                     if (*tmp_location.getURI().begin() == '/')
                         tmp_server.addLocation(tmp_location);
                     index++;

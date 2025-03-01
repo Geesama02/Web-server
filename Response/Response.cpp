@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/14 17:03:53 by maglagal          #+#    #+#             */
-/*   Updated: 2025/02/26 15:30:51 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/02/27 14:52:05 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -103,6 +103,7 @@ void Response::initializeStatusRes()
     resStatus.insert(std::make_pair(411, "Length Required\r\n"));
     resStatus.insert(std::make_pair(413, "Content Too Large\r\n"));
     resStatus.insert(std::make_pair(414, "URI Too Long\r\n"));
+    resStatus.insert(std::make_pair(415, "Unsupported Media Type\r\n"));
     resStatus.insert(std::make_pair(500, "Internal Server Error\r\n"));
     resStatus.insert(std::make_pair(501, "Not Implemented\r\n"));
     resStatus.insert(std::make_pair(502, "Bad Gateway\r\n"));
@@ -255,7 +256,7 @@ void    Response::redirectionResponse(Request req, Config& config)
     }
     if (statusCode == 301 && locationHeader.length() == 0)
         locationHeader = "http://" + host + req.getPath() + "/";
-    else if(statusCode == 301 && locationHeader.length() > 0)
+    else if (statusCode == 301 && locationHeader.length() > 0)
         locationHeader = "http://" + host + locationHeader + "/";
     std::cout << "location header  -> " << locationHeader << std::endl;
     setHeader("Location", locationHeader);
@@ -371,8 +372,10 @@ void Response::searchForFile(Config& config, Request& req)
                 checkForFileExtension(fileName);
                 return ;
             }
-            if (req.getMethod() == "DELETE")
+            std::cout << "HEERE\n";
+            if (req.getMethod() == "DELETE") {
                 statusCode = 204;
+            }
             else
                 statusCode = 200;
             if (statusCode == 200)
@@ -433,6 +436,7 @@ void Response::handleDeleteRequest(Config& config, Request& req)
   {
       if (rmrf(requestPath) == -1)
       {
+        std::cout << "errno -> " << strerror(errno) << std::endl;
           clearResponse();
           statusCode = 500;
           return ;
@@ -461,6 +465,7 @@ void Response::fillBody(Config& config, Request& req)
 
 void Response::sendResponse(Config& config, Request& req, int fd)
 {
+    std::cout << "status code -> " << statusCode << std::endl;
     if (statusCode == 204)
         handleDeleteRequest(config, req);
     else if (req.getPath().find("/cgi-bin/") != std::string::npos && statusCode == 200)

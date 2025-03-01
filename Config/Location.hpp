@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/21 16:52:32 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/02/24 15:13:30 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/02/27 12:44:26 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -36,6 +36,7 @@ class Location {
         std::string root;
         std::string uploadPath;
         std::map<int, std::string> error_page;
+        bool methodsFlag;
         std::vector<std::string> allowed_methods;
         std::string index;
         bool autoindex;
@@ -54,6 +55,7 @@ class Location {
         std::map<int, std::string>& getErrorPage();
         std::string getIndex();
         bool getAutoindex();
+        bool getMethodsFlag();
         std::vector<std::string>& getAllowedMethods();
         std::map<int, std::string> getRedirect();
         std::vector<std::string>& getCgiPath();
@@ -67,6 +69,7 @@ class Location {
         void addErrorPage(int code, std::string path);
         void setIndex(std::string& str);
         void setAutoindex(bool n_autoindex);
+        void setMethodsFlag(bool flag);
         void setAllowedMethods(std::vector<std::string>& methods);
         void setRedirect(int code, std::string page);
         void addCgiPath(std::string path);
