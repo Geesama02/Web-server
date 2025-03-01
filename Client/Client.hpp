@@ -23,6 +23,7 @@ class Client {
         CGI         cgi;
         Server      server;
         long long   timeout;
+        char**      envp;
     public:
         //constructor
         Client();

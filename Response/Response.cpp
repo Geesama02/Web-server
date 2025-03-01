@@ -364,7 +364,8 @@ void Response::searchForFile(Config& config, Request& req)
                 checkAutoIndex(config, req);
             return ;
         }
-        else if ((st.st_mode & S_IFREG) && (st.st_mode & S_IRUSR)) {
+        else if ((st.st_mode & S_IFREG) && (st.st_mode & S_IRUSR))
+        {
             if (req.getHeaders().find("range") != req.getHeaders().end()) {
                 statusCode = 206;
                 sprintf(buff3, "%ld", st.st_size);
@@ -372,7 +373,6 @@ void Response::searchForFile(Config& config, Request& req)
                 checkForFileExtension(fileName);
                 return ;
             }
-            std::cout << "HEERE\n";
             if (req.getMethod() == "DELETE") {
                 statusCode = 204;
             }
@@ -382,8 +382,6 @@ void Response::searchForFile(Config& config, Request& req)
                 FileType = 1;
             sprintf(buff3, "%ld", st.st_size);
             setHeader("Content-Length", buff3);
-             //if (st.st_mode & S_IFDIR)
-                 //vertifyDirectorySlash(fileName, req);
             checkForFileExtension(fileName);
             return ;
         }
@@ -436,7 +434,6 @@ void Response::handleDeleteRequest(Config& config, Request& req)
   {
       if (rmrf(requestPath) == -1)
       {
-        std::cout << "errno -> " << strerror(errno) << std::endl;
           clearResponse();
           statusCode = 500;
           return ;
@@ -448,8 +445,6 @@ void Response::handleDeleteRequest(Config& config, Request& req)
 
 void Response::fillBody(Config& config, Request& req)
 {
-     //if (statusCode == 200 || statusCode == 403)
-     // checkAutoIndex(config, req);
     checkErrorPages(config, req);
     //when matching a location should not enter here!!
     if (statusCode == 200)
@@ -465,7 +460,6 @@ void Response::fillBody(Config& config, Request& req)
 
 void Response::sendResponse(Config& config, Request& req, int fd)
 {
-    std::cout << "status code -> " << statusCode << std::endl;
     if (statusCode == 204)
         handleDeleteRequest(config, req);
     else if (req.getPath().find("/cgi-bin/") != std::string::npos && statusCode == 200)

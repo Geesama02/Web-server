@@ -30,9 +30,8 @@
 //3- if no leading slash means you should send in the location the location as it is with no slash and if the slash is there you should give the host in the location
 
 
-int    Response::comparingReqWithLocation(std::string locationPath, std::string reqPath) {
-    // std::cout << locationPath << std::endl;
-    // std::cout << reqPath << std::endl;
+int    Response::comparingReqWithLocation(std::string locationPath, std::string reqPath)
+{
     size_t i = locationPath.find(reqPath);
     std::string rest = locationPath.substr(i);
     return (0);
@@ -225,20 +224,17 @@ int    Response::checkDefinedErrorPage(Config& config, std::string rootPath, std
 
 void Response::checkErrorPages(Config& config, Request& req)
 {
-  searchLocationsForMatch(config, req);
-  if (locationMatch)
-  {
-      if (checkDefinedErrorPage(config, config.getClients()[clientFd].getServer().getRoot(),
-            locationMatch->getErrorPage()))
-      { 
-          return ;
-      }
-  }
-  else
-  {
-      checkDefinedErrorPage(config, config.getClients()[clientFd].getServer().getRoot(),
-        config.getClients()[clientFd].getServer().getErrorPage());
-  }
+    searchLocationsForMatch(config, req);
+    if (locationMatch)
+    {
+        checkDefinedErrorPage(config, config.getClients()[clientFd].getServer().getRoot(),
+          locationMatch->getErrorPage());
+    }
+    else
+    {
+        checkDefinedErrorPage(config, config.getClients()[clientFd].getServer().getRoot(),
+          config.getClients()[clientFd].getServer().getErrorPage());
+    }
 }
 
 void    Response::returnDefinedPage(Config& config, std::string rootPath, std::string errorPageFile)

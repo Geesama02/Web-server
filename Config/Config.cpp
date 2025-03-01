@@ -17,9 +17,11 @@
 // Getters
 std::vector<Server>     Config::getServers() { return Servers; }
 std::map<int, Client>&  Config::getClients() { return Clients; }
+char**                  Config::getEnvp() { return envP; }
 
 // Setters
 void    Config::addServer(Server new_server) { Servers.push_back(new_server); }
+void    Config::setEnvp(char **nEnvp) { envP = nEnvp; }
 
 void    Config::checkCgiScriptExecution(int fd) {
     int status;
@@ -83,9 +85,10 @@ void    Config::checkScriptTimeOut(int fd)
 }
 
 // Functions
-int Config::startServers() {
+int Config::startServers(char **envp) {
     epoll_event ev;
     epoll_fd = epoll_create(1);
+    envP = envp;
     if (epoll_fd < 0) {
         std::cerr << "Cannot create epoll instance!" << std::endl;
         return (1);

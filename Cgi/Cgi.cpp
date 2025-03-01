@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Cgi.cpp                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/01/30 18:22:44 by maglagal          #+#    #+#             */
-/*   Updated: 2025/02/23 11:52:12 by maglagal         ###   ########.fr       */
+/*   By: maglagal <maglagal@student.1337.ma>        ++  +:+       ++        */
+/*                                                +++#+#+#+   +#+           */
+/*   Created: 2025/01/30 18:22:44 by maglagal          +    #+#             */
+/*   Updated: 2025/02/23 11:52:12 by maglagal         #   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,7 +14,7 @@
 #include "../Config/Config.hpp"
 
 CGI::CGI() {
-    for(int i = 0; i < 7; i++)
+    for(int i = 0; i < 200; i++)
         envs[i] = NULL;
     executablePathArray = NULL;
     absoluteFilePath = NULL;
@@ -22,7 +22,8 @@ CGI::CGI() {
 }
 
 CGI::~CGI() {
-    for(int i = 0; i < 7; i++) {
+    for(int i = 0; i < 200; i++)
+    {
         if (envs[i]) {
             delete[] envs[i];
             envs[i] = NULL;
@@ -77,7 +78,7 @@ void CGI::defineExecutionPaths(int fd, Config& config)
 
 void CGI::clearCGI()
 {
-    for(int i = 0; i < 7; i++) {
+    for(int i = 0; i < 200; i++) {
         if (envs[i])
             delete[] envs[i];
     }
@@ -85,7 +86,7 @@ void CGI::clearCGI()
         delete[] absoluteFilePath;
     if (executablePathArray)
         delete[] executablePathArray;
-    for(int i = 0; i < 7; i++)
+    for(int i = 0; i < 200; i++)
         envs[i] = NULL;
     executablePathArray = NULL;
     absoluteFilePath = NULL;
@@ -139,11 +140,33 @@ void CGI::initializeVars(Response& res, Request req)
         scriptRelativePath = "/";
 }
 
-void CGI::setEnvVars(Request req, Response& res)
+void CGI::setEnvVars(Config& config, Request req, Response& res)
 {
+    //(void)config;
     char contentLengthStr[150];
     if (req.getBody().length() > 0)
         sprintf(contentLengthStr, "%ld", req.getBody().length());
+
+     //setenv("REQUEST_METHOD", req.getMethod().c_str(), 1);
+     //if (req.getPath().empty())
+         //setenv("SCRIPT_NAME", "/", 1);
+     //else
+         //setenv("SCRIPT_NAME", req.getPath().c_str(), 1);
+     //if (req.getMethod() == "GET")
+         //setenv("CONTENT_LENGTH", "0", 1); //forbidden!!
+     //else if (req.getMethod() == "POST")
+         //setenv("CONTENT_LENGTH", req.getHeaders()["content-length"].c_str(), 1);
+     //setenv("SERVER_NAME", "Webserv", 1);
+     //setenv("SERVER_PROTOCOL", "HTTP 1.1", 1);
+     //setenv("CONTENT_TYPE", req.getHeaders()["content-type"].c_str(), 1);
+     //setenv("QUERY_STRING", (res.getQueryString()).c_str(), 1);
+   //
+     //char** envp = config.getEnvp();
+     //while(*envp) {
+       //std::cout << *envp << std::endl;
+       //envp++;
+    //}
+
 
     std::map<std::string, std::string> storeEnvs;
     storeEnvs["REQUEST_METHOD"] = req.getMethod().c_str();
@@ -156,15 +179,41 @@ void CGI::setEnvVars(Request req, Response& res)
         storeEnvs["CONTENT_LENGTH"] = req.getHeaders()["content-length"].c_str(); //forbidden!! 
     storeEnvs["CONTENT_TYPE"] = req.getHeaders()["content-type"].c_str();
     storeEnvs["QUERY_STRING"] = (res.getQueryString()).c_str();
-    
+
+    char **envp = config.getEnvp();
+    int i = 0;
+    while (*envp)
+    {
+        envs[i] = new char[std::strlen(*envp) + 1];
+        std::strcpy(envs[i], *envp); 
+        envp++;
+        i++;
+    }
+    int j = 0;
     std::map<std::string, std::string>::iterator it = storeEnvs.begin();
-    for (int i = 0; i < 7; i++) {
+    while (j < 7)
+    {
         std::string env = it->first + "=" + it->second;
         envs[i] = new char[env.length() + 1];
         std::strcpy(envs[i], env.c_str());
         it++;
+        i++;
+        j++;
     }
-    envs[7] = NULL;
+    envs[i] = NULL;
+     //for(i;*envp; envp++)
+     //{
+         //envs[i] = new char[std::strlen(*envp) + 1];
+         //std::strcpy(envs[i], *envp);
+     //}
+ //
+     //std::map<std::string, std::string>::iterator it = storeEnvs.begin();
+     //for (i; i < 7; i++) {
+         //std::string env = it->first + "=" + it->second;
+         //envs[i] = new char[env.length() + 1];
+         //std::strcpy(envs[i], env.c_str());
+         //it++;
+    //}
 }
 
 void CGI::defineArgv()
@@ -308,7 +357,7 @@ int CGI::execute_cgi_script(Config& config, Response& res, int fd, Request req)
     initializeVars(res, req);
 
     //set environment variables 
-    setEnvVars(req, res);
+    setEnvVars(config, req, res);
 
     //find the absolute path of the script
     if (findExecutablePath(config, fd) == -1)
