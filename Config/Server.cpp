@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/22 10:25:22 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/02/25 16:33:33 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/02/28 11:56:01 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -71,14 +71,24 @@ void Server::addLocation(Location& new_location) { locations.push_back(new_locat
 int Server::checkPortDup(std::vector<Server>& Servers, std::vector<Server>::iterator it) {
     for (std::vector<Server>::iterator it2 = Servers.begin(); it2 != it; it2++) {
         if (it2->getPort() == it->getPort() && it2->getHost() == it->getHost()) {
-            if (it2->getServerName() != it->getServerName())
-                return (0);
-            else
-                return (1);
+            return (0);
+        }
+    }
+    return (1);
+}
+
+int Server::checkNameDup(std::vector<Server>& Servers, std::vector<Server>::iterator it, std::string& s_name) {
+    for (std::vector<Server>::iterator it2 = Servers.begin(); it2 != it; it2++) {
+        if (it2->getPort() == it->getPort() && it2->getHost() == it->getHost()) {
+            for (std::vector<std::string>::iterator s_it = it2->getServerName().begin(); s_it != it2->getServerName().end(); s_it++) {
+                if (s_name == *s_it)
+                    return (1);
+            }
         }
     }
     return (0);
 }
+
 int Server::initServer(std::vector<Server>& Servers, std::vector<Server>::iterator it) {
     // struct sockaddr_in address;
     struct addrinfo hints, *res;
@@ -116,8 +126,9 @@ int Server::initServer(std::vector<Server>& Servers, std::vector<Server>::iterat
         return (1);
     }
     fcntl(socket_fd, F_SETFL, O_NONBLOCK);
-    for(std::vector<std::string>::iterator it = server_name.begin(); it != server_name.end(); it++) {
-        std::cout << *it << ": listening to port " << port << "...\n";
+    for(std::vector<std::string>::iterator it2 = server_name.begin(); it2 != server_name.end(); it2++) {
+        if (checkNameDup(Servers, it, *it2) == 0)
+            std::cout << *it2 << ": listening to port " << port << "...\n";
     }
     return (0);
 }
