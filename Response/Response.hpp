@@ -55,6 +55,7 @@ class Response {
         std::string                        locationHeader;
         Location*                          locationMatch;
         int                                FileType;
+        int                                redirectFlag;
 
     public:
         static std::map<std::string, std::string> ContentTypeHeader;
@@ -83,6 +84,7 @@ class Response {
         void            setIndexFile(std::ifstream *nIndexFile);
         
         //other
+        void                returnResponse(Config& config);
         static int          callbackRemove(const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf);
         static void         matchReqPathWithLocation(Location& loc, std::string reqPath, Location **match);
         static std::string  getDate();

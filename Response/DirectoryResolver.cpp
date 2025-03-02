@@ -273,7 +273,7 @@ void    Response::returnDefinedPage(Config& config, std::string rootPath, std::s
     errorPage = new std::ifstream(errorPageFile.c_str());
     if (!errorPage->is_open())
     {
-        std::cerr << "Error: Opening the Error file" << std::endl;
+        std::cerr << "Error: Opening the Error Page" << std::endl;
         clearResponse();
         statusCode = 500;
         return ;
@@ -300,4 +300,19 @@ int Response::callbackRemove(const char *fpath, const struct stat *sb, int typef
 int Response::rmrf(char *path)
 {
     return nftw(path, callbackRemove, 64, FTW_DEPTH | FTW_PHYS);
+}
+
+void Response::returnResponse(Config& config)
+{
+    searchLocationsForMatch(config, config.getClients()[clientFd].getRequest());
+    if (locationMatch)
+    {
+        std::map<int, std::string> redirect = locationMatch->getRedirect();
+        std::map<int, std::string>::iterator redirectIt = redirect.begin();
+        if (redirectIt != redirect.end())
+        {
+            statusCode = redirectIt->first;
+            body = redirectIt->second;
+        }
+    }
 }

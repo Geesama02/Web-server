@@ -22,6 +22,7 @@ std::map<std::string, std::string> Response::ContentTypeHeader;
 Response::Response()
 {
     FileType = 0;
+    redirectFlag = 0;
     initializeContentHeader();
     initializeStatusRes();
     file = NULL;
@@ -42,24 +43,7 @@ Response::Response()
 //Destructor
 Response::~Response() 
 {
-    if (file)
-    {
-        file->close();
-        delete file;
-    }
-    if (indexFile)
-    {
-        indexFile->close();
-        delete indexFile;
-    }
-    if (errorPage)
-    {
-        errorPage->close();
-        delete errorPage;
-    }
-    file = NULL;
-    indexFile = NULL;
-    errorPage = NULL;
+   clearResponse(); 
 }
 
 //getters
@@ -147,6 +131,7 @@ void    Response::clearResponse()
     statusMssg = "HTTP/1.1 ";
     statusCode = 0;
     FileType = 0;
+    redirectFlag = 0;
     locationMatch = NULL;
     body.clear();
     finalRes.clear();
@@ -359,6 +344,12 @@ void Response::searchForFile(Config& config, Request& req)
         if (st.st_mode & S_IFDIR || (!(st.st_mode & S_IRUSR)))
         {
             statusCode = 403;
+            returnResponse(config);
+            if (locationMatch)
+            {
+                redirectFlag = 1;
+                return ;
+            }
             verifyDirectorySlash(fileName, req);
             if (statusCode == 403)
                 checkAutoIndex(config, req);
@@ -366,16 +357,22 @@ void Response::searchForFile(Config& config, Request& req)
         }
         else if ((st.st_mode & S_IFREG) && (st.st_mode & S_IRUSR))
         {
-            if (req.getHeaders().find("range") != req.getHeaders().end()) {
+            if (req.getHeaders().find("range") != req.getHeaders().end())
+            {
                 statusCode = 206;
                 sprintf(buff3, "%ld", st.st_size);
                 setHeader("Content-Length", buff3);
                 checkForFileExtension(fileName);
                 return ;
             }
-            if (req.getMethod() == "DELETE") {
-                statusCode = 204;
+            returnResponse(config);
+            if (locationMatch)
+            {
+                redirectFlag = 1;
+                return ;
             }
+            if (req.getMethod() == "DELETE")
+                statusCode = 204;
             else
                 statusCode = 200;
             if (statusCode == 200)
@@ -445,8 +442,8 @@ void Response::handleDeleteRequest(Config& config, Request& req)
 
 void Response::fillBody(Config& config, Request& req)
 {
-    checkErrorPages(config, req);
-    //when matching a location should not enter here!!
+    if (!redirectFlag)
+        checkErrorPages(config, req);
     if (statusCode == 200)
         successResponse(req);
     else if (statusCode == 206)
