@@ -17,18 +17,22 @@
 // Getters
 std::vector<Server>     Config::getServers() { return Servers; }
 std::map<int, Client>&  Config::getClients() { return Clients; }
+char**                  Config::getEnvp() { return envP; }
 
 // Setters
 void    Config::addServer(Server new_server) { Servers.push_back(new_server); }
+void    Config::setEnvp(char **nEnvp) { envP = nEnvp; }
 
 void    Config::checkCgiScriptExecution(int fd) {
     int status;
     std::map<int, Client>::iterator it = Clients.begin();
     while (it != Clients.end())
     {
-        if (it->first == fd && Clients[fd].getCGI().getCpid() != 0) {
+        if (it->first == fd && Clients[fd].getCGI().getCpid() != 0)
+        {
             pid_t child = waitpid(Clients[fd].getCGI().getCpid(), &status, WNOHANG);
-            if (child > 0) {
+            if (child > 0)
+            {
                 if (WEXITSTATUS(status))
                 {
                     Clients[fd].getCGI().setChildStatus(WEXITSTATUS(status));
@@ -49,7 +53,7 @@ void    Config::checkCgiScriptExecution(int fd) {
                         return ;
                     }
                     Clients[fd].getCGI().sendServerResponse(fd, *this);
-                    Clients[fd].getCGI().clearCGI();
+                    Clients[fd].getCGI().clearCGI(); 
                 }
             }
         }
@@ -57,11 +61,15 @@ void    Config::checkCgiScriptExecution(int fd) {
     }
 }
 
-void    Config::checkScriptTimeOut(int fd) {
+void    Config::checkScriptTimeOut(int fd)
+{
     std::map<int, Client>::iterator it = Clients.begin();
-    while (it != Clients.end()) {
-        if (it->first == fd) {
-            if (Clients[fd].getCGI().getCpid() != 0 && timeNow() - Clients[fd].getCGI().getStartTime() > 10) {
+    while (it != Clients.end())
+    {
+        if (it->first == fd)
+        {
+            if (Clients[fd].getCGI().getCpid() != 0 && timeNow() - Clients[fd].getCGI().getStartTime() > 10)
+            {
                 kill(Clients[fd].getCGI().getCpid(), SIGKILL);
                 waitpid(Clients[fd].getCGI().getCpid(), NULL, 0);
                 close(Clients[fd].getCGI().getRpipe());
@@ -77,9 +85,10 @@ void    Config::checkScriptTimeOut(int fd) {
 }
 
 // Functions
-int Config::startServers() {
+int Config::startServers(char **envp) {
     epoll_event ev;
     epoll_fd = epoll_create(1);
+    envP = envp;
     if (epoll_fd < 0) {
         std::cerr << "Cannot create epoll instance!" << std::endl;
         return (1);
@@ -135,12 +144,10 @@ int Config::startServers() {
 int Config::monitorTimeout() {
     long long currTime = timeNow();
     int timeout = 75;
-    for (std::map<int, Client>::iterator it = Clients.begin(); it != Clients.end(); ) {
-        if (it->second.getTimeout() + timeout < currTime) {
-            // if (Response::files.find(it->first) != Response::files.end()) {
-            //     Response::files[it->first]->close();
-            //     Response::files.erase(it->first);
-            // }
+    for (std::map<int, Client>::iterator it = Clients.begin(); it != Clients.end(); )
+    {
+        if (it->second.getTimeout() + timeout < currTime)
+        {
             epoll_ctl(epoll_fd, EPOLL_CTL_DEL, it->first, NULL);
             close(it->first);
             std::cout << "get KICKED\n";
@@ -154,14 +161,17 @@ int Config::monitorTimeout() {
     return (0);
 }
 
-int Config::monitorServers(epoll_event& ev) {
+int Config::monitorServers(epoll_event& ev)
+{
     ev.events = EPOLLIN | EPOLLOUT | EPOLLERR; // monitor if socket ready to (read | write | error)
-    for (std::vector<Server>::iterator it = Servers.begin(); it != Servers.end(); it++) {
+    for (std::vector<Server>::iterator it = Servers.begin(); it != Servers.end(); it++)
+    {
         if (it->initServer(Servers,it))
             return (1);
         ev.data.fd = it->getSocket();
         // add server socket to epoll to monitor them
-        if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, it->getSocket(), &ev) != 0) {
+        if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, it->getSocket(), &ev) != 0)
+        {
             std::cerr << strerror(errno) << std::endl;
             close(epoll_fd);
             return (1);
@@ -170,23 +180,28 @@ int Config::monitorServers(epoll_event& ev) {
     return (0);
 }
 
-int Config::isServerFd(int fd) {
-    for (std::vector<Server>::iterator it = Servers.begin(); it != Servers.end(); it++) {
+int Config::isServerFd(int fd)
+{
+    for (std::vector<Server>::iterator it = Servers.begin(); it != Servers.end(); it++)
+    {
         if (fd == it->getSocket())
             return (1);
     }
     return (0);
 }
 
-Server Config::getServer(int fd) {
-    for (std::vector<Server>::iterator it = Servers.begin(); it != Servers.end(); it++) {
+Server Config::getServer(int fd)
+{
+    for (std::vector<Server>::iterator it = Servers.begin(); it != Servers.end(); it++)
+    {
         if (fd == it->getSocket())
             return (*it);
     }
     return (Servers[0]);
 }
 
-long long Config::timeNow() {
+long long Config::timeNow()
+{
     struct timeval tv;
     long long time;
     gettimeofday(&tv, NULL);
@@ -194,9 +209,11 @@ long long Config::timeNow() {
     return (time);
 }
 
-int Config::acceptConnection(int fd, epoll_event& ev) {
+int Config::acceptConnection(int fd, epoll_event& ev)
+{
     // loop until accepting all clients
-    while (true) {
+    while (true)
+    {
         int new_client = accept(fd, NULL, NULL);
         if (new_client < 0) {
             if (errno == EAGAIN || errno == EWOULDBLOCK) // all clients accepted

@@ -29,18 +29,21 @@ class Config {
         int                   epoll_fd;
         std::vector<Server>   Servers;
         std::map<int, Client> Clients;
-    public:        
+        char                  **envP;
+    public:
         // Getters
         std::vector<Server>    getServers();
         std::map<int, Client>& getClients();
+        char**                 getEnvp();
 
         // Setters
         void addServer(Server new_server);
+        void setEnvp( char **nEnvp );
 
         // Functions
         void    checkCgiScriptExecution(int fd);
         void    checkScriptTimeOut(int fd);
-        int     startServers();
+        int     startServers(char **envp);
         int     monitorServers(epoll_event& ev);
         int     isServerFd(int fd);
         int     acceptConnection(int fd, epoll_event& ev);

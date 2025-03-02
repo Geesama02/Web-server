@@ -9,7 +9,7 @@
 // }
 
 // void f() {system("valgrind --leak-check=yes --log-file=valgrind.txt ./webserv");}
-int main(int argc, char **argv)
+int main(int argc, char **argv, char **envp)
 {
     // atexit(f);
     signal(SIGPIPE, SIG_IGN);
@@ -31,7 +31,7 @@ int main(int argc, char **argv)
     //         std::cout << "Location -> " << it2->getURI() << std::endl;
     //     }
     // }
-    if (config.startServers())
+    if (config.startServers(envp))
         return (1);
     // if (re)
     return (0);

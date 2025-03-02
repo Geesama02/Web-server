@@ -19,10 +19,15 @@
 std::map<std::string, std::string> Response::ContentTypeHeader;
 
 //constructor
-Response::Response() {
-    file = NULL;
+Response::Response()
+{
+    FileType = 0;
+    redirectFlag = 0;
     initializeContentHeader();
     initializeStatusRes();
+    file = NULL;
+    indexFile = NULL;
+    errorPage = NULL;
     Headers["Content-Type"] = "text/html";
     Headers["Connection"] = "keep-alive";
     Headers["Server"] = "Webserv";
@@ -36,32 +41,38 @@ Response::Response() {
 }
 
 //Destructor
-Response::~Response() {
-    if (file) {
-        file->close();
-        delete file;
-    }
+Response::~Response() 
+{
+   clearResponse(); 
 }
 
 //getters
 std::map<std::string, std::string>& Response::getHeadersRes() { return Headers; }
 int                                 Response::getClientFd() { return clientFd; }
 std::string                         Response::getQueryString() { return queryString; }
-int                                 Response::getStatusCode() { return statusCode; };
-std::string                         Response::getStatusMssg() { return statusMssg; };
+int                                 Response::getStatusCode() { return statusCode; }
+std::string                         Response::getStatusMssg() { return statusMssg; }
 std::string                         Response::getHeader( std::string key ) { return Headers[key]; };
+std::ifstream&                      Response::getFile() { return *file; }
+std::ifstream&                      Response::getIndexFile() { return *indexFile; }
 
 //setters
-void Response::setClientFd( int nFd ) { clientFd = nFd; }
-void Response::setQueryString( std::string value ) { queryString = value; }
-void Response::setStatusCode(int value) { statusCode = value; };
-void Response::setStatusMssg( std::string value ) { statusMssg = value; };
-void Response::setHeader( std::string key, std::string value ) { Headers[key] = value; };
+void                                Response::setClientFd( int nFd ) { clientFd = nFd; }
+void                                Response::setQueryString( std::string value ) { queryString = value; }
+void                                Response::setStatusCode(int value) { statusCode = value; };
+void                                Response::setStatusMssg( std::string value ) { statusMssg = value; };
+void                                Response::setHeader( std::string key, std::string value ) { Headers[key] = value; };
+void                                Response::setFile(std::ifstream *nFile) { file = nFile; }
+void                                Response::setIndexFile(std::ifstream *nIndexFile) { indexFile = nIndexFile; }
+
 
 //other
 void Response::initializeStatusRes()
 {
     locationMatch = NULL;
+    errorPage = NULL;
+    indexFile = NULL;
+    file = NULL;
     resStatus.insert(std::make_pair(200, "OK\r\n"));
     resStatus.insert(std::make_pair(201, "Created\r\n"));
     resStatus.insert(std::make_pair(204, "No Content\r\n"));
@@ -119,12 +130,29 @@ void    Response::clearResponse()
     Headers["Date"] = "0";
     statusMssg = "HTTP/1.1 ";
     statusCode = 0;
+    FileType = 0;
+    redirectFlag = 0;
     locationMatch = NULL;
     body.clear();
     finalRes.clear();
     if (file)
+    {
+        file->close();
         delete file;
+    }
+    if (indexFile)
+    {
+        indexFile->close();
+        delete indexFile;
+    }
+    if (errorPage)
+    {
+        errorPage->close();
+        delete errorPage;
+    }
     file = NULL;
+    errorPage = NULL;
+    indexFile = NULL;
 }
 
 std::string Response::getDate()
@@ -180,22 +208,26 @@ void Response::successResponse(Request req)
         std::sprintf(contentLengthHeader, "%ld", body.length());
         Headers["Content-Length"] = contentLengthHeader;
     }
-    std::map<std::string, std::string>::iterator it = Headers.find("Content-Type");
-    if (it == Headers.end())
-        Headers["Content-Type"] = "text/html";
-    if (!file)
+    if (!file && FileType)
+    {
+        Headers["Accept-Ranges"] = "bytes";
         file = new std::ifstream(req.getPath().erase(0, 1).c_str(), std::ios::binary);
-    Headers["Accept-Ranges"] = "bytes";
+    }
     Headers["Date"] = getDate();
 }
 
 void    Response::redirectionResponse(Request req, Config& config)
 {
     char buff[150];
+    char portChar[150];
+    int  port;
     std::string statusCodeStr;
     sprintf(buff, "%d", statusCode);
     statusCodeStr = buff;
     statusMssg += statusCodeStr + " " + resStatus[statusCode];
+    port = config.getClients()[clientFd].getServer().getPort(); 
+    sprintf(portChar, "%d", port);
+    std::string host = config.getClients()[clientFd].getServer().getHost() + ":" + portChar;
     if (body.empty())
     {
         body = "<!DOCTYPE html>"
@@ -207,14 +239,11 @@ void    Response::redirectionResponse(Request req, Config& config)
                 "</body>"
                 "</html>";
     }
-    if (statusCode == 301) 
-    {
-        int port = config.getClients()[clientFd].getServer().getPort(); 
-        char portChar[150];
-        sprintf(portChar, "%d", port);
-        std::string host = config.getClients()[clientFd].getServer().getHost() + ":" + portChar;
+    if (statusCode == 301 && locationHeader.length() == 0)
         locationHeader = "http://" + host + req.getPath() + "/";
-    }
+    else if (statusCode == 301 && locationHeader.length() > 0)
+        locationHeader = "http://" + host + locationHeader + "/";
+    std::cout << "location header  -> " << locationHeader << std::endl;
     setHeader("Location", locationHeader);
     char contentLengthHeader[150];
     std::sprintf(contentLengthHeader, "%ld", body.length());
@@ -315,29 +344,41 @@ void Response::searchForFile(Config& config, Request& req)
         if (st.st_mode & S_IFDIR || (!(st.st_mode & S_IRUSR)))
         {
             statusCode = 403;
+            returnResponse(config);
+            if (locationMatch)
+            {
+                redirectFlag = 1;
+                return ;
+            }
             verifyDirectorySlash(fileName, req);
             if (statusCode == 403)
                 checkAutoIndex(config, req);
             return ;
         }
-        else if ((st.st_mode & S_IFREG) && (st.st_mode & S_IRUSR)) {
-            if (req.getHeaders().find("range") != req.getHeaders().end()) {
+        else if ((st.st_mode & S_IFREG) && (st.st_mode & S_IRUSR))
+        {
+            if (req.getHeaders().find("range") != req.getHeaders().end())
+            {
                 statusCode = 206;
                 sprintf(buff3, "%ld", st.st_size);
                 setHeader("Content-Length", buff3);
                 checkForFileExtension(fileName);
                 return ;
             }
-            std::cout << "HEERE\n";
-            if (req.getMethod() == "DELETE") {
-                statusCode = 204;
+            returnResponse(config);
+            if (locationMatch)
+            {
+                redirectFlag = 1;
+                return ;
             }
+            if (req.getMethod() == "DELETE")
+                statusCode = 204;
             else
                 statusCode = 200;
+            if (statusCode == 200)
+                FileType = 1;
             sprintf(buff3, "%ld", st.st_size);
             setHeader("Content-Length", buff3);
-             //if (st.st_mode & S_IFDIR)
-                 //vertifyDirectorySlash(fileName, req);
             checkForFileExtension(fileName);
             return ;
         }
@@ -390,7 +431,6 @@ void Response::handleDeleteRequest(Config& config, Request& req)
   {
       if (rmrf(requestPath) == -1)
       {
-        std::cout << "errno -> " << strerror(errno) << std::endl;
           clearResponse();
           statusCode = 500;
           return ;
@@ -402,10 +442,8 @@ void Response::handleDeleteRequest(Config& config, Request& req)
 
 void Response::fillBody(Config& config, Request& req)
 {
-     //if (statusCode == 200 || statusCode == 403)
-     // checkAutoIndex(config, req);
-    checkErrorPages(config, req);
-    //when matching a location should not enter here!!
+    if (!redirectFlag)
+        checkErrorPages(config, req);
     if (statusCode == 200)
         successResponse(req);
     else if (statusCode == 206)
@@ -418,11 +456,11 @@ void Response::fillBody(Config& config, Request& req)
 
 void Response::sendResponse(Config& config, Request& req, int fd)
 {
-    // std::cout << "status code -> " << statusCode << std::endl;
     if (statusCode == 204)
         handleDeleteRequest(config, req);
-    else if (req.getPath().find("/cgi-bin/") != std::string::npos && statusCode == 200) {
-        int status;
+    else if (req.getPath().find("/cgi-bin/") != std::string::npos && statusCode == 200)
+    {
+        int status = 0;
         status = config.getClients()[fd].getCGI().execute_cgi_script(config, *this, clientFd, req);
         if (fd != 0)
         {
