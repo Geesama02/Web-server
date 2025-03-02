@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/30 12:07:04 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/02/27 15:24:28 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/03/01 15:59:01 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,8 +16,6 @@
 #include "../Parser/Parser.hpp"
 // #include "../Config/Location.hpp"
 
-// std::map<int, UploadFile> Request::uploads;
-// std::map<int, Request> Request::unfinishedReqs;
 std::map<int, std::string> Request::reqStatus;
 
 // Constructor
