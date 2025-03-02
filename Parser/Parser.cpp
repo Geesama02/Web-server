@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/21 14:31:56 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/02/27 14:31:24 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/03/02 11:29:29 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,9 +19,18 @@ int Parser::startParsing(Config &config, char *filename) {
         config.addServer(defaultServer);
         return (0);
     }
+    struct stat fileInfo;
+    if (stat(filename, &fileInfo) != 0) {
+        std::cerr << strerror(errno) << std::endl;
+        return (1);
+    }
+    else if (!S_ISREG(fileInfo.st_mode)) {
+		std::cerr << filename << " is a Directory!" << std::endl;
+        return (1);
+    }
     std::ifstream f_read(filename);
 	if (!f_read) {
-		std::cerr << "Failed to open file!\n";
+		std::cerr << strerror(errno) << std::endl;
 		return (1);
 	}
     if (std::getline(f_read, holder, '\0')) {
@@ -31,8 +40,26 @@ int Parser::startParsing(Config &config, char *filename) {
             return (1);
         }
     }
+    else {
+        f_read.close();
+        std::cerr << "Invalid server configuration!\n";
+        return (1);
+    }
     f_read.close();
     return (0);
+}
+
+void Parser::joinStrings(std::vector<std::string>& holder) {
+    for (std::vector<std::string>::iterator it = holder.begin(); it != holder.end(); ) {
+        if (*it == ";" && it != holder.begin() && (it + 1) != holder.end()) {
+            *(it - 1) += ";";
+            std::vector<std::string>::iterator tmp_it = it;
+            it++;
+            holder.erase(tmp_it);
+        }
+        else
+            it++;
+    }
 }
 
 int Parser::handleLines(Config& config, std::string& line) {
@@ -47,6 +74,9 @@ int Parser::handleLines(Config& config, std::string& line) {
         if (tmp != "")
             holder.push_back(tmp);
     }
+    if (holder.empty())
+        return (1);
+    joinStrings(holder);
     for (size_t i = 0; i < holder.size(); i++) {
         if (holder[i] != "server") {
             return (1);
@@ -460,12 +490,20 @@ int Parser::setErrVar(std::vector<std::string>& holder, Location& tmp_location, 
     return (0);
 }
 
+int Parser::checkDupMethod(std::string& holder, std::vector<std::string> tmp_holder) {
+    for (std::vector<std::string>::iterator it = tmp_holder.begin(); it != tmp_holder.end(); it++) {
+        if (holder == *it)
+            return (0);
+    }
+    return (1);
+}
+
 int Parser::setAllowedMethodsVar(std::vector<std::string>& holder, Location& tmp_location, size_t& index) {
     std::vector<std::string> tmp_holder;
     index++;
     tmp_location.setMethodsFlag(true);
     while(index < holder.size() && *holder[index].rbegin() != ';') {
-        if (holder[index] == "POST" || holder[index] == "GET" || holder[index] == "DELETE")
+        if ((holder[index] == "POST" || holder[index] == "GET" || holder[index] == "DELETE") && checkDupMethod(holder[index], tmp_holder))
             tmp_holder.push_back(holder[index]);
         else
             return (1);
@@ -481,7 +519,7 @@ int Parser::setAllowedMethodsVar(std::vector<std::string>& holder, Location& tmp
         holder[index].erase(holder[index].end() - 1);
         if (holder[index].empty() || !isValidValue(holder[index]))
             return (1);
-        if (holder[index] == "POST" || holder[index] == "GET" || holder[index] == "DELETE")
+        if ((holder[index] == "POST" || holder[index] == "GET" || holder[index] == "DELETE") && checkDupMethod(holder[index], tmp_holder))
             tmp_holder.push_back(holder[index]);
         else
             return (1);
@@ -589,7 +627,7 @@ int Parser::handleLocation(std::vector<std::string>& holder, Server& tmp_server,
     bool errExist = false;
     if (index < holder.size() && holder[index] != "{") {
         if (checkDupUri(holder[index], tmp_server))
-            return (0);
+            return (1);
         tmp_location.setURI(holder[index]);
         index++;
         if (index < holder.size() && holder[index] == "{") {

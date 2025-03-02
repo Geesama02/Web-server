@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/22 11:25:38 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/02/27 09:42:55 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/03/01 15:50:48 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -271,8 +271,8 @@ int Config::handleClient(int fd) {
     status = Clients[fd].getRequest().readRequest(fd, Clients[fd].getServer(), Servers);
     Clients[fd].getResponse().setStatusCode(status);
     Clients[fd].getResponse().setClientFd(fd);
-    std::cout << "request status -> " << status << std::endl;
-    //std::cout << "Requets path -> " << Clients[fd].getRequest().getPath() << std::endl; 
+    // std::cout << "Requets path -> " << Clients[fd].getRequest().getPath() << std::endl; 
+    std::cout << "request status --> " << status << std::endl;
     if (status == 1) // connection is closed
         closeConnection(fd);
     else if (status == 2) // if file is uploading

@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/23 10:46:14 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/02/24 15:23:41 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/03/01 11:09:38 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -51,6 +51,8 @@ class Parser {
         int handleLocation(std::vector<std::string>& holder, Server& tmp_server, size_t& index);
         int skipLocation(std::vector<std::string>& holder, size_t& index);
         int checkDupUri(std::string holder, Server& server);
+        void joinStrings(std::vector<std::string>& holder);
+        int checkDupMethod(std::string& holder, std::vector<std::string> tmp_holder);
 };
 
 #endif
