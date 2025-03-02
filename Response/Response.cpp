@@ -186,7 +186,7 @@ void Response::generateRes(Config& config)
                 "</body>"
                 "</html>";
     }
-    if (statusCode != 204)
+    if (!redirectFlag && statusCode != 204)
     {
         char contentLength[150];
         std::sprintf(contentLength, "%ld", body.length());
@@ -194,9 +194,9 @@ void Response::generateRes(Config& config)
         Headers["Content-Type"] = "text/html";
     }
     Headers["Date"] = getDate();
-    if (statusCode == 201)
+    if (!redirectFlag && statusCode == 201)
         Headers["Location"] = config.getClients()[clientFd].getRequest().getFileName();
-    if (statusCode >= 500)
+    if (!redirectFlag && statusCode >= 500)
         Headers["Connection"] = "close";
 }
 
@@ -340,22 +340,20 @@ void Response::searchForFile(Config& config, Request& req)
     fileName = serverRoot + req.getPath();
     req.setPath(req.urlDecode(req.getPath()));
     fileName = req.urlDecode(fileName); 
-    // std::cout << "file request -> " << fileName << std::endl;
+
+    std::cout << "file request -> " << fileName << std::endl;
+  
     if (!stat(fileName.c_str(), &st))
     {
         if (st.st_mode & S_IFDIR || (!(st.st_mode & S_IRUSR)))
         {
             statusCode = 403;
             returnResponse(config);
-            if (body.length() > 0)
-            {
-                redirectFlag = 1;
+            if (redirectFlag)
                 return ;
-            }
             verifyDirectorySlash(fileName, req);
             if (statusCode == 403)
                 checkAutoIndex(config, req);
-            return ;
         }
         else if ((st.st_mode & S_IFREG) && (st.st_mode & S_IRUSR))
         {
@@ -365,27 +363,26 @@ void Response::searchForFile(Config& config, Request& req)
                 sprintf(buff3, "%ld", st.st_size);
                 setHeader("Content-Length", buff3);
                 checkForFileExtension(fileName);
-                return ;
             }
-            returnResponse(config);
-            if (body.length() > 0)
-            {
-                redirectFlag = 1;
-                return ;
-            }
-            if (req.getMethod() == "DELETE")
-                statusCode = 204;
             else
-                statusCode = 200;
-            if (statusCode == 200)
-                FileType = 1;
-            sprintf(buff3, "%ld", st.st_size);
-            setHeader("Content-Length", buff3);
-            checkForFileExtension(fileName);
-            return ;
+            {
+                returnResponse(config);
+                if (redirectFlag)
+                    return ;
+                if (req.getMethod() == "DELETE")
+                    statusCode = 204;
+                else
+                    statusCode = 200;
+                if (statusCode == 200)
+                    FileType = 1;
+                sprintf(buff3, "%ld", st.st_size);
+                setHeader("Content-Length", buff3);
+                checkForFileExtension(fileName);
+            }
         }
     }
-    statusCode = 404;
+    else
+        statusCode = 404;
 }
 
 int Response::sendBodyBytes()

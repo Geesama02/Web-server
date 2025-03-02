@@ -110,7 +110,6 @@ void Response::listDirectories(std::string reqPath)
     lDirectoriesPage += "</html>";
     closedir(dir);
     body = lDirectoriesPage;
-    closedir(dir);
 }
 
 void Response::matchReqPathWithLocation(Location& loc, std::string reqPath, Location **match)
@@ -311,10 +310,12 @@ void Response::returnResponse(Config& config)
         std::map<int, std::string>::iterator redirectIt = redirect.begin();
         if ((redirectIt->first >= 301 && redirectIt->first <= 303) || redirectIt->first == 307 || redirectIt->first == 308)
             return ;
+        redirectFlag = 1;
         if (redirectIt != redirect.end())
         {
             statusCode = redirectIt->first;
             body = redirectIt->second;
         }
     }
+    Headers["Content-Type"] = "application/octet-stream";
 }
