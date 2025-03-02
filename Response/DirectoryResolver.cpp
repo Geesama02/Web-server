@@ -309,6 +309,8 @@ void Response::returnResponse(Config& config)
     {
         std::map<int, std::string> redirect = locationMatch->getRedirect();
         std::map<int, std::string>::iterator redirectIt = redirect.begin();
+        if ((redirectIt->first >= 301 && redirectIt->first <= 303) || redirectIt->first == 307 || redirectIt->first == 308)
+            return ;
         if (redirectIt != redirect.end())
         {
             statusCode = redirectIt->first;

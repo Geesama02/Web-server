@@ -14,6 +14,7 @@
 #include "../Config/Config.hpp"
 #include "../Parser/Parser.hpp"
 
+//redirect response just from 304 and above
 
 // std::map<int, std::ifstream *> Response::files;
 std::map<std::string, std::string> Response::ContentTypeHeader;
@@ -88,6 +89,7 @@ void Response::initializeStatusRes()
     resStatus.insert(std::make_pair(413, "Content Too Large\r\n"));
     resStatus.insert(std::make_pair(414, "URI Too Long\r\n"));
     resStatus.insert(std::make_pair(415, "Unsupported Media Type\r\n"));
+    resStatus.insert(std::make_pair(444, "No Response\r\n"));
     resStatus.insert(std::make_pair(500, "Internal Server Error\r\n"));
     resStatus.insert(std::make_pair(501, "Not Implemented\r\n"));
     resStatus.insert(std::make_pair(502, "Bad Gateway\r\n"));
@@ -345,7 +347,7 @@ void Response::searchForFile(Config& config, Request& req)
         {
             statusCode = 403;
             returnResponse(config);
-            if (locationMatch)
+            if (body.length() > 0)
             {
                 redirectFlag = 1;
                 return ;
@@ -366,7 +368,7 @@ void Response::searchForFile(Config& config, Request& req)
                 return ;
             }
             returnResponse(config);
-            if (locationMatch)
+            if (body.length() > 0)
             {
                 redirectFlag = 1;
                 return ;
