@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/22 11:17:32 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/02/27 12:45:00 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/03/03 15:43:30 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,6 +31,7 @@ Location::Location(Server& copy) {
     autoindex = copy.getAutoindex();
     methodsFlag = false;
     allowed_methods.push_back("GET");
+    client_max_body_size = copy.getClientMaxBodySize();
     redirect = copy.getRedirect();
 }
 
@@ -41,6 +42,7 @@ std::string Location::getUploadPath() { return uploadPath; }
 std::map<int, std::string>& Location::getErrorPage() { return error_page; }
 std::string Location::getIndex() { return index; }
 bool Location::getAutoindex() { return autoindex; }
+long long Location::getClientMaxBodySize() { return client_max_body_size; }
 bool Location::getMethodsFlag() { return methodsFlag; }
 std::vector<std::string>& Location::getAllowedMethods() { return allowed_methods; }
 std::map<int, std::string> Location::getRedirect() { return redirect; }
@@ -51,6 +53,7 @@ std::vector<std::string>& Location::getCgiExt() { return cgi_ext; }
 void Location::setURI(std::string& n_URI) { URI = n_URI; }
 void Location::setRoot(std::string& n_root) { root = n_root; }
 void Location::setUploadPath(std::string& n_path) { uploadPath = n_path; }
+void Location::setClientMaxBodySize(long long size) { client_max_body_size = size; }
 void Location::setErrorPage(std::map<int, std::string>& n_ep) { error_page = n_ep; }
 void Location::addErrorPage(int code, std::string path) {
     if (error_page.find(code) == error_page.end())

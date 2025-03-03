@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/21 16:52:32 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/02/27 12:44:26 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/03/03 15:28:05 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -39,6 +39,7 @@ class Location {
         bool methodsFlag;
         std::vector<std::string> allowed_methods;
         std::string index;
+        long long client_max_body_size;
         bool autoindex;
         std::map<int, std::string> redirect;
         std::vector<std::string> cgi_path;
@@ -53,6 +54,7 @@ class Location {
         std::string getRoot();
         std::string getUploadPath();
         std::map<int, std::string>& getErrorPage();
+        long long getClientMaxBodySize();
         std::string getIndex();
         bool getAutoindex();
         bool getMethodsFlag();
@@ -69,6 +71,7 @@ class Location {
         void addErrorPage(int code, std::string path);
         void setIndex(std::string& str);
         void setAutoindex(bool n_autoindex);
+        void setClientMaxBodySize(long long size);
         void setMethodsFlag(bool flag);
         void setAllowedMethods(std::vector<std::string>& methods);
         void setRedirect(int code, std::string page);

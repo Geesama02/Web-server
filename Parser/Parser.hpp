@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/23 10:46:14 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/03/01 11:09:38 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/03/03 15:30:10 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -45,6 +45,7 @@ class Parser {
         int setErrVar(std::vector<std::string>& holder, Server& tmp_server, size_t& index);
         int setErrVar(std::vector<std::string>& holder, Location& tmp_location, size_t& index);
         int setMaxBodyVar(std::vector<std::string>& holder, Server& tmp_server, size_t& index);
+        int setMaxBodyVar(std::vector<std::string>& holder, Location& tmp_location, size_t& index);
         int setAllowedMethodsVar(std::vector<std::string>& holder, Location& tmp_location, size_t& index);
         int setCgiPathVar(std::vector<std::string>& holder, Location& tmp_location, size_t& index);
         int setCgiExtVar(std::vector<std::string>& holder, Location& tmp_location, size_t& index);

@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/09 09:49:11 by maglagal          #+#    #+#             */
-/*   Updated: 2025/02/28 12:32:00 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/03/02 12:21:22 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -110,7 +110,6 @@ void Response::listDirectories(std::string reqPath)
     lDirectoriesPage += "</html>";
     closedir(dir);
     body = lDirectoriesPage;
-    closedir(dir);
 }
 
 void Response::matchReqPathWithLocation(Location& loc, std::string reqPath, Location **match)
