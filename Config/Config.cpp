@@ -283,6 +283,7 @@ int Config::handleClient(int fd) {
             // std::cout << "path -> " << request.getPath() << std::endl;
             printLog(fd);
             if (status == 0) {
+                std::cout << "search for file!!!\n";
                 Clients[fd].getResponse().searchForFile(*this, Clients[fd].getRequest());
             }
         }

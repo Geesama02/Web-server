@@ -331,13 +331,17 @@ void Response::searchForFile(Config& config, Request& req)
     std::string serverRoot = config.getClients()[clientFd].getServer().getRoot();
     char buff3[150];
 
-    //seperating filename from querystring
-    checkForQueryString(fileName);
     if (fileName == "/")
         fileName = serverRoot;
     else if (serverRoot.length() > 0 && serverRoot.rfind("/") == serverRoot.length() - 1) 
         serverRoot.erase(serverRoot.length() - 1);
     fileName = serverRoot + req.getPath();
+
+    //seperating filename from querystring
+    std::cout << "file name before -> " <<fileName << std::endl;
+    checkForQueryString(fileName);
+    std::cout << "file name after -> " <<fileName << std::endl;
+
     req.setPath(req.urlDecode(req.getPath()));
     fileName = req.urlDecode(fileName); 
 
@@ -368,7 +372,9 @@ void Response::searchForFile(Config& config, Request& req)
             {
                 returnResponse(config);
                 if (redirectFlag)
-                    return ;
+                {
+                  return ;
+                }
                 if (req.getMethod() == "DELETE")
                     statusCode = 204;
                 else
@@ -455,10 +461,12 @@ void Response::fillBody(Config& config, Request& req)
 
 void Response::sendResponse(Config& config, Request& req, int fd)
 {
+  std::cout << "status code -> "<<statusCode << std::endl;
     if (statusCode == 204)
         handleDeleteRequest(config, req);
     else if (req.getPath().find("/cgi-bin/") != std::string::npos && statusCode == 200)
     {
+        std::cout << "execute cgi script!!\n";
         int status = 0;
         status = config.getClients()[fd].getCGI().execute_cgi_script(config, *this, clientFd, req);
         if (fd != 0)
