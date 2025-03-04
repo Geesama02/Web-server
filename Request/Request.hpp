@@ -97,7 +97,7 @@ class Request {
         int handleReqLine(std::stringstream& s);
         std::string urlDecode(std::string path);
         int checkValidPath(std::string& path);
-        Location* getMatchedLocation(std::string path, Server& server);
+        static Location* getMatchedLocation(std::string path, Server& server);
         int joinPath(Location* location, UploadFile& file);
         int checkAllowedMethods(std::string& str);
 

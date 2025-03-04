@@ -13,7 +13,9 @@
 #include "Cgi.hpp"
 #include "../Config/Config.hpp"
 
-CGI::CGI() {
+CGI::CGI()
+{
+    cPid = 0;
     for(int i = 0; i < 200; i++)
         envs[i] = NULL;
     executablePathArray = NULL;
@@ -297,7 +299,7 @@ void CGI::findHeadersInsideScript(Response& res) {
     }
 
      //remove leading empty newlines
-     while(i!= std::string::npos && ResBody[0] == '\n')
+     while(i != std::string::npos && ResBody[0] == '\n')
        ResBody.erase(0, 1);
 
     //define content length and content-type in case not defined in the script

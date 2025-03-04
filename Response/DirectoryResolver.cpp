@@ -39,9 +39,10 @@ int    Response::comparingReqWithLocation(std::string locationPath, std::string 
 
 void    Response::showIndexFile(std::string indexFilePath)
 {
+    Headers["Content-Type"] = "text/html";
     indexFile = new std::ifstream(indexFilePath.c_str());
     std::string buff;
-      statusCode = 200;
+    statusCode = 200;
     while (std::getline(*indexFile, buff))
         body += buff;
     indexFile->close();
@@ -165,18 +166,26 @@ void Response::listingOrIndex(Config& config, std::string reqPath)
       if (locationMatch->getAutoindex())
       {
           if (!stat(indexFile.c_str(), &st) && st.st_mode & S_IFREG)
-              showIndexFile(indexFile);
+          {
+            lastModified = getDate(&st.st_mtime);
+            showIndexFile(indexFile);
+          }
           else
               listDirectories(reqPath);
       }
       else if (!stat(indexFile.c_str(), &st) && st.st_mode & S_IFREG)
+      {
+          lastModified = getDate(&st.st_mtime);
           showIndexFile(indexFile);
+      }
   }
   else 
   {
-    //   std::cout << "index file -> " << indexFile << std::endl;
       if (!stat(indexFile.c_str(), &st) && st.st_mode & S_IFREG)
+      {
+          lastModified = getDate(&st.st_mtime);
           showIndexFile(indexFile);
+      }
       else if (config.getClients()[clientFd].getServer().getAutoindex())
           listDirectories(reqPath);
   }
@@ -225,7 +234,7 @@ void Response::checkErrorPages(Config& config, Request& req)
 {
     searchLocationsForMatch(config, req);
     if (locationMatch)
-    {
+    { 
         checkDefinedErrorPage(config, config.getClients()[clientFd].getServer().getRoot(),
           locationMatch->getErrorPage());
     }
@@ -250,6 +259,26 @@ void    Response::returnDefinedPage(Config& config, std::string rootPath, std::s
         errorPageFile = rootPath + errorPageFile; 
     }
     int res = stat(errorPageFile.c_str(), &st);
+    locationMatch = Request::getMatchedLocation(relativeErrorPage, config.getClients()[clientFd].getServer());
+    if (locationMatch)
+    {
+        body.clear();
+        statusCode = 301;
+        char portChar[150];
+        int port = config.getClients()[clientFd].getServer().getPort(); 
+        sprintf(portChar, "%d", port);
+        std::string host = config.getClients()[clientFd].getServer().getHost() + ":" + portChar;
+        if (locationMatch->getRedirect().size() > 0)
+        {
+            statusCode = locationMatch->getRedirect().begin()->first; 
+            locationHeader = "http://" + host + locationMatch->getRedirect().begin()->second;
+        }
+        else
+            locationHeader = "http://" + host + config.getClients()[clientFd].getRequest().getPath();
+
+        std::cout << "statusCode > " << statusCode << std::endl;
+        return ;
+    }
     if (!res && (st.st_mode & S_IRUSR) && (st.st_mode & S_IFDIR))
     {
         clearResponse();
@@ -308,14 +337,13 @@ void Response::returnResponse(Config& config)
     {
         std::map<int, std::string> redirect = locationMatch->getRedirect();
         std::map<int, std::string>::iterator redirectIt = redirect.begin();
-        if (redirect.empty() || (redirectIt->first >= 301 && redirectIt->first <= 303) || redirectIt->first == 307 || redirectIt->first == 308)
-            return ;
-        redirectFlag = 1;
         if (redirectIt != redirect.end())
         {
+            redirectFlag = 1;
             statusCode = redirectIt->first;
-            body = redirectIt->second;
+            if (statusCode < 301 || statusCode > 308)
+                body = redirectIt->second;
         }
+        Headers["Content-Type"] = "application/octet-stream";
     }
-    Headers["Content-Type"] = "application/octet-stream";
 }

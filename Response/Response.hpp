@@ -53,6 +53,7 @@ class Response {
         std::string                        currentDirAbsolutePath;
         std::string                        body;
         std::string                        locationHeader;
+        std::string                        lastModified;
         Location*                          locationMatch;
         int                                FileType;
         int                                redirectFlag;
@@ -88,6 +89,7 @@ class Response {
         static int          callbackRemove(const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf);
         static void         matchReqPathWithLocation(Location& loc, std::string reqPath, Location **match);
         static std::string  getDate();
+        static std::string  getDate(time_t *time);
         int                 rmrf(char *path);
         void                handleDeleteRequest(Config& config, Request& req);
         void                listingOrIndex(Config&config, std::string reqPath);

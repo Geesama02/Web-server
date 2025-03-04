@@ -80,6 +80,11 @@ void Response::initializeStatusRes()
     resStatus.insert(std::make_pair(206, "Partial Content\r\n"));
     resStatus.insert(std::make_pair(301, "Moved Permanently\r\n"));
     resStatus.insert(std::make_pair(302, "Moved Temporarily\r\n"));
+    resStatus.insert(std::make_pair(303, "See Other\r\n"));
+    resStatus.insert(std::make_pair(304, "Not Modified\r\n"));
+    resStatus.insert(std::make_pair(305, "Use Proxy\r\n"));
+    resStatus.insert(std::make_pair(306, "(Unused)\r\n"));
+    resStatus.insert(std::make_pair(306, "Temporary Redirect\r\n"));
     resStatus.insert(std::make_pair(400, "Bad Request\r\n"));
     resStatus.insert(std::make_pair(403, "Forbidden\r\n"));
     resStatus.insert(std::make_pair(404, "Not Found\r\n"));
@@ -168,6 +173,16 @@ std::string Response::getDate()
     return (res);
 }
 
+std::string Response::getDate(time_t *time)
+{
+    struct tm datetime = *gmtime(time);
+    char now[50];
+
+    strftime(now, 50, "%a, %d %b %Y %H:%M:%S GMT", &datetime);
+    std::string res = now;
+    return (res);
+}
+
 void Response::generateRes(Config& config)
 {
     char buff[150];
@@ -186,14 +201,17 @@ void Response::generateRes(Config& config)
                 "</body>"
                 "</html>";
     }
-    if (!redirectFlag && statusCode != 204)
-    {
-        char contentLength[150];
-        std::sprintf(contentLength, "%ld", body.length());
-        Headers["Content-Length"] = contentLength;
-        Headers["Content-Type"] = "text/html";
-    }
+    char contentLength[150];
+    std::sprintf(contentLength, "%ld", body.length());
+    Headers["Content-Length"] = contentLength;
     Headers["Date"] = getDate();
+    if (!redirectFlag)
+        Headers["Content-Type"] = "text/html";
+    if (statusCode == 204)
+    {
+        Headers.erase("Content-Type");
+        Headers.erase("Content-Length");
+    }
     if (!redirectFlag && statusCode == 201)
         Headers["Location"] = config.getClients()[clientFd].getRequest().getFileName();
     if (!redirectFlag && statusCode >= 500)
@@ -210,6 +228,8 @@ void Response::successResponse(Request req)
         std::sprintf(contentLengthHeader, "%ld", body.length());
         Headers["Content-Length"] = contentLengthHeader;
     }
+    if (!lastModified.empty())
+        Headers["Last-Modified"] = lastModified;
     if (!file && FileType)
     {
         Headers["Accept-Ranges"] = "bytes";
@@ -241,19 +261,30 @@ void    Response::redirectionResponse(Request req, Config& config)
                 "</body>"
                 "</html>";
     }
-    if (statusCode == 301 && locationHeader.length() == 0)
-        locationHeader = "http://" + host + req.getPath() + "/";
-    else if (statusCode == 301 && locationHeader.length() > 0)
-        locationHeader = "http://" + host + locationHeader + "/";
-    std::cout << "location header  -> " << locationHeader << std::endl;
+    if (!redirectFlag)
+    {
+        if (statusCode == 301 && locationHeader.length() == 0)
+            locationHeader = "http://" + host + req.getPath() + "/";
+        else if (statusCode == 301 && locationHeader.length() > 0)
+            locationHeader = "http://" + host + locationHeader + "/";
+    }
+    else
+    {
+        std::map<int, std::string> redirect = locationMatch->getRedirect();
+        std::map<int, std::string>::iterator redirectIt = redirect.begin();
+        if (statusCode >= 301 && statusCode <= 308)
+            locationHeader = "http://" + host + redirectIt->second;
+    }
     setHeader("Location", locationHeader);
     char contentLengthHeader[150];
     std::sprintf(contentLengthHeader, "%ld", body.length());
+    Headers["Content-Type"] = "text/html";
     Headers["Content-Length"] = contentLengthHeader;
     Headers["Date"] = getDate();
 }
 
-void Response::rangeResponse(Request req) {
+void Response::rangeResponse(Request req)
+{
     if (!file)
         file = new std::ifstream(req.getPath().erase(0, 1).c_str(), std::ios::binary);
     char buff[150];
@@ -280,6 +311,7 @@ void Response::rangeResponse(Request req) {
         sprintf(rangeContentLength, "%lld", len - rangeStart);
         setHeader("Content-Length", rangeContentLength);
         Headers["Date"] = getDate();
+        Headers["Last-Modified"] = lastModified; 
     }
 }
 
@@ -338,9 +370,7 @@ void Response::searchForFile(Config& config, Request& req)
     fileName = serverRoot + req.getPath();
 
     //seperating filename from querystring
-    std::cout << "file name before -> " <<fileName << std::endl;
     checkForQueryString(fileName);
-    std::cout << "file name after -> " <<fileName << std::endl;
 
     req.setPath(req.urlDecode(req.getPath()));
     fileName = req.urlDecode(fileName); 
@@ -351,10 +381,10 @@ void Response::searchForFile(Config& config, Request& req)
     {
         if (st.st_mode & S_IFDIR || (!(st.st_mode & S_IRUSR)))
         {
-            statusCode = 403;
-            returnResponse(config);
-            if (redirectFlag)
-                return ;
+             statusCode = 403;
+             //returnResponse(config);
+             //if (redirectFlag)
+                //return ;
             verifyDirectorySlash(fileName, req);
             if (statusCode == 403)
                 checkAutoIndex(config, req);
@@ -370,17 +400,18 @@ void Response::searchForFile(Config& config, Request& req)
             }
             else
             {
-                returnResponse(config);
-                if (redirectFlag)
-                {
-                  return ;
-                }
+                //returnResponse(config);
+                //if (redirectFlag)
+                //{
+                  //return ;
+                //}
                 if (req.getMethod() == "DELETE")
                     statusCode = 204;
                 else
                     statusCode = 200;
                 if (statusCode == 200)
                     FileType = 1;
+                lastModified = getDate(&st.st_mtime);
                 sprintf(buff3, "%ld", st.st_size);
                 setHeader("Content-Length", buff3);
                 checkForFileExtension(fileName);
@@ -388,7 +419,12 @@ void Response::searchForFile(Config& config, Request& req)
         }
     }
     else
-        statusCode = 404;
+    {
+      //returnResponse(config);
+  //    if (redirectFlag)
+//          return ;
+      statusCode = 404;
+    }
 }
 
 int Response::sendBodyBytes()
@@ -447,13 +483,13 @@ void Response::handleDeleteRequest(Config& config, Request& req)
 
 void Response::fillBody(Config& config, Request& req)
 {
-    if (!redirectFlag)
-        checkErrorPages(config, req);
+    checkErrorPages(config, req);
+    returnResponse(config);
     if (statusCode == 200)
         successResponse(req);
     else if (statusCode == 206)
         rangeResponse(req);
-    else if (!redirectFlag && (statusCode == 301 || statusCode == 302))
+    else if (statusCode >= 301 && statusCode <= 303)
         redirectionResponse(req, config);
     else
         generateRes(config);
@@ -461,8 +497,7 @@ void Response::fillBody(Config& config, Request& req)
 
 void Response::sendResponse(Config& config, Request& req, int fd)
 {
-  std::cout << "status code -> "<<statusCode << std::endl;
-    if (statusCode == 204)
+    if (!redirectFlag && statusCode == 204)
         handleDeleteRequest(config, req);
     else if (req.getPath().find("/cgi-bin/") != std::string::npos && statusCode == 200)
     {
@@ -487,6 +522,7 @@ void Response::sendResponse(Config& config, Request& req, int fd)
     finalRes += "\r\n";
     if (!body.empty())
         finalRes += body;
+
     send(clientFd, finalRes.c_str(), finalRes.length(), 0);
     if (statusCode >= 400)
         config.closeConnection(fd);
