@@ -167,7 +167,6 @@ void CGI::setEnvVars(Config& config, Request req, Response& res)
        //envp++;
     //}
 
-
     std::map<std::string, std::string> storeEnvs;
     storeEnvs["REQUEST_METHOD"] = req.getMethod().c_str();
     storeEnvs["SCRIPT_NAME"] = req.getPath().empty() ? "/" : req.getPath().c_str();//forbidden!!
@@ -179,6 +178,12 @@ void CGI::setEnvVars(Config& config, Request req, Response& res)
         storeEnvs["CONTENT_LENGTH"] = req.getHeaders()["content-length"].c_str(); //forbidden!! 
     storeEnvs["CONTENT_TYPE"] = req.getHeaders()["content-type"].c_str();
     storeEnvs["QUERY_STRING"] = (res.getQueryString()).c_str();
+    if (req.getHeaders()["cookie"].length() > 0)
+        storeEnvs["HTTP_COOKIE"] = req.getHeaders()["cookie"];
+    else
+        storeEnvs["HTTP_COOKIE"] = ""; 
+
+    std::cout << "cookie -> " << storeEnvs["HTTP_COOKIE"] << std::endl;
 
     char **envp = config.getEnvp();
     int i = 0;
@@ -191,7 +196,7 @@ void CGI::setEnvVars(Config& config, Request req, Response& res)
     }
     int j = 0;
     std::map<std::string, std::string>::iterator it = storeEnvs.begin();
-    while (j < 7)
+    while (j < 8)
     {
         std::string env = it->first + "=" + it->second;
         envs[i] = new char[env.length() + 1];
@@ -262,7 +267,10 @@ void CGI::findHeadersInsideScript(Response& res) {
     std::string headerName;
     std::string headerValue;
 
-    size_t i = ResBody.find("\n\n");
+    size_t i = ResBody.find("\r\n\r\n");
+    if (i == std::string::npos) {
+        i = ResBody.find("\n\n");
+    }
     if (i != std::string::npos) {
         headerInScript = ResBody.substr(0, i);
         ResBody.erase(0, i + 1);
@@ -288,9 +296,9 @@ void CGI::findHeadersInsideScript(Response& res) {
         }
     }
 
-    //remove leading empty newlines
-    while(ResBody[0] == '\n')
-        ResBody.erase(0, 1);
+     //remove leading empty newlines
+     while(i!= std::string::npos && ResBody[0] == '\n')
+       ResBody.erase(0, 1);
 
     //define content length and content-type in case not defined in the script
     if (!contentLengthFlag) {
@@ -342,6 +350,8 @@ void CGI::sendServerResponse(int fd, Config& config)
     cgiRes += "\r\n";
     if (ResBody.length() > 0)
         cgiRes += ResBody;
+
+
     send(fd, cgiRes.c_str(), cgiRes.length(), 0);    
 } 
 

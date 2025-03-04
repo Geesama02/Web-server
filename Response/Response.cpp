@@ -14,6 +14,7 @@
 #include "../Config/Config.hpp"
 #include "../Parser/Parser.hpp"
 
+//redirect response just from 304 and above
 
 // std::map<int, std::ifstream *> Response::files;
 std::map<std::string, std::string> Response::ContentTypeHeader;
@@ -88,6 +89,7 @@ void Response::initializeStatusRes()
     resStatus.insert(std::make_pair(413, "Content Too Large\r\n"));
     resStatus.insert(std::make_pair(414, "URI Too Long\r\n"));
     resStatus.insert(std::make_pair(415, "Unsupported Media Type\r\n"));
+    resStatus.insert(std::make_pair(444, "No Response\r\n"));
     resStatus.insert(std::make_pair(500, "Internal Server Error\r\n"));
     resStatus.insert(std::make_pair(501, "Not Implemented\r\n"));
     resStatus.insert(std::make_pair(502, "Bad Gateway\r\n"));
@@ -184,7 +186,7 @@ void Response::generateRes(Config& config)
                 "</body>"
                 "</html>";
     }
-    if (statusCode != 204)
+    if (!redirectFlag && statusCode != 204)
     {
         char contentLength[150];
         std::sprintf(contentLength, "%ld", body.length());
@@ -192,9 +194,9 @@ void Response::generateRes(Config& config)
         Headers["Content-Type"] = "text/html";
     }
     Headers["Date"] = getDate();
-    if (statusCode == 201)
+    if (!redirectFlag && statusCode == 201)
         Headers["Location"] = config.getClients()[clientFd].getRequest().getFileName();
-    if (statusCode >= 500)
+    if (!redirectFlag && statusCode >= 500)
         Headers["Connection"] = "close";
 }
 
@@ -329,31 +331,33 @@ void Response::searchForFile(Config& config, Request& req)
     std::string serverRoot = config.getClients()[clientFd].getServer().getRoot();
     char buff3[150];
 
-    //seperating filename from querystring
-    checkForQueryString(fileName);
     if (fileName == "/")
         fileName = serverRoot;
     else if (serverRoot.length() > 0 && serverRoot.rfind("/") == serverRoot.length() - 1) 
         serverRoot.erase(serverRoot.length() - 1);
     fileName = serverRoot + req.getPath();
+
+    //seperating filename from querystring
+    std::cout << "file name before -> " <<fileName << std::endl;
+    checkForQueryString(fileName);
+    std::cout << "file name after -> " <<fileName << std::endl;
+
     req.setPath(req.urlDecode(req.getPath()));
     fileName = req.urlDecode(fileName); 
-    // std::cout << "file request -> " << fileName << std::endl;
+
+    std::cout << "file request -> " << fileName << std::endl;
+  
     if (!stat(fileName.c_str(), &st))
     {
         if (st.st_mode & S_IFDIR || (!(st.st_mode & S_IRUSR)))
         {
             statusCode = 403;
             returnResponse(config);
-            if (locationMatch)
-            {
-                redirectFlag = 1;
+            if (redirectFlag)
                 return ;
-            }
             verifyDirectorySlash(fileName, req);
             if (statusCode == 403)
                 checkAutoIndex(config, req);
-            return ;
         }
         else if ((st.st_mode & S_IFREG) && (st.st_mode & S_IRUSR))
         {
@@ -363,27 +367,28 @@ void Response::searchForFile(Config& config, Request& req)
                 sprintf(buff3, "%ld", st.st_size);
                 setHeader("Content-Length", buff3);
                 checkForFileExtension(fileName);
-                return ;
             }
-            returnResponse(config);
-            if (locationMatch)
-            {
-                redirectFlag = 1;
-                return ;
-            }
-            if (req.getMethod() == "DELETE")
-                statusCode = 204;
             else
-                statusCode = 200;
-            if (statusCode == 200)
-                FileType = 1;
-            sprintf(buff3, "%ld", st.st_size);
-            setHeader("Content-Length", buff3);
-            checkForFileExtension(fileName);
-            return ;
+            {
+                returnResponse(config);
+                if (redirectFlag)
+                {
+                  return ;
+                }
+                if (req.getMethod() == "DELETE")
+                    statusCode = 204;
+                else
+                    statusCode = 200;
+                if (statusCode == 200)
+                    FileType = 1;
+                sprintf(buff3, "%ld", st.st_size);
+                setHeader("Content-Length", buff3);
+                checkForFileExtension(fileName);
+            }
         }
     }
-    statusCode = 404;
+    else
+        statusCode = 404;
 }
 
 int Response::sendBodyBytes()
@@ -456,10 +461,12 @@ void Response::fillBody(Config& config, Request& req)
 
 void Response::sendResponse(Config& config, Request& req, int fd)
 {
+  std::cout << "status code -> "<<statusCode << std::endl;
     if (statusCode == 204)
         handleDeleteRequest(config, req);
     else if (req.getPath().find("/cgi-bin/") != std::string::npos && statusCode == 200)
     {
+        std::cout << "execute cgi script!!\n";
         int status = 0;
         status = config.getClients()[fd].getCGI().execute_cgi_script(config, *this, clientFd, req);
         if (fd != 0)

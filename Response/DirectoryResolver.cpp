@@ -308,10 +308,14 @@ void Response::returnResponse(Config& config)
     {
         std::map<int, std::string> redirect = locationMatch->getRedirect();
         std::map<int, std::string>::iterator redirectIt = redirect.begin();
+        if (redirect.empty() || (redirectIt->first >= 301 && redirectIt->first <= 303) || redirectIt->first == 307 || redirectIt->first == 308)
+            return ;
+        redirectFlag = 1;
         if (redirectIt != redirect.end())
         {
             statusCode = redirectIt->first;
             body = redirectIt->second;
         }
     }
+    Headers["Content-Type"] = "application/octet-stream";
 }

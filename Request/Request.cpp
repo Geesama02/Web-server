@@ -617,7 +617,7 @@ int Request::readRequest(int fd, Server& server, std::vector<Server>& Servers) {
     else {
         buff[received] = '\0';
         str.append(buff, received);
-        // std::cout << "received: " << str << std::endl;
+        //std::cout << "received: " << str << std::endl;
         return (readHeaders(str, server, Servers));
     }
     return (0);
