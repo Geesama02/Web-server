@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/14 17:03:53 by maglagal          #+#    #+#             */
-/*   Updated: 2025/02/28 10:36:06 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/03/02 15:03:56 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -453,7 +453,7 @@ void Response::fillBody(Config& config, Request& req)
         successResponse(req);
     else if (statusCode == 206)
         rangeResponse(req);
-    else if (statusCode == 301 || statusCode == 302)
+    else if (!redirectFlag && (statusCode == 301 || statusCode == 302))
         redirectionResponse(req, config);
     else
         generateRes(config);
@@ -488,6 +488,6 @@ void Response::sendResponse(Config& config, Request& req, int fd)
     if (!body.empty())
         finalRes += body;
     send(clientFd, finalRes.c_str(), finalRes.length(), 0);
-    if (statusCode >= 500)
+    if (statusCode >= 400)
         config.closeConnection(fd);
 }

@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/30 12:07:04 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/03/01 15:59:01 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/03/03 15:47:42 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -559,8 +559,6 @@ int Request::readHeaders(std::string& str, Server& server, std::vector<Server>& 
             server = getServer(server, Servers);
         str = str.substr(stop_p + 4);
         currLocation = getMatchedLocation(path, server);
-        if (currLocation)
-            std::cout << "Location is -> " << currLocation->getURI() << std::endl;
         if ((status = checkAllowedMethods(str)) != 0)
             return (status);
         if (Headers.find("host") == Headers.end() || (method == "POST"
@@ -568,9 +566,9 @@ int Request::readHeaders(std::string& str, Server& server, std::vector<Server>& 
             && !isNumber(Headers["content-length"])))
             return (400); // Bad Request
         else if (method == "POST"
-            && Headers.find("content-length") != Headers.end()
-            && strToDecimal(Headers["content-length"]) > server.getClientMaxBodySize()
-            && server.getClientMaxBodySize() != 0)
+            && Headers.find("content-length") != Headers.end() && currLocation
+            && strToDecimal(Headers["content-length"]) > currLocation->getClientMaxBodySize()
+            && currLocation->getClientMaxBodySize() != 0)
             return (413); // Request Too Big
         int res = handlePostReq();
         if (res != 0)

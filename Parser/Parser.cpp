@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/21 14:31:56 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/03/02 11:29:29 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/03/03 15:58:45 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -69,6 +69,7 @@ int Parser::handleLines(Config& config, std::string& line) {
     replace(line, "\n", " ");
     replace(line, "}", " } ");
     replace(line, "{", " { ");
+    replace(line, ";", "; ");
     std::stringstream strs(line);
     while(std::getline(strs, tmp, ' ')) {
         if (tmp != "")
@@ -78,9 +79,8 @@ int Parser::handleLines(Config& config, std::string& line) {
         return (1);
     joinStrings(holder);
     for (size_t i = 0; i < holder.size(); i++) {
-        if (holder[i] != "server") {
+        if (holder[i] != "server")
             return (1);
-        }
         else {
             if (fillServer(config, holder, i))
                 return (1);
@@ -228,10 +228,49 @@ int Parser::setMaxBodyVar(std::vector<std::string>& holder, Server& tmp_server, 
     index++;
     if (index < holder.size() && *holder[index].rbegin() == ';') {
         holder[index].erase(holder[index].end() - 1);
-        if (!isNumber(holder[index]) || holder[index].size() > 12
-            || strToDecimal(holder[index]) > 107374182400 || holder[index].empty() || !isValidValue(holder[index]))
+        int unit = 1;
+        if ((*holder[index].rbegin() == 'k' || *holder[index].rbegin() == 'K'))
+            unit = 1024;
+        else if ((*holder[index].rbegin() == 'm' || *holder[index].rbegin() == 'M'))
+            unit = 1024 * 1024;
+        else if ((*holder[index].rbegin() == 'g' || *holder[index].rbegin() == 'G'))
+            unit = 1024 * 1024 * 1024;
+        if (unit != 1)
+            holder[index].erase(holder[index].end() - 1);
+        long long num = strToDecimal(holder[index]);
+        if (!isNumber(holder[index]) || holder[index].size() > 19
+            || (num == std::numeric_limits<long long>::max() && *holder[index].rbegin() != '7')
+            || holder[index].empty() || !isValidValue(holder[index])
+            || num > std::numeric_limits<long long>::max() / unit)
             return (1);
-        tmp_server.setClientMaxBodySize(strToDecimal(holder[index]));
+        tmp_server.setClientMaxBodySize(num * unit);
+        index++;
+    }
+    else
+        return (1);
+    return (0);
+}
+
+int Parser::setMaxBodyVar(std::vector<std::string>& holder, Location& tmp_location, size_t& index) {
+    index++;
+    if (index < holder.size() && *holder[index].rbegin() == ';') {
+        holder[index].erase(holder[index].end() - 1);
+        int unit = 1;
+        if ((*holder[index].rbegin() == 'k' || *holder[index].rbegin() == 'K'))
+            unit = 1024;
+        else if ((*holder[index].rbegin() == 'm' || *holder[index].rbegin() == 'M'))
+            unit = 1024 * 1024;
+        else if ((*holder[index].rbegin() == 'g' || *holder[index].rbegin() == 'G'))
+            unit = 1024 * 1024 * 1024;
+        if (unit != 1)
+            holder[index].erase(holder[index].end() - 1);
+        long long num = strToDecimal(holder[index]);
+        if (!isNumber(holder[index]) || holder[index].size() > 19
+            || (num == std::numeric_limits<long long>::max() && *holder[index].rbegin() != '7')
+            || holder[index].empty() || !isValidValue(holder[index])
+            || num > std::numeric_limits<long long>::max() / unit)
+            return (1);
+        tmp_location.setClientMaxBodySize(num * unit);
         index++;
     }
     else
@@ -568,8 +607,8 @@ int Parser::setCgiExtVar(std::vector<std::string>& holder, Location& tmp_locatio
 int Parser::skipLocation(std::vector<std::string>& holder, size_t& index) {
     Location tmp_location;
     index++;
-    int retValue, aMethodsCount, rootCount, indexCount, aIndexCount, cPathCount, cExtCount;
-    retValue = aMethodsCount = rootCount = indexCount = aIndexCount = cPathCount = cExtCount = 0;
+    int retValue, aMethodsCount, rootCount, indexCount, aIndexCount, cPathCount, cExtCount, bSizeCount;
+    retValue = aMethodsCount = rootCount = indexCount = aIndexCount = cPathCount = cExtCount = bSizeCount =0;
     if (index < holder.size() && holder[index] != "{") {
         tmp_location.setURI(holder[index]);
         index++;
@@ -588,6 +627,8 @@ int Parser::skipLocation(std::vector<std::string>& holder, size_t& index) {
                     retValue = setRedirectVar(holder, tmp_location, index);
                 else if (holder[index] == "error_page")
                     retValue = setErrVar(holder, tmp_location, index);
+                else if (holder[index] == "client_max_body_size" && !(bSizeCount++))
+                    retValue = setMaxBodyVar(holder, tmp_location, index);
                 else if (holder[index] == "allowed_methods" && !(aMethodsCount++))
                     retValue = setAllowedMethodsVar(holder, tmp_location, index);
                 else if (holder[index] == "cgi_path" && !(cPathCount++) && (tmp_location.getURI() == "/cgi-bin" || tmp_location.getURI() == "/cgi-bin/"))
@@ -652,6 +693,8 @@ int Parser::handleLocation(std::vector<std::string>& holder, Server& tmp_server,
                 }
                 else if (holder[index] == "allowed_methods")
                     retValue = setAllowedMethodsVar(holder, tmp_location, index);
+                else if (holder[index] == "client_max_body_size")
+                    retValue = setMaxBodyVar(holder, tmp_location, index);
                 else if (holder[index] == "cgi_path" && (tmp_location.getURI() == "/cgi-bin" || tmp_location.getURI() == "/cgi-bin/"))
                     retValue = setCgiPathVar(holder, tmp_location, index);
                 else if (holder[index] == "cgi_ext" && (tmp_location.getURI() == "/cgi-bin" || tmp_location.getURI() == "/cgi-bin/"))
