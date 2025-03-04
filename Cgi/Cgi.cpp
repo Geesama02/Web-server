@@ -295,7 +295,7 @@ void CGI::findHeadersInsideScript(Response& res) {
             }
         }
     }
- //
+
      //remove leading empty newlines
      while(i!= std::string::npos && ResBody[0] == '\n')
        ResBody.erase(0, 1);
