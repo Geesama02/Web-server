@@ -136,30 +136,9 @@ void CGI::initializeVars(Response& res, Request req)
 
 int CGI::setEnvVars(Config& config, Request& req, Response& res, int fd)
 {
-    //(void)config;
     char contentLengthStr[150];
     if (req.getBody().length() > 0)
         sprintf(contentLengthStr, "%ld", req.getBody().length());
-
-     //setenv("REQUEST_METHOD", req.getMethod().c_str(), 1);
-     //if (req.getPath().empty())
-         //setenv("SCRIPT_NAME", "/", 1);
-     //else
-         //setenv("SCRIPT_NAME", req.getPath().c_str(), 1);
-     //if (req.getMethod() == "GET")
-         //setenv("CONTENT_LENGTH", "0", 1); //forbidden!!
-     //else if (req.getMethod() == "POST")
-         //setenv("CONTENT_LENGTH", req.getHeaders()["content-length"].c_str(), 1);
-     //setenv("SERVER_NAME", "Webserv", 1);
-     //setenv("SERVER_PROTOCOL", "HTTP 1.1", 1);
-     //setenv("CONTENT_TYPE", req.getHeaders()["content-type"].c_str(), 1);
-     //setenv("QUERY_STRING", (res.getQueryString()).c_str(), 1);
-   //
-     //char** envp = config.getEnvp();
-     //while(*envp) {
-       //std::cout << *envp << std::endl;
-       //envp++;
-    //}
 
     std::map<std::string, std::string> storeEnvs;
     storeEnvs["REQUEST_METHOD"] = req.getMethod().c_str();
@@ -177,7 +156,6 @@ int CGI::setEnvVars(Config& config, Request& req, Response& res, int fd)
     else
         storeEnvs["HTTP_COOKIE"] = ""; 
 
-    std::cout << "cookie -> " << storeEnvs["HTTP_COOKIE"] << std::endl;
 
     char **envp = config.getEnvp();
     while(envp[envsNbr])
@@ -191,7 +169,6 @@ int CGI::setEnvVars(Config& config, Request& req, Response& res, int fd)
     int i = 0;
     while (*envp)
     {
-      //std::cout <<"i -> "<<i <<std::endl;
         envs[i] = new(std::nothrow) char[std::strlen(*envp) + 1];
         if (!envs[i])
         {
@@ -232,19 +209,6 @@ int CGI::setEnvVars(Config& config, Request& req, Response& res, int fd)
     }
     envs[i] = NULL;
     return (0);
-     //for(i;*envp; envp++)
-     //{
-         //envs[i] = new char[std::strlen(*envp) + 1];
-         //std::strcpy(envs[i], *envp);
-     //}
- //
-     //std::map<std::string, std::string>::iterator it = storeEnvs.begin();
-     //for (i; i < 7; i++) {
-         //std::string env = it->first + "=" + it->second;
-         //envs[i] = new char[env.length() + 1];
-         //std::strcpy(envs[i], env.c_str());
-         //it++;
-    //}
 }
 
 int CGI::defineArgv(Config& config, int fd)

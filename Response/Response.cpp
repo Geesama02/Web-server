@@ -400,7 +400,6 @@ void Response::searchForFile(Config& config, Request& req)
         {
             statusCode = 403;
             verifyDirectorySlash(fileName, req);
-            std::cout <<"status code -> " << statusCode << std::endl;
             if (statusCode == 403)
                 checkAutoIndex(config, req);
         }
@@ -490,7 +489,6 @@ void Response::fillBody(Config& config, Request& req)
 {
     checkErrorPages(config, req);
     returnResponse(config);
-    std::cout << "status code -> " << statusCode << "content type -> " << Headers["Content-Type"] << std::endl;
     if (!redirectFlag && req.getMethod() == "DELETE" && statusCode == 204)
         handleDeleteRequest(config, req);
     if (statusCode == 200)
