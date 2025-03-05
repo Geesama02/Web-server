@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/22 11:25:38 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/03/02 14:52:54 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/03/05 17:06:17 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -138,6 +138,7 @@ int Config::startServers(char **envp) {
         }
         monitorTimeout();
     }
+    close(epoll_fd);
     return (0);
 }
 

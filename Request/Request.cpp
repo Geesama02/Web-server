@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/30 12:07:04 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/03/03 15:47:42 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/03/04 20:32:36 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -365,7 +365,13 @@ int Request::setupPostBody() {
         return (411); // Missing Content-length
     file.setType("post");
     file.setFilename(".tmp");
-    file.setPath("../../goinfre/");
+    char *user = std::getenv("USER");
+    if (user) {
+        std::string userStr = user;
+        file.setPath("/home/" + userStr + "/goinfre/");
+    }
+    else
+        file.setPath("/tmp/");
     addUpload(file);
     return (0);
 }
