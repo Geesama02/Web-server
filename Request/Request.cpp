@@ -41,7 +41,9 @@ void Request::setPath(std::string p) { path = p; }
 void Request::setVersion(std::string& v) { version = v; }
 void Request::setBody(std::string& b) { body = b; }
 void Request::addUpload(UploadFile& new_upload) {
-    file = new UploadFile;
+    file = new(std::nothrow) UploadFile;
+    if (!file)
+      return ;  
     *file = new_upload;
     // std::string locationPath = currLocation->getUploadPath();
     // file->setPath(currLocation->getUploadPath())
@@ -373,6 +375,8 @@ int Request::setupPostBody() {
     else
         file.setPath("/tmp/");
     addUpload(file);
+    if (!this->file)
+        return (500);
     return (0);
 }
 
@@ -437,6 +441,8 @@ int Request::setupBinaryFile() {
     if (ret != 0)
         return (ret);
     addUpload(file);
+    if (!this->file)
+        return (500);
     return (0);
 }
 
@@ -591,6 +597,8 @@ int Request::setupChunkedFile() {
     
     file.setType("chunked");
     addUpload(file);
+    if (!this->file)
+        return (500);
     int ret = joinPath(currLocation, file);
     if (ret != 0)
         return (ret);
@@ -611,6 +619,8 @@ int Request::setupFile() {
     if (ret != 0)
         return (ret);
     addUpload(file);
+    if (!this->file)
+        return (500);
     return (0);
 }
 

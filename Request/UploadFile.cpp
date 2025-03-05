@@ -57,8 +57,8 @@ int UploadFile::openFile() {
     newFilename();
     filename = path + filename;
     std::cout << "file allocated!!" << std::endl;
-    fd = new std::ofstream(filename.c_str());
-    if (fd->is_open()) {
+    fd = new(std::nothrow) std::ofstream(filename.c_str());
+    if (!fd || fd->is_open()) {
         // std::cout << "file created for " << filename << std::endl;
         return (1);
     }

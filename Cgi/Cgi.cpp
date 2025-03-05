@@ -13,30 +13,19 @@
 #include "Cgi.hpp"
 #include "../Config/Config.hpp"
 
-CGI::CGI() {
-    for(int i = 0; i < 200; i++)
-        envs[i] = NULL;
+CGI::CGI()
+{
+    cPid = 0;
+    envsNbr = 0;
+    envs = NULL;
     executablePathArray = NULL;
     absoluteFilePath = NULL;
     childStatus = 0;
 }
 
-CGI::~CGI() {
-    for(int i = 0; i < 200; i++)
-    {
-        if (envs[i]) {
-            delete[] envs[i];
-            envs[i] = NULL;
-        }
-    }
-    if (absoluteFilePath)
-        delete[] absoluteFilePath;
-    absoluteFilePath = NULL;
-    if (executablePathArray)
-        delete[] executablePathArray;
-    executablePathArray = NULL;
-    if (rPipe)
-        close(rPipe);
+CGI::~CGI() 
+{
+   clearCGI(); 
 }
 
 //getters
@@ -78,16 +67,20 @@ void CGI::defineExecutionPaths(int fd, Config& config)
 
 void CGI::clearCGI()
 {
-    for(int i = 0; i < 200; i++) {
-        if (envs[i])
-            delete[] envs[i];
+    if (envs) 
+    {
+        while(envsNbr--) 
+        {
+            if (envs[envsNbr])
+                delete[] envs[envsNbr];
+        }
+        delete[] envs;
+        envs = NULL;
     }
     if (absoluteFilePath)
         delete[] absoluteFilePath;
     if (executablePathArray)
         delete[] executablePathArray;
-    for(int i = 0; i < 200; i++)
-        envs[i] = NULL;
     executablePathArray = NULL;
     absoluteFilePath = NULL;
     if (rPipe != 0)
@@ -96,6 +89,7 @@ void CGI::clearCGI()
     rPipe = 0;
     startTime = 0;
     childStatus = 0;
+    envsNbr = 0;
     headersInScript.clear();
     ResBody.clear();
     cgiRes.clear();
@@ -140,32 +134,11 @@ void CGI::initializeVars(Response& res, Request req)
         scriptRelativePath = "/";
 }
 
-void CGI::setEnvVars(Config& config, Request req, Response& res)
+int CGI::setEnvVars(Config& config, Request& req, Response& res, int fd)
 {
-    //(void)config;
     char contentLengthStr[150];
     if (req.getBody().length() > 0)
         sprintf(contentLengthStr, "%ld", req.getBody().length());
-
-     //setenv("REQUEST_METHOD", req.getMethod().c_str(), 1);
-     //if (req.getPath().empty())
-         //setenv("SCRIPT_NAME", "/", 1);
-     //else
-         //setenv("SCRIPT_NAME", req.getPath().c_str(), 1);
-     //if (req.getMethod() == "GET")
-         //setenv("CONTENT_LENGTH", "0", 1); //forbidden!!
-     //else if (req.getMethod() == "POST")
-         //setenv("CONTENT_LENGTH", req.getHeaders()["content-length"].c_str(), 1);
-     //setenv("SERVER_NAME", "Webserv", 1);
-     //setenv("SERVER_PROTOCOL", "HTTP 1.1", 1);
-     //setenv("CONTENT_TYPE", req.getHeaders()["content-type"].c_str(), 1);
-     //setenv("QUERY_STRING", (res.getQueryString()).c_str(), 1);
-   //
-     //char** envp = config.getEnvp();
-     //while(*envp) {
-       //std::cout << *envp << std::endl;
-       //envp++;
-    //}
 
     std::map<std::string, std::string> storeEnvs;
     storeEnvs["REQUEST_METHOD"] = req.getMethod().c_str();
@@ -183,13 +156,31 @@ void CGI::setEnvVars(Config& config, Request req, Response& res)
     else
         storeEnvs["HTTP_COOKIE"] = ""; 
 
-    std::cout << "cookie -> " << storeEnvs["HTTP_COOKIE"] << std::endl;
 
     char **envp = config.getEnvp();
+    while(envp[envsNbr])
+        envsNbr++;
+    envsNbr += 9;
+
+    envs = new(std::nothrow) char*[envsNbr + 9];
+    if (!envs)
+        return (failureHandler(config, fd));
+
     int i = 0;
     while (*envp)
     {
-        envs[i] = new char[std::strlen(*envp) + 1];
+        envs[i] = new(std::nothrow) char[std::strlen(*envp) + 1];
+        if (!envs[i])
+        {
+          while(i--)
+          {
+              delete[] envs[i];
+              envs[i] = NULL;
+          }
+          delete[] envs;
+          envs = NULL;
+          return (failureHandler(config, res.getClientFd()));
+        }
         std::strcpy(envs[i], *envp); 
         envp++;
         i++;
@@ -199,39 +190,41 @@ void CGI::setEnvVars(Config& config, Request req, Response& res)
     while (j < 8)
     {
         std::string env = it->first + "=" + it->second;
-        envs[i] = new char[env.length() + 1];
+        envs[i] = new(std::nothrow) char[env.length() + 1];
+        if (!envs[i])
+        {
+            while(i--)
+            {
+                delete[] envs[i];
+                envs[i] = NULL;
+            }
+            delete[] envs;
+            envs = NULL;
+            return (failureHandler(config, res.getClientFd()));
+        }
         std::strcpy(envs[i], env.c_str());
         it++;
         i++;
         j++;
     }
     envs[i] = NULL;
-     //for(i;*envp; envp++)
-     //{
-         //envs[i] = new char[std::strlen(*envp) + 1];
-         //std::strcpy(envs[i], *envp);
-     //}
- //
-     //std::map<std::string, std::string>::iterator it = storeEnvs.begin();
-     //for (i; i < 7; i++) {
-         //std::string env = it->first + "=" + it->second;
-         //envs[i] = new char[env.length() + 1];
-         //std::strcpy(envs[i], env.c_str());
-         //it++;
-    //}
+    return (0);
 }
 
-void CGI::defineArgv()
+int CGI::defineArgv(Config& config, int fd)
 {
     char buff[120];
     getcwd(buff, 120);
     std::string current_dir = buff;
     std::string absolutePath = current_dir + scriptRelativePath;
-    absoluteFilePath = new char[absolutePath.length() + 1];
+    absoluteFilePath = new(std::nothrow) char[absolutePath.length() + 1];
+    if (!absoluteFilePath)
+        return (failureHandler(config, fd));
     std::strcpy(absoluteFilePath, absolutePath.c_str());
     argv[0] = executablePathArray;
     argv[1] = absoluteFilePath;
     argv[2] = NULL;
+    return (0);
 }
 
 int CGI::findExecutablePath(Config& config, int fd) 
@@ -254,7 +247,9 @@ int CGI::findExecutablePath(Config& config, int fd)
         return (failureHandler(config, fd));
     }
     std::string executablePath = it->second;
-    executablePathArray = new char[executablePath.length() + 1];
+    executablePathArray = new(std::nothrow) char[executablePath.length() + 1];
+    if (!executablePathArray)
+        return failureHandler(config, fd);
     std::strcpy(executablePathArray, executablePath.c_str());
     return (0);
 }
@@ -297,7 +292,7 @@ void CGI::findHeadersInsideScript(Response& res) {
     }
 
      //remove leading empty newlines
-     while(i!= std::string::npos && ResBody[0] == '\n')
+     while(i != std::string::npos && ResBody[0] == '\n')
        ResBody.erase(0, 1);
 
     //define content length and content-type in case not defined in the script
@@ -367,14 +362,16 @@ int CGI::execute_cgi_script(Config& config, Response& res, int fd, Request req)
     initializeVars(res, req);
 
     //set environment variables 
-    setEnvVars(config, req, res);
+    if (setEnvVars(config, req, res, fd) == -1)
+        return (-1);
 
     //find the absolute path of the script
     if (findExecutablePath(config, fd) == -1)
         return (-1);
 
     //define argv to pass it to execve
-    defineArgv();
+    if (defineArgv(config, fd) == -1)
+        return (-1);
 
     int fds[2];
     int save_out = dup(1);
@@ -417,6 +414,7 @@ int CGI::execute_cgi_script(Config& config, Response& res, int fd, Request req)
             if (dup2(bodyFd, 0) == -1)
                 exit(EXIT_FAILURE);
             close(bodyFd);
+            remove(req.getFileName().c_str());
         }
         if (dup2(fds[1], 1) == -1)
             exit(EXIT_FAILURE);

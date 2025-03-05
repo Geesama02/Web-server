@@ -37,7 +37,7 @@ class CGI {
         std::vector<char *>                  Envs;
         std::map<std::string, std::string>   executablePaths;
         std::vector<std::string>             headersInScript;
-        char                                 *envs[200];
+        char                                 **envs;
         char                                 *argv[3];
         std::string                          scriptRelativePath;
         std::string                          scriptFileName;
@@ -50,6 +50,7 @@ class CGI {
         long long                            startTime;
         char*                                executablePathArray;
         char*                                absoluteFilePath;
+        int                                   envsNbr;
         
 
     public :
@@ -75,12 +76,12 @@ class CGI {
 
         //other
         int  failureHandler(Config& config, int fd);
-        void defineArgv();
+        int  defineArgv(Config& config, int fd);
         void defineExecutionPaths(int fd, Config& config);
         void clearCGI();
         int  execute_cgi_script(Config& config, Response& res, int fd, Request req);
         void initializeVars(Response& res, Request req);
-        void setEnvVars(Config& config, Request req, Response& res);
+        int   setEnvVars(Config& config, Request& req, Response& res, int fd);
         int  findExecutablePath(Config& config, int fd);
         int  read_cgi_response(Config& config, int fd);
         void sendServerResponse(int fd, Config& config);
