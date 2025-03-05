@@ -40,7 +40,13 @@ int    Response::comparingReqWithLocation(std::string locationPath, std::string 
 void    Response::showIndexFile(std::string indexFilePath)
 {
     Headers["Content-Type"] = "text/html";
-    indexFile = new std::ifstream(indexFilePath.c_str());
+    indexFile = new(std::nothrow) std::ifstream(indexFilePath.c_str());
+    if (!indexFile)
+    {
+        clearResponse();
+        statusCode = 500;
+        return ;
+    }
     std::string buff;
     statusCode = 200;
     while (std::getline(*indexFile, buff))
@@ -187,7 +193,7 @@ void Response::listingOrIndex(Config& config, std::string reqPath)
           showIndexFile(indexFile);
       }
       else if (config.getClients()[clientFd].getServer().getAutoindex())
-          listDirectories(reqPath);
+        listDirectories(reqPath);
   }
 }
 
@@ -275,8 +281,6 @@ void    Response::returnDefinedPage(Config& config, std::string rootPath, std::s
         }
         else
             locationHeader = "http://" + host + config.getClients()[clientFd].getRequest().getPath();
-
-        std::cout << "statusCode > " << statusCode << std::endl;
         return ;
     }
     if (!res && (st.st_mode & S_IRUSR) && (st.st_mode & S_IFDIR))
@@ -298,8 +302,8 @@ void    Response::returnDefinedPage(Config& config, std::string rootPath, std::s
         statusCode = 404;
         return ;
     }
-    errorPage = new std::ifstream(errorPageFile.c_str());
-    if (!errorPage->is_open())
+    errorPage = new(std::nothrow) std::ifstream(errorPageFile.c_str());
+    if (!errorPage || !errorPage->is_open())
     {
         std::cerr << "Error: Opening the Error Page" << std::endl;
         clearResponse();
@@ -343,7 +347,20 @@ void Response::returnResponse(Config& config)
             statusCode = redirectIt->first;
             if (statusCode < 301 || statusCode > 308)
                 body = redirectIt->second;
+            Headers["Content-Type"] = "application/octet-stream";
         }
-        Headers["Content-Type"] = "application/octet-stream";
+    }
+    else
+    {
+       std::map<int, std::string> redirect = config.getClients()[clientFd].getServer().getRedirect();
+       std::map<int, std::string>::iterator redirectIt = redirect.begin();
+       if (redirectIt != redirect.end())
+        {
+            redirectFlag = 1;
+            statusCode = redirectIt->first;
+            if (statusCode < 301 || statusCode > 308)
+                body = redirectIt->second;
+            Headers["Content-Type"] = "application/octet-stream";
+        }
     }
 }

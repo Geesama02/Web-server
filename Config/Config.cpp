@@ -53,7 +53,9 @@ void    Config::checkCgiScriptExecution(int fd) {
                         return ;
                     }
                     Clients[fd].getCGI().sendServerResponse(fd, *this);
-                    Clients[fd].getCGI().clearCGI(); 
+                    Clients[fd].getCGI().clearCGI();
+                    if (Clients[fd].getRequest().getFileName().length() > 0)
+                        remove(Clients[fd].getRequest().getFileName().c_str());
                 }
             }
         }
@@ -77,6 +79,8 @@ void    Config::checkScriptTimeOut(int fd)
                 Clients[fd].getResponse().clearResponse();
                 Clients[fd].getResponse().setStatusCode(504);
                 Clients[fd].getResponse().sendResponse(*this, Clients[fd].getRequest(), fd);
+                if (Clients[fd].getRequest().getFileName().length() > 0)
+                    remove(Clients[fd].getRequest().getFileName().c_str());
                 closeConnection(fd);
             }
         }

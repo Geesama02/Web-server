@@ -110,9 +110,9 @@ class Response {
         void                addHeadersToResponse();
         void                clearResponse();
         void                checkForQueryString(std::string& fileName);
-        void                successResponse(Request req);
+        void                successResponse(Config& config, Request& req);
         void                redirectionResponse(Request req, Config& config);
-        void                rangeResponse(Request req);
+        void                rangeResponse(Config& config, Request& req);
         void                sendResponse(Config& config, Request& req, int fd);
         int                 sendBodyBytes();
         void                searchForFile(Config& config, Request& Req);
