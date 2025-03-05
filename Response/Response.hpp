@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Response.hpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
+/*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/14 16:55:34 by maglagal          #+#    #+#             */
-/*   Updated: 2025/02/25 13:58:52 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/03/05 21:21:12 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -47,6 +47,7 @@ class Response {
         std::ifstream                      *errorPage;
         int                                clientFd;
         int                                statusCode;
+        std::string                        filePath;
         std::string                        statusMssg;
         std::string                        finalRes;
         std::string                        queryString;
@@ -57,6 +58,7 @@ class Response {
         Location*                          locationMatch;
         int                                FileType;
         int                                redirectFlag;
+        char                               contentLengthHeader[150];
 
     public:
         static std::map<std::string, std::string> ContentTypeHeader;
@@ -92,7 +94,7 @@ class Response {
         static std::string  getDate(time_t *time);
         int                 rmrf(char *path);
         void                handleDeleteRequest(Config& config, Request& req);
-        void                listingOrIndex(Config&config, std::string reqPath);
+        void                listingOrIndex(Config&config, Request& req);
         void                fillBody(Config& config, Request& req);
         void                initializeContentHeader();
         void                checkForFileExtension(std::string fileName);
@@ -102,7 +104,7 @@ class Response {
         void                checkErrorPages(Config& config, Request& req);
         void                searchLocationsForMatch(Config& config, Request& req);
         void                listDirectories(std::string dirName);
-        void                showIndexFile(std::string indexFilePath);
+        void                showIndexFile(std::string indexFilePath, Request& req);
         int                 comparingReqWithLocation(std::string locationPath, std::string reqPath);
         void                verifyDirectorySlash(std::string fileName, Request& req);
         void                generateRes(Config& config);

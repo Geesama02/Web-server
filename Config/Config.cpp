@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Config.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
+/*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/22 11:25:38 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/03/02 14:52:54 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/03/05 19:15:39 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -248,14 +248,16 @@ int Config::acceptConnection(int fd, epoll_event& ev)
     return (0);
 }
 
-void Config::closeConnection(int fd) {
+void Config::closeConnection(int fd)
+{
     epoll_ctl(epoll_fd, EPOLL_CTL_DEL, fd, NULL);
     std::cout << "closed client : " << fd<<std::endl;
     Clients.erase(fd);
     close(fd);
 }
 
-void Config::printLog(int fd) {
+void Config::printLog(int fd)
+{
     std::string tmp = Clients[fd].getRequest().getHeaders()["host"];
     size_t pos = tmp.rfind(':');
     if (pos != std::string::npos)
@@ -281,7 +283,8 @@ int Config::handleClient(int fd) {
         closeConnection(fd);
     else if (status == 2) // if file is uploading
         return (0);
-    else {
+    else
+    {
         if (!Clients[fd].getRequest().getPath().empty())
         {
             // std::cout << "path -> " << request.getPath() << std::endl;

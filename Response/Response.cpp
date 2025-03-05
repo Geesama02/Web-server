@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Response.cpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
+/*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/14 17:03:53 by maglagal          #+#    #+#             */
-/*   Updated: 2025/03/02 15:03:56 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/03/05 21:24:17 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,6 +24,7 @@ Response::Response()
 {
     FileType = 0;
     redirectFlag = 0;
+    std::memset(contentLengthHeader, '\0', sizeof(contentLengthHeader));
     initializeContentHeader();
     initializeStatusRes();
     file = NULL;
@@ -116,7 +117,6 @@ void Response::initializeContentHeader()
     ContentTypeHeader[".json"] = "application/json";
 }
 
-
 void    Response::addHeadersToResponse()
 {
     std::map<std::string, std::string>::iterator it = Headers.begin();
@@ -142,6 +142,7 @@ void    Response::clearResponse()
     locationMatch = NULL;
     body.clear();
     finalRes.clear();
+    filePath.erase();
     if (file)
     {
         file->close();
@@ -221,6 +222,7 @@ void Response::generateRes(Config& config)
 
 void Response::successResponse(Config& config, Request& req)
 {
+    (void)req;
     char contentLengthHeader[150];
     statusMssg += "200 OK\r\n";
     
@@ -234,7 +236,7 @@ void Response::successResponse(Config& config, Request& req)
     if (!file && FileType)
     {
         Headers["Accept-Ranges"] = "bytes";
-        file = new(std::nothrow) std::ifstream(req.getPath().erase(0, 1).c_str(), std::ios::binary);
+        file = new(std::nothrow) std::ifstream(filePath.c_str(), std::ios::binary);
         if (!file)
         {
             clearResponse();
@@ -278,8 +280,11 @@ void    Response::redirectionResponse(Request req, Config& config)
     }
     else
     {
-        std::map<int, std::string> redirect = locationMatch->getRedirect();
-        std::map<int, std::string>::iterator redirectIt = redirect.begin();
+        std::map<int, std::string>::iterator redirectIt;
+        if (locationMatch)
+            redirectIt = locationMatch->getRedirect().begin();
+        else
+            redirectIt = config.getClients()[clientFd].getServer().getRedirect().begin();
         if (statusCode >= 301 && statusCode <= 308)
             locationHeader = "http://" + host + redirectIt->second;
     }
@@ -295,7 +300,8 @@ void Response::rangeResponse(Config& config, Request& req)
 {
     if (!file)
     {
-        file = new(std::nothrow) std::ifstream(req.getPath().erase(0, 1).c_str(), std::ios::binary);
+        std::cout << "file path -> " << filePath << std::endl;
+        file = new(std::nothrow) std::ifstream(filePath.c_str(), std::ios::binary);
         if (!file)
         {
             clearResponse();
@@ -315,7 +321,8 @@ void Response::rangeResponse(Config& config, Request& req)
         return ;
     range.replace(i, 1, " ");
     if (getHeader("Content-Type") == "video/mp4"
-            || getHeader("Content-Type") == "audio/mpeg") {
+            || getHeader("Content-Type") == "audio/mpeg")
+    {
         char buff2[150];
         size_t length = req.strToDecimal(Headers["Content-Length"]);
         sprintf(buff2, "%ld", length - 1);
@@ -378,7 +385,6 @@ void Response::searchForFile(Config& config, Request& req)
     struct stat st;
     std::string fileName;
     std::string serverRoot = config.getClients()[clientFd].getServer().getRoot();
-    char buff3[150];
 
     if (fileName == "/")
         fileName = serverRoot;
@@ -408,8 +414,9 @@ void Response::searchForFile(Config& config, Request& req)
             if (req.getHeaders().find("range") != req.getHeaders().end())
             {
                 statusCode = 206;
-                sprintf(buff3, "%ld", st.st_size);
-                setHeader("Content-Length", buff3);
+                filePath = fileName;
+                sprintf(contentLengthHeader, "%ld", st.st_size);
+                setHeader("Content-Length", contentLengthHeader);
                 checkForFileExtension(fileName);
             }
             else
@@ -420,9 +427,10 @@ void Response::searchForFile(Config& config, Request& req)
                     statusCode = 200;
                 if (statusCode == 200)
                     FileType = 1;
+                filePath = fileName;
                 lastModified = getDate(&st.st_mtime);
-                sprintf(buff3, "%ld", st.st_size);
-                setHeader("Content-Length", buff3);
+                sprintf(contentLengthHeader, "%ld", st.st_size);
+                setHeader("Content-Length", contentLengthHeader);
                 checkForFileExtension(fileName);
             }
         }
@@ -434,7 +442,8 @@ void Response::searchForFile(Config& config, Request& req)
 int Response::sendBodyBytes()
 {
     int bytesR = 0;
-    if (file) {
+    if (file)
+    {
         char buff[1024];
         // if marouan updates, update timeout of client here ---------
         file->read(buff, 1024);
