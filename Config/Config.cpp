@@ -6,7 +6,7 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/22 11:25:38 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/03/06 12:48:08 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/03/06 14:30:25 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,11 +17,9 @@
 // Getters
 std::vector<Server>     Config::getServers() { return Servers; }
 std::map<int, Client>&  Config::getClients() { return Clients; }
-char**                  Config::getEnvp() { return envP; }
 
 // Setters
 void    Config::addServer(Server new_server) { Servers.push_back(new_server); }
-void    Config::setEnvp(char **nEnvp) { envP = nEnvp; }
 
 void    Config::checkCgiScriptExecution(int fd) {
     int status;
@@ -89,10 +87,9 @@ void    Config::checkScriptTimeOut(int fd)
 }
 
 // Functions
-int Config::startServers(char **envp) {
+int Config::startServers() {
     epoll_event ev;
     epoll_fd = epoll_create(1);
-    envP = envp;
     if (epoll_fd < 0) {
         std::cerr << "Cannot create epoll instance!" << std::endl;
         return (1);

@@ -6,7 +6,7 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/17 10:25:29 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/03/06 12:31:16 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/03/06 13:03:37 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,9 +25,6 @@ class Client {
         long long   timeout;
         char**      envp;
     public:
-        //constructor
-        Client();
-        ~Client();
     
         // Getters
         int&        getFdClient();

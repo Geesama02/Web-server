@@ -29,11 +29,14 @@ CGI::~CGI()
 }
 
 //getters
-std::string CGI::getBody() { return ResBody; }
-int         CGI::getChildStatus() { return childStatus; }
-pid_t       CGI::getCpid() { return cPid; }
-int         CGI::getRpipe() { return rPipe; }
-long long   CGI::getStartTime() { return startTime; }
+std::string  CGI::getBody() { return ResBody; }
+int          CGI::getChildStatus() { return childStatus; }
+pid_t        CGI::getCpid() { return cPid; }
+int          CGI::getRpipe() { return rPipe; }
+long long    CGI::getStartTime() { return startTime; }
+std::string& CGI::getPathInfo() {return pathInfo;}
+std::string& CGI::getScriptFileName() {return scriptFileName; }
+std::string& CGI::getExtensionFile() {return extensionFile;}
 
 //setters
 void        CGI::setBody(std::string newBody) { ResBody = newBody; }
@@ -41,6 +44,9 @@ void        CGI::setChildStatus(int newChildStatus) { childStatus = newChildStat
 void        CGI::setCpid(pid_t nPid) { cPid = nPid; }
 void        CGI::setRpipe(int nRpipe) { rPipe = nRpipe; }
 void        CGI::setStartTime(long long nTime) {startTime = nTime;}
+void        CGI::setPathInfo(std::string nValue) {pathInfo = nValue;}
+void        CGI::setScriptFileName(std::string nValue) { scriptFileName = nValue; }
+void        CGI::setExtensionFile(std::string nValue) {extensionFile = nValue;}
 
 
 //define cgi execution paths from config file
@@ -134,60 +140,78 @@ void CGI::initializeVars(Response& res, Request req)
         scriptRelativePath = "/";
 }
 
+void CGI::checkHeaderName(std::string& headerName)
+{
+    for(size_t i = 0; i < headerName.length(); i++)
+    {
+        if (isalpha(headerName[i]) && islower(headerName[i]))
+            headerName[i] = toupper(headerName[i]);
+        else if(headerName[i] == '-')
+            headerName[i] = '_';
+
+    }
+}
+
+// void CGI::setPathInfo(std::string& scriptName)
+// {
+//     std::cout << "path info!!\n"<< std::endl;
+//     // size_t index;
+//     // std::string pathInfo;
+
+//     // index = scriptName.find();
+//     // std::string pathInfo = scriptName.substr(index);
+    
+//     // scriptName.erase(index);
+//     // scriptName.find(scriptName);
+// }
+
 int CGI::setEnvVars(Config& config, Request& req, Response& res, int fd)
 {
+    (void)fd;
     char contentLengthStr[150];
     if (req.getBody().length() > 0)
         sprintf(contentLengthStr, "%ld", req.getBody().length());
 
     std::map<std::string, std::string> storeEnvs;
     storeEnvs["REQUEST_METHOD"] = req.getMethod().c_str();
-    storeEnvs["SCRIPT_NAME"] = req.getPath().empty() ? "/" : req.getPath().c_str();//forbidden!!
+    if (req.getPath().empty())
+        storeEnvs["SCRIPT_NAME"] = "/";
+    else
+        storeEnvs["SCRIPT_NAME"] = scriptFileName;
     storeEnvs["SERVER_NAME"] = "Webserv";
     storeEnvs["SERVER_PROTOCOL"] = "HTTP 1.1";
+    storeEnvs["GATEWAY_INTERAFCE"] = "CGI/1.1";
     if (req.getMethod() == "GET")
         storeEnvs["CONTENT_LENGTH"] = "0"; //forbidden!!
     else if (req.getMethod() == "POST")
         storeEnvs["CONTENT_LENGTH"] = req.getHeaders()["content-length"].c_str(); //forbidden!! 
     storeEnvs["CONTENT_TYPE"] = req.getHeaders()["content-type"].c_str();
     storeEnvs["QUERY_STRING"] = (res.getQueryString()).c_str();
-    if (req.getHeaders()["cookie"].length() > 0)
-        storeEnvs["HTTP_COOKIE"] = req.getHeaders()["cookie"];
+    if (pathInfo.length() > 0)
+        storeEnvs["PATH_INFO"] = pathInfo.c_str();
     else
-        storeEnvs["HTTP_COOKIE"] = ""; 
+        storeEnvs["PATH_INFO"] = "";
+    
 
-
-    char **envp = config.getEnvp();
-    while(envp[envsNbr])
-        envsNbr++;
-    envsNbr += 9;
-
-    envs = new(std::nothrow) char*[envsNbr + 9];
+    envs = new(std::nothrow) char*[req.getHeaders().size() + 10];
     if (!envs)
         return (failureHandler(config, fd));
-
+        
     int i = 0;
-    while (*envp)
+    std::map<std::string, std::string>::iterator headersIt = req.getHeaders().begin();
+    while (headersIt != req.getHeaders().end())
     {
-        envs[i] = new(std::nothrow) char[std::strlen(*envp) + 1];
-        if (!envs[i])
-        {
-          while(i--)
-          {
-              delete[] envs[i];
-              envs[i] = NULL;
-          }
-          delete[] envs;
-          envs = NULL;
-          return (failureHandler(config, res.getClientFd()));
-        }
-        std::strcpy(envs[i], *envp); 
-        envp++;
+        std::string headerName = headersIt->first;
+        checkHeaderName(headerName);
+        std::string env = "HTTP_" + headerName + "=" + headersIt->second;
+        envs[i] = new(std::nothrow) char[env.length() + 1];
+        std::strcpy(envs[i], env.c_str());
+        headersIt++;
         i++;
     }
     int j = 0;
     std::map<std::string, std::string>::iterator it = storeEnvs.begin();
-    while (j < 8)
+    while (j < 9)
     {
         std::string env = it->first + "=" + it->second;
         envs[i] = new(std::nothrow) char[env.length() + 1];
@@ -204,8 +228,8 @@ int CGI::setEnvVars(Config& config, Request& req, Response& res, int fd)
         }
         std::strcpy(envs[i], env.c_str());
         it++;
-        i++;
         j++;
+        i++;
     }
     envs[i] = NULL;
     return (0);
@@ -213,14 +237,14 @@ int CGI::setEnvVars(Config& config, Request& req, Response& res, int fd)
 
 int CGI::defineArgv(Config& config, int fd)
 {
-    char buff[120];
-    getcwd(buff, 120);
-    std::string current_dir = buff;
-    std::string absolutePath = current_dir + scriptRelativePath;
-    absoluteFilePath = new(std::nothrow) char[absolutePath.length() + 1];
+    // char buff[120];
+    // getcwd(buff, 120);
+    // std::string current_dir = buff;
+    // std::string absolutePath = current_dir + scriptRelativePath;
+    absoluteFilePath = new(std::nothrow) char[scriptFileName.length() + 1];
     if (!absoluteFilePath)
         return (failureHandler(config, fd));
-    std::strcpy(absoluteFilePath, absolutePath.c_str());
+    std::strcpy(absoluteFilePath, scriptFileName.c_str());
     argv[0] = executablePathArray;
     argv[1] = absoluteFilePath;
     argv[2] = NULL;
@@ -229,15 +253,17 @@ int CGI::defineArgv(Config& config, int fd)
 
 int CGI::findExecutablePath(Config& config, int fd) 
 {
-    size_t index = scriptRelativePath.rfind("."); //you need some error handling here
-    size_t index2 = scriptRelativePath.rfind("/"); //you need some error handling here
-    std::string tmp = scriptRelativePath;
-    if (index != std::string::npos)
-        extensionFile = tmp.erase(0, index);
-    tmp = scriptRelativePath;
-    if (index2 != std::string::npos)
-        scriptFileName = tmp.erase(0, index2);
-    scriptFileName.erase(0, 1);
+    // size_t index = scriptRelativePath.rfind("."); //you need some error handling here
+    // size_t index2 = scriptRelativePath.rfind("/"); //you need some error handling here
+    // std::string tmp = scriptRelativePath;
+    // if (index != std::string::npos)
+    //     extensionFile = tmp.erase(0, index);
+    // tmp = scriptRelativePath;
+    // if (index2 != std::string::npos)
+    //     scriptFileName = tmp.erase(0, index2);
+    // scriptFileName.erase(0, 1);
+    std::cout << "script file name -> " << scriptFileName << std::endl;
+    std::cout << "extensionfile -> " << extensionFile << std::endl;
     std::map<std::string, std::string>::iterator it = executablePaths.begin();
     while (it != executablePaths.end() && it->first != extensionFile)
       it++;

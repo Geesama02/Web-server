@@ -6,7 +6,7 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/14 16:55:34 by maglagal          #+#    #+#             */
-/*   Updated: 2025/03/05 21:41:25 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/03/06 21:38:18 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -58,6 +58,7 @@ class Response {
         int                                FileType;
         int                                redirectFlag;
         char                               contentLengthHeader[150];
+        int                                cgiScript;
 
     public:
         static std::map<std::string, std::string> ContentTypeHeader;
@@ -74,7 +75,6 @@ class Response {
         std::map<std::string, std::string>& getHeadersRes( );
         std::string                         getHeader( std::string key );
         std::ifstream&                      getFile();
-        std::ifstream&                      getIndexFile();
 
         //setters
         void            setClientFd(int nFd);
@@ -83,9 +83,9 @@ class Response {
         void            setStatusMssg(std::string value);
         void            setHeader( std::string key, std::string value );
         void            setFile(std::ifstream *nFile);
-        void            setIndexFile(std::ifstream *nIndexFile);
         
         //other
+        void                handleCgiScript(Config& config, std::string& fileName);
         void                returnResponse(Config& config);
         static int          callbackRemove(const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf);
         static void         matchReqPathWithLocation(Location& loc, std::string reqPath, Location **match);

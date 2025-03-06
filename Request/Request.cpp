@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Request.cpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
+/*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/30 12:07:04 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/03/03 15:47:42 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/03/06 14:28:25 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -627,7 +627,7 @@ int Request::readRequest(int fd, Server& server, std::vector<Server>& Servers) {
     else {
         buff[received] = '\0';
         str.append(buff, received);
-        //std::cout << "received: " << str << std::endl;
+        // std::cout << "received: " << str << std::endl;
         return (readHeaders(str, server, Servers));
     }
     return (0);

@@ -6,7 +6,7 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/14 17:03:53 by maglagal          #+#    #+#             */
-/*   Updated: 2025/03/06 12:49:51 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/03/06 21:57:52 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,6 +22,7 @@ std::map<std::string, std::string> Response::ContentTypeHeader;
 //constructor
 Response::Response()
 {
+    cgiScript = 0;
     clientFd = -1;
     FileType = 0;
     redirectFlag = 0;
@@ -46,7 +47,6 @@ Response::Response()
 Response::~Response() 
 {
    clearResponse();
-   std::cout << "file -> "<<file << " "<< clientFd << " Response destructor called!!\n";
 }
 
 //getters
@@ -127,6 +127,7 @@ void    Response::addHeadersToResponse()
 
 void    Response::clearResponse()
 {
+    cgiScript = 0;
     Headers.clear();
     statusMssg.clear();
     Headers["Connection"] = "keep-alive";
@@ -228,7 +229,6 @@ void Response::successResponse(Config& config)
     {
         Headers["Accept-Ranges"] = "bytes";
         file = new(std::nothrow) std::ifstream(filePath.c_str(), std::ios::binary);
-        std::cout << "file opened!!\n";
         if (!file)
         {
             clearResponse();
@@ -293,7 +293,6 @@ void Response::rangeResponse(Config& config, Request& req)
     if (!file)
     {
         file = new(std::nothrow) std::ifstream(filePath.c_str(), std::ios::binary);
-        std::cout << "file opened!!\n";
         if (!file)
         {
             clearResponse();
@@ -372,6 +371,48 @@ void Response::verifyDirectorySlash(std::string fileName, Request& req)
         statusCode = 204;
 }
 
+void Response::handleCgiScript(Config& config, std::string& fileName)
+{
+    std::cout << "handle cgi script!!\n";
+    struct stat st;
+    size_t index = 0;
+    std::string cgiScriptExtension;
+    cgiScript = 1;
+    std::vector<Location>::iterator it = config.getClients()[clientFd].getServer().getLocations().begin();
+    while(it != config.getClients()[clientFd].getServer().getLocations().end())
+    {
+        if ((it->getURI() == "/cgi-bin/"))
+        {
+            std::vector<std::string>::iterator extensionIt = it->getCgiExt().begin();
+            while(extensionIt != it->getCgiExt().end())
+            {
+                std::cout << "extension in map -> " << *extensionIt<< std::endl;
+                
+                index = fileName.find(*extensionIt);
+                if (index != std::string::npos) {
+                    cgiScriptExtension = *extensionIt;
+                    break;
+                }
+                extensionIt++;
+            }
+        }
+        it++;
+    }
+    if (!cgiScriptExtension.length()) {
+        statusCode = 500;
+        return ;
+    }
+    config.getClients()[clientFd].getCGI().setExtensionFile(cgiScriptExtension);
+    std::string scriptPath = fileName.substr(0, index + cgiScriptExtension.length());
+    config.getClients()[clientFd].getCGI().setScriptFileName(scriptPath);
+    std::string pathInfo = fileName.substr(index + cgiScriptExtension.length());
+    config.getClients()[clientFd].getCGI().setPathInfo(pathInfo);
+    if (!stat(scriptPath.c_str(), &st))
+        statusCode = 200;
+    else
+        statusCode = 404;
+}
+
 void Response::searchForFile(Config& config, Request& req)
 {
     struct stat st;
@@ -391,7 +432,10 @@ void Response::searchForFile(Config& config, Request& req)
     fileName = req.urlDecode(fileName); 
 
     std::cout << "file request -> " << fileName << std::endl;
-  
+
+    if (!strncmp(req.getPath().c_str(), "/cgi-bin/", 9))
+        return (handleCgiScript(config, fileName));
+    
     if (!stat(fileName.c_str(), &st))
     {
         if (st.st_mode & S_IFDIR || (!(st.st_mode & S_IRUSR)))
@@ -504,9 +548,9 @@ void Response::fillBody(Config& config, Request& req)
 
 void Response::sendResponse(Config& config, Request& req, int fd)
 {
-    std::cout << "client -> " << clientFd << std::endl;
-    if (!strncmp(req.getPath().c_str(), "/cgi-bin/", 9) && statusCode == 200)
+    if (cgiScript && statusCode == 200)
     {
+        
         int status = 0;
         status = config.getClients()[fd].getCGI().execute_cgi_script(config, *this, clientFd, req);
         if (fd != 0)
@@ -528,7 +572,6 @@ void Response::sendResponse(Config& config, Request& req, int fd)
     if (!body.empty())
         finalRes += body;
     send(clientFd, finalRes.c_str(), finalRes.length(), 0);
-    std::cout << "file -> " << file << std::endl;
     if (statusCode >= 400)
         config.closeConnection(fd);
 }

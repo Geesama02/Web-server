@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Config.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
+/*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/21 15:07:06 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/02/26 10:30:30 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/03/06 14:30:20 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,21 +29,18 @@ class Config {
         int                   epoll_fd;
         std::vector<Server>   Servers;
         std::map<int, Client> Clients;
-        char                  **envP;
     public:
         // Getters
         std::vector<Server>    getServers();
         std::map<int, Client>& getClients();
-        char**                 getEnvp();
 
         // Setters
         void addServer(Server new_server);
-        void setEnvp( char **nEnvp );
 
         // Functions
         void    checkCgiScriptExecution(int fd);
         void    checkScriptTimeOut(int fd);
-        int     startServers(char **envp);
+        int     startServers();
         int     monitorServers(epoll_event& ev);
         int     isServerFd(int fd);
         int     acceptConnection(int fd, epoll_event& ev);
