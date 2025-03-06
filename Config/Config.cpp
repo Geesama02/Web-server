@@ -6,7 +6,7 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/22 11:25:38 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/03/05 19:15:39 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/03/06 12:48:08 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -231,10 +231,12 @@ int Config::acceptConnection(int fd, epoll_event& ev)
         ev.data.fd = new_client;
         fcntl(new_client, F_SETFL, O_NONBLOCK);
         Server server = getServer(fd);
-        Client client;
+        // Client client;
         server.setSocket(-1);
-        client.setServer(server);
-        Clients[new_client] = client;
+        // client.setServer(server);
+        // Clients[new_client] = client;
+        // std::cout << "fd -> " << new_client << std::endl;
+        Clients[new_client].setServer(server);
         Clients[new_client].setFdClient(new_client);
         Clients[new_client].setTimeout(timeNow());
         // std::cout << "client connection fd " <<new_client<<"!!!!"<< std::endl;
@@ -289,10 +291,8 @@ int Config::handleClient(int fd) {
         {
             // std::cout << "path -> " << request.getPath() << std::endl;
             printLog(fd);
-            if (status == 0) {
-                std::cout << "search for file!!!\n";
+            if (status == 0)
                 Clients[fd].getResponse().searchForFile(*this, Clients[fd].getRequest());
-            }
         }
         Clients[fd].getResponse().sendResponse(*this, Clients[fd].getRequest(), fd);
     }

@@ -6,7 +6,7 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/14 16:55:34 by maglagal          #+#    #+#             */
-/*   Updated: 2025/03/05 21:21:12 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/03/05 21:41:25 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -43,7 +43,6 @@ class Response {
         std::map<std::string, std::string> Headers;
         std::map<int, std::string>         resStatus;
         std::ifstream                      *file;
-        std::ifstream                      *indexFile;
         std::ifstream                      *errorPage;
         int                                clientFd;
         int                                statusCode;
@@ -112,7 +111,7 @@ class Response {
         void                addHeadersToResponse();
         void                clearResponse();
         void                checkForQueryString(std::string& fileName);
-        void                successResponse(Config& config, Request& req);
+        void                successResponse(Config& config);
         void                redirectionResponse(Request req, Config& config);
         void                rangeResponse(Config& config, Request& req);
         void                sendResponse(Config& config, Request& req, int fd);

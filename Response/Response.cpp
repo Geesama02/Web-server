@@ -6,7 +6,7 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/14 17:03:53 by maglagal          #+#    #+#             */
-/*   Updated: 2025/03/05 21:24:17 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/03/06 12:49:51 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,13 +22,13 @@ std::map<std::string, std::string> Response::ContentTypeHeader;
 //constructor
 Response::Response()
 {
+    clientFd = -1;
     FileType = 0;
     redirectFlag = 0;
     std::memset(contentLengthHeader, '\0', sizeof(contentLengthHeader));
     initializeContentHeader();
     initializeStatusRes();
     file = NULL;
-    indexFile = NULL;
     errorPage = NULL;
     Headers["Content-Type"] = "text/html";
     Headers["Connection"] = "keep-alive";
@@ -45,7 +45,8 @@ Response::Response()
 //Destructor
 Response::~Response() 
 {
-   clearResponse(); 
+   clearResponse();
+   std::cout << "file -> "<<file << " "<< clientFd << " Response destructor called!!\n";
 }
 
 //getters
@@ -56,7 +57,6 @@ int                                 Response::getStatusCode() { return statusCod
 std::string                         Response::getStatusMssg() { return statusMssg; }
 std::string                         Response::getHeader( std::string key ) { return Headers[key]; };
 std::ifstream&                      Response::getFile() { return *file; }
-std::ifstream&                      Response::getIndexFile() { return *indexFile; }
 
 //setters
 void                                Response::setClientFd( int nFd ) { clientFd = nFd; }
@@ -65,7 +65,6 @@ void                                Response::setStatusCode(int value) { statusC
 void                                Response::setStatusMssg( std::string value ) { statusMssg = value; };
 void                                Response::setHeader( std::string key, std::string value ) { Headers[key] = value; };
 void                                Response::setFile(std::ifstream *nFile) { file = nFile; }
-void                                Response::setIndexFile(std::ifstream *nIndexFile) { indexFile = nIndexFile; }
 
 
 //other
@@ -73,7 +72,6 @@ void Response::initializeStatusRes()
 {
     locationMatch = NULL;
     errorPage = NULL;
-    indexFile = NULL;
     file = NULL;
     resStatus.insert(std::make_pair(200, "OK"));
     resStatus.insert(std::make_pair(201, "Created"));
@@ -148,19 +146,13 @@ void    Response::clearResponse()
         file->close();
         delete file;
     }
-    if (indexFile)
-    {
-        indexFile->close();
-        delete indexFile;
-    }
+    file = NULL;
     if (errorPage)
     {
         errorPage->close();
         delete errorPage;
     }
-    file = NULL;
     errorPage = NULL;
-    indexFile = NULL;
 }
 
 std::string Response::getDate()
@@ -220,9 +212,8 @@ void Response::generateRes(Config& config)
         Headers["Connection"] = "close";
 }
 
-void Response::successResponse(Config& config, Request& req)
+void Response::successResponse(Config& config)
 {
-    (void)req;
     char contentLengthHeader[150];
     statusMssg += "200 OK\r\n";
     
@@ -237,6 +228,7 @@ void Response::successResponse(Config& config, Request& req)
     {
         Headers["Accept-Ranges"] = "bytes";
         file = new(std::nothrow) std::ifstream(filePath.c_str(), std::ios::binary);
+        std::cout << "file opened!!\n";
         if (!file)
         {
             clearResponse();
@@ -300,8 +292,8 @@ void Response::rangeResponse(Config& config, Request& req)
 {
     if (!file)
     {
-        std::cout << "file path -> " << filePath << std::endl;
         file = new(std::nothrow) std::ifstream(filePath.c_str(), std::ios::binary);
+        std::cout << "file opened!!\n";
         if (!file)
         {
             clearResponse();
@@ -425,7 +417,7 @@ void Response::searchForFile(Config& config, Request& req)
                     statusCode = 204;
                 else
                     statusCode = 200;
-                if (statusCode == 200)
+                if (statusCode == 200 || statusCode == 206)
                     FileType = 1;
                 filePath = fileName;
                 lastModified = getDate(&st.st_mtime);
@@ -501,7 +493,7 @@ void Response::fillBody(Config& config, Request& req)
     if (!redirectFlag && req.getMethod() == "DELETE" && statusCode == 204)
         handleDeleteRequest(config, req);
     if (statusCode == 200)
-        successResponse(config, req);
+        successResponse(config);
     else if (statusCode == 206)
         rangeResponse(config, req);
     else if (statusCode >= 301 && statusCode <= 303)
@@ -512,6 +504,7 @@ void Response::fillBody(Config& config, Request& req)
 
 void Response::sendResponse(Config& config, Request& req, int fd)
 {
+    std::cout << "client -> " << clientFd << std::endl;
     if (!strncmp(req.getPath().c_str(), "/cgi-bin/", 9) && statusCode == 200)
     {
         int status = 0;
@@ -535,6 +528,7 @@ void Response::sendResponse(Config& config, Request& req, int fd)
     if (!body.empty())
         finalRes += body;
     send(clientFd, finalRes.c_str(), finalRes.length(), 0);
+    std::cout << "file -> " << file << std::endl;
     if (statusCode >= 400)
         config.closeConnection(fd);
 }

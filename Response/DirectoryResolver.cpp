@@ -6,7 +6,7 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/09 09:49:11 by maglagal          #+#    #+#             */
-/*   Updated: 2025/03/05 21:20:39 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/03/06 12:02:19 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -47,6 +47,7 @@ void    Response::showIndexFile(std::string indexFilePath, Request& req)
     else
         statusCode = 200;
     file = new(std::nothrow) std::ifstream(indexFilePath.c_str());
+    std::cout << "file opened!!\n";
     if (!file)
     {
         clearResponse();

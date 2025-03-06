@@ -6,7 +6,7 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/17 10:25:29 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/02/19 16:15:37 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/03/06 12:31:16 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,7 +30,7 @@ class Client {
         ~Client();
     
         // Getters
-        int         getFdClient();
+        int&        getFdClient();
         Request&    getRequest();
         Response&   getResponse();
         CGI&        getCGI();
