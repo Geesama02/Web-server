@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/22 11:17:32 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/03/03 15:43:30 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/03/05 17:25:48 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -45,7 +45,7 @@ bool Location::getAutoindex() { return autoindex; }
 long long Location::getClientMaxBodySize() { return client_max_body_size; }
 bool Location::getMethodsFlag() { return methodsFlag; }
 std::vector<std::string>& Location::getAllowedMethods() { return allowed_methods; }
-std::map<int, std::string> Location::getRedirect() { return redirect; }
+std::map<int, std::string>& Location::getRedirect() { return redirect; }
 std::vector<std::string>& Location::getCgiPath() { return cgi_path; }
 std::vector<std::string>& Location::getCgiExt() { return cgi_ext; }
 

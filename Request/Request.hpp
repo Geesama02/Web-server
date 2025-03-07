@@ -66,7 +66,7 @@ class Request {
         void addUpload(UploadFile& new_upload);
 
         // Functions
-        int                             parse(std::string buffer, size_t stop_p);
+        int                             parse(std::string& buffer, size_t& stop_p);
         int                             isNumber(std::string& str);
         static std::vector<std::string> split(std::string buffer, int full, char del);
         static void to_lower(std::string& str);
@@ -93,7 +93,7 @@ class Request {
         std::string getExtension(std::string type);
         int checkMethod(std::string str);
         void clearReq();
-        int continueReq(std::string& buffer, size_t stop_p);
+        int continueReq(std::string& buffer, size_t& stop_p);
         int handleReqLine(std::stringstream& s);
         std::string urlDecode(std::string path);
         int checkValidPath(std::string& path);

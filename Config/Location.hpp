@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/21 16:52:32 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/03/03 15:28:05 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/03/05 17:26:15 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -59,7 +59,7 @@ class Location {
         bool getAutoindex();
         bool getMethodsFlag();
         std::vector<std::string>& getAllowedMethods();
-        std::map<int, std::string> getRedirect();
+        std::map<int, std::string>& getRedirect();
         std::vector<std::string>& getCgiPath();
         std::vector<std::string>& getCgiExt();
         

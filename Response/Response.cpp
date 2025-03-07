@@ -439,7 +439,6 @@ void Response::searchForFile(Config& config, Request& req)
 
     if (!strncmp(req.getPath().c_str(), "/cgi-bin/", 9))
         return (handleCgiScript(config, fileName));
-    
     if (!stat(fileName.c_str(), &st))
     {
         if (st.st_mode & S_IFDIR || (!(st.st_mode & S_IRUSR)))

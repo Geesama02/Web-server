@@ -91,6 +91,7 @@ void Response::listDirectories(std::string reqPath)
 
     statusCode = 200;
     Headers["Content-Type"] = "text/html";
+    std::cout << "dir -> " << dirAsbolute << std::endl;
     DIR *dir = opendir(dirAsbolute.c_str());
     std::string lDirectoriesPage = "<!DOCTYPE html>"
                 "<html>"
