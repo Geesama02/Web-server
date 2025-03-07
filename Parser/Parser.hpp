@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/23 10:46:14 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/03/03 15:30:10 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/03/07 17:27:27 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -33,6 +33,7 @@ class Parser {
         int setPortVar(std::vector<std::string>& holder, Server& tmp_server, size_t& index);
         int setRootVar(std::vector<std::string>& holder, Server& tmp_server, size_t& index);
         int setRootVar(std::vector<std::string>& holder, Location& tmp_location, size_t& index);
+        int setCgiDirVar(std::vector<std::string>& holder, Server& tmp_server, size_t& index);
         int setUploadVar(std::vector<std::string>& holder, Location& tmp_location, size_t& index);
         int setHostVar(std::vector<std::string>& holder, Server& tmp_server, size_t& index);
         int setIndexVar(std::vector<std::string>& holder, Server& tmp_server, size_t& index);
@@ -47,8 +48,8 @@ class Parser {
         int setMaxBodyVar(std::vector<std::string>& holder, Server& tmp_server, size_t& index);
         int setMaxBodyVar(std::vector<std::string>& holder, Location& tmp_location, size_t& index);
         int setAllowedMethodsVar(std::vector<std::string>& holder, Location& tmp_location, size_t& index);
-        int setCgiPathVar(std::vector<std::string>& holder, Location& tmp_location, size_t& index);
-        int setCgiExtVar(std::vector<std::string>& holder, Location& tmp_location, size_t& index);
+        int setCgiPathVar(std::vector<std::string>& holder, Server& tmp_server, size_t& index);
+        int setCgiExtVar(std::vector<std::string>& holder, Server& tmp_server, size_t& index);
         int handleLocation(std::vector<std::string>& holder, Server& tmp_server, size_t& index);
         int skipLocation(std::vector<std::string>& holder, size_t& index);
         int checkDupUri(std::string holder, Server& server);
