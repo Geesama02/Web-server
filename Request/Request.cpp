@@ -6,7 +6,7 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/30 12:07:04 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/03/06 14:28:25 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/03/07 12:35:10 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,7 +30,7 @@ Request::Request() {
 std::map<std::string, std::string>& Request::getHeaders() { return Headers; }
 std::string Request::getMethod() { return method; }
 std::string Request::getFileName() { return fileName; }
-std::string Request::getPath() { return path; }
+std::string& Request::getPath() { return path; }
 std::string Request::getVersion() { return version; }
 std::string Request::getBody() { return body; }
 // std::map<int, UploadFile>& Request::getUploads() { return (uploads); }

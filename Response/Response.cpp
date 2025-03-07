@@ -6,7 +6,7 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/14 17:03:53 by maglagal          #+#    #+#             */
-/*   Updated: 2025/03/06 21:57:52 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/03/07 11:48:56 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -375,8 +375,9 @@ void Response::handleCgiScript(Config& config, std::string& fileName)
 {
     std::cout << "handle cgi script!!\n";
     struct stat st;
-    size_t index = 0;
     std::string cgiScriptExtension;
+    size_t index = 0;
+
     cgiScript = 1;
     std::vector<Location>::iterator it = config.getClients()[clientFd].getServer().getLocations().begin();
     while(it != config.getClients()[clientFd].getServer().getLocations().end())
@@ -398,19 +399,22 @@ void Response::handleCgiScript(Config& config, std::string& fileName)
         }
         it++;
     }
-    if (!cgiScriptExtension.length()) {
+    if (!cgiScriptExtension.length())
+    {
         statusCode = 500;
         return ;
     }
     config.getClients()[clientFd].getCGI().setExtensionFile(cgiScriptExtension);
     std::string scriptPath = fileName.substr(0, index + cgiScriptExtension.length());
-    config.getClients()[clientFd].getCGI().setScriptFileName(scriptPath);
-    std::string pathInfo = fileName.substr(index + cgiScriptExtension.length());
-    config.getClients()[clientFd].getCGI().setPathInfo(pathInfo);
     if (!stat(scriptPath.c_str(), &st))
         statusCode = 200;
-    else
+    else {
         statusCode = 404;
+        return ;
+    }
+    config.getClients()[clientFd].getCGI().setscriptFilePath(scriptPath);
+    std::string pathInfo = fileName.substr(index + cgiScriptExtension.length());
+    config.getClients()[clientFd].getCGI().setPathInfo(pathInfo);
 }
 
 void Response::searchForFile(Config& config, Request& req)

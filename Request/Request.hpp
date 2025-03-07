@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Request.hpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
+/*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/30 11:15:32 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/02/27 15:23:49 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/03/07 12:35:20 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -54,7 +54,7 @@ class Request {
         std::map<std::string, std::string>& getHeaders();
         std::string                         getMethod();
         std::string                         getFileName();
-        std::string                         getPath();
+        std::string&                         getPath();
         std::string                         getVersion();
         std::string                         getBody();
 
