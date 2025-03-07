@@ -6,7 +6,7 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/14 17:03:53 by maglagal          #+#    #+#             */
-/*   Updated: 2025/03/07 11:48:56 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/03/07 16:29:40 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -248,7 +248,7 @@ void    Response::redirectionResponse(Request req, Config& config)
     std::string statusCodeStr;
     sprintf(buff, "%d", statusCode);
     statusCodeStr = buff;
-    statusMssg += statusCodeStr + " " + resStatus[statusCode];
+    statusMssg += statusCodeStr + " " + resStatus[statusCode] + "\r\n";
     port = config.getClients()[clientFd].getServer().getPort(); 
     sprintf(portChar, "%d", port);
     std::string host = config.getClients()[clientFd].getServer().getHost() + ":" + portChar;
@@ -265,6 +265,7 @@ void    Response::redirectionResponse(Request req, Config& config)
     }
     if (!redirectFlag)
     {
+        std::cout << "locationheader -> " << locationHeader << std::endl;
         if (statusCode == 301 && locationHeader.length() == 0)
             locationHeader = "http://" + host + req.getPath() + "/";
         else if (statusCode == 301 && locationHeader.length() > 0)
@@ -277,10 +278,18 @@ void    Response::redirectionResponse(Request req, Config& config)
             redirectIt = locationMatch->getRedirect().begin();
         else
             redirectIt = config.getClients()[clientFd].getServer().getRedirect().begin();
-        if (statusCode >= 301 && statusCode <= 308)
+        if ((statusCode >= 301 && statusCode <= 303)
+            || statusCode == 307 || statusCode == 308)
+        {
             locationHeader = "http://" + host + redirectIt->second;
+            setHeader("Location", locationHeader);
+        }
+        else
+            body = redirectIt->second;
     }
-    setHeader("Location", locationHeader);
+    std::cout << "redirection response!!"<< std::endl;
+    std::cout << "status code -> " << statusCode << std::endl;
+    
     char contentLengthHeader[150];
     std::sprintf(contentLengthHeader, "%ld", body.length());
     Headers["Content-Type"] = "text/html";
@@ -475,7 +484,7 @@ void Response::searchForFile(Config& config, Request& req)
         }
     }
     else
-      statusCode = 404;
+        statusCode = 404;
 }
 
 int Response::sendBodyBytes()
@@ -536,14 +545,15 @@ void Response::handleDeleteRequest(Config& config, Request& req)
 void Response::fillBody(Config& config, Request& req)
 {
     checkErrorPages(config, req);
-    returnResponse(config);
+    if (!redirectFlag)
+        returnResponse(config);
     if (!redirectFlag && req.getMethod() == "DELETE" && statusCode == 204)
         handleDeleteRequest(config, req);
     if (statusCode == 200)
         successResponse(config);
     else if (statusCode == 206)
         rangeResponse(config, req);
-    else if (statusCode >= 301 && statusCode <= 303)
+    else if (statusCode >= 300 && statusCode <= 399)
         redirectionResponse(req, config);
     else
         generateRes(config);
