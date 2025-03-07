@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/22 10:25:22 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/03/05 17:21:50 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/03/07 17:38:38 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -46,6 +46,9 @@ long long Server::getClientMaxBodySize() { return client_max_body_size; }
 std::string Server::getIndex() { return index; }
 std::map<int, std::string>& Server::getRedirect() { return redirect; }
 std::vector<Location>& Server::getLocations() { return locations; }
+std::string& Server::getCgiDir() { return cgi_dir; }
+std::vector<std::string>& Server::getCgiPath() { return cgi_path; }
+std::vector<std::string>& Server::getCgiExt() { return cgi_ext; }
 
 // Setters
 void Server::setSocket(int s) { socket_fd = s; }
@@ -66,6 +69,9 @@ void Server::setRedirect(int code, std::string page) {
         redirect[code] = page;
 }
 void Server::addLocation(Location& new_location) { locations.push_back(new_location); }
+void Server::setCgiDir(std::string dir) { cgi_dir = dir; }
+void Server::addCgiPath(std::string path) { cgi_path.push_back(path); }
+void Server::addCgiExt(std::string ext) { cgi_ext.push_back(ext); }
 
 // Functions
 int Server::checkPortDup(std::vector<Server>& Servers, std::vector<Server>::iterator it) {

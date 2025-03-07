@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/21 15:09:59 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/03/05 17:22:02 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/03/07 17:38:56 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,6 +27,9 @@ class Server {
         long long client_max_body_size;
         std::string index;
         std::map<int, std::string> redirect;
+        std::string cgi_dir;
+        std::vector<std::string> cgi_path;
+        std::vector<std::string> cgi_ext;
         std::vector<Location> locations;
     public:
         // Contructor
@@ -44,6 +47,9 @@ class Server {
         std::string getIndex();
         bool getAutoindex();
         std::map<int, std::string>& getRedirect();
+        std::string& getCgiDir();
+        std::vector<std::string>& getCgiPath();
+        std::vector<std::string>& getCgiExt();
         std::vector<Location>& getLocations();
 
         // Setters
@@ -58,6 +64,9 @@ class Server {
         void setClientMaxBodySize(long long size);
         void setIndex(std::string& str);
         void setRedirect(int code, std::string page);
+        void setCgiDir(std::string dir);
+        void addCgiPath(std::string path);
+        void addCgiExt(std::string ext);
         void addLocation(Location& new_location);
 
         // Functions
