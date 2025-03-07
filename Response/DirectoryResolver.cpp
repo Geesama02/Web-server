@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/09 09:49:11 by maglagal          #+#    #+#             */
-/*   Updated: 2025/03/02 12:21:22 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/03/06 15:24:40 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -85,6 +85,7 @@ void Response::listDirectories(std::string reqPath)
 
     statusCode = 200;
     Headers["Content-Type"] = "text/html";
+    std::cout << "dir -> " << dirAsbolute << std::endl;
     DIR *dir = opendir(dirAsbolute.c_str());
     std::string lDirectoriesPage = "<!DOCTYPE html>"
                 "<html>"

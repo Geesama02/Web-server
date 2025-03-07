@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/30 11:15:32 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/02/27 15:23:49 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/03/06 14:09:57 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -66,7 +66,7 @@ class Request {
         void addUpload(UploadFile& new_upload);
 
         // Functions
-        int                             parse(std::string buffer, size_t stop_p);
+        int                             parse(std::string& buffer, size_t& stop_p);
         int                             isNumber(std::string& str);
         static std::vector<std::string> split(std::string buffer, int full, char del);
         static void to_lower(std::string& str);
@@ -93,7 +93,7 @@ class Request {
         std::string getExtension(std::string type);
         int checkMethod(std::string str);
         void clearReq();
-        int continueReq(std::string& buffer, size_t stop_p);
+        int continueReq(std::string& buffer, size_t& stop_p);
         int handleReqLine(std::stringstream& s);
         std::string urlDecode(std::string path);
         int checkValidPath(std::string& path);

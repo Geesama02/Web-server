@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/30 12:07:04 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/03/04 20:32:36 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/03/07 13:31:08 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -98,20 +98,27 @@ int Request::checkMethod(std::string str) {
     return (1);
 }
 
-int Request::continueReq(std::string& buffer, size_t stop_p) {
+int Request::continueReq(std::string& buffer, size_t& stop_p) {
     if (!holder.empty()) {
         buffer = holder + buffer;
+        // std::cout << "holder -> " << holder << std::endl;
+        stop_p = buffer.find("\r\n\r\n");
+        // if (stop_p != std::string::npos)
+        //     std::cout << "FOUND\n";
         holder.clear();
     }
+    // std::cout << "bef Buffer -> " << buffer << std::endl;
     if (stop_p == std::string::npos) {
         size_t last_pos = buffer.rfind("\r\n");
         if (last_pos == std::string::npos) {
             holder = buffer;
             if (holder.size() > 8192 && !state)
                 return (400);
+            buffer.clear();
         }
         else {
-            holder = buffer.substr(last_pos + 2);
+            // std::cout << "last_pos -> " << last_pos << std::endl;
+            holder = buffer.substr(last_pos);
             buffer.erase(last_pos + 2);
         }
     }
@@ -142,6 +149,7 @@ int Request::checkValidPath(std::string& path) {
 
 int Request::handleReqLine(std::stringstream& s) {
     std::string line;
+    // std::cout << "state -> " << state << std::endl;
     if (state && std::getline(s, line)) {
         std::vector<std::string> holder;
         holder = split(line, 1, ' ');
@@ -160,8 +168,6 @@ int Request::handleReqLine(std::stringstream& s) {
             return (505);
         if (*holder[1].begin() != '/' || !checkValidPath(holder[1]))
             return (400);
-        if (holder[0] != "GET" && holder[0] != "POST" && holder[0] != "DELETE")
-            return (405);
         headersLength += line.size() + 1;
         setMethod(holder[0]);
         setPath(holder[1]);
@@ -170,27 +176,44 @@ int Request::handleReqLine(std::stringstream& s) {
     return (0);
 }
 
-int Request::parse(std::string buffer, size_t stop_p) {
+int Request::parse(std::string& buffer, size_t& stop_p) {
     if (continueReq(buffer, stop_p) != 0)
         return (400);
-    std::stringstream s(buffer);
+    if (buffer.empty())
+        return (2);
+    std::string tmp_buff = buffer;
+    if (stop_p != std::string::npos)
+        tmp_buff = tmp_buff.erase(stop_p);
+    std::stringstream s(tmp_buff);
     std::string line;
+    // std::cout << "out buffer -> " << buffer << std::endl;
+    // if (state && buffer.find("\r\n") == std::string::npos)
+    //     return (2);
     int retValue = handleReqLine(s);
     if (retValue != 0)
         return (retValue);
-    while (std::getline(s, line) && line != "\r") {
+    // std::cout << "after retValue" << std::endl;
+    while (std::getline(s, line)) {
+        if (line == "\r")
+            continue;
+        // std::cout << "INSIIIDE---------------------------\n";
         headersLength += line.size();
         std::vector<std::string> holder = split(line, 0, ':');
+        // std::cout << "line -> " << line << std::endl;
+        // std::cout << "size -> " << holder.size() << std::endl;
         if (holder.size() != 2 || line.size() >= 8192 || headersLength > 32768)
             return (400);
         Headers[holder[0]] = holder[1];
     }
+    // std::cout << "out line -> " << line<<std::endl;
     if (stop_p == std::string::npos) {
         state = 0;
         return (2);
     }
     else
         state = 1;
+    if (method != "GET" && method != "POST" && method != "DELETE")
+        return (405);
     return (0);
 }
 
@@ -567,16 +590,22 @@ int Request::readHeaders(std::string& str, Server& server, std::vector<Server>& 
         size_t stop_p = str.find("\r\n\r\n");
         if ((status = parse(str, stop_p)) != 0)
             return (status);
+        std::cout <<  "OUT\n";
         if (Headers.find("host") != Headers.end())
             server = getServer(server, Servers);
+        // std::cout << "stop_p -> " << stop_p << std::endl;
         str = str.substr(stop_p + 4);
+        // std::cout << "AFTER OUT\n" << std::endl;
         currLocation = getMatchedLocation(path, server);
         if ((status = checkAllowedMethods(str)) != 0)
             return (status);
+        for (std::map<std::string, std::string>::iterator it = Headers.begin(); it != Headers.end();it++) {
+            std::cout << it->first << " = " << it->second << std::endl;
+        }
         if (Headers.find("host") == Headers.end() || (method == "POST"
             && Headers.find("content-length") != Headers.end()
             && !isNumber(Headers["content-length"])))
-            return (400); // Bad Request
+            return (std::cout << "inside bad req\n",400); // Bad Request
         else if (method == "POST"
             && Headers.find("content-length") != Headers.end() && currLocation
             && strToDecimal(Headers["content-length"]) > currLocation->getClientMaxBodySize()
@@ -633,7 +662,12 @@ int Request::readRequest(int fd, Server& server, std::vector<Server>& Servers) {
     else {
         buff[received] = '\0';
         str.append(buff, received);
-        //std::cout << "received: " << str << std::endl;
+        // std::cout << "---------------------------" << std::endl;
+        // std::cout << "received: " << str << std::endl;
+        // if (str.find("\r\n\r") != std::string::npos)
+        //     std::cout << "Is CRLF\n";
+        // if (str == "\n")
+        //     std::cout << "is /n\n";
         return (readHeaders(str, server, Servers));
     }
     return (0);

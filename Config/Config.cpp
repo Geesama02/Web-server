@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/22 11:25:38 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/03/05 17:06:17 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/03/07 14:01:58 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -219,7 +219,9 @@ int Config::acceptConnection(int fd, epoll_event& ev)
     // loop until accepting all clients
     while (true)
     {
-        int new_client = accept(fd, NULL, NULL);
+        sockaddr_in clientAddress;
+        socklen_t clientAddressLength = sizeof(clientAddress);
+        int new_client = accept(fd, (struct sockaddr*)&clientAddress, &clientAddressLength);
         if (new_client < 0) {
             if (errno == EAGAIN || errno == EWOULDBLOCK) // all clients accepted
                 break;
@@ -228,6 +230,8 @@ int Config::acceptConnection(int fd, epoll_event& ev)
                 break;
             }
         }
+        char clientIP[INET_ADDRSTRLEN];
+        inet_ntop(AF_INET, &clientAddress.sin_addr, clientIP, INET_ADDRSTRLEN);
         ev.events = EPOLLIN | EPOLLOUT;
         ev.data.fd = new_client;
         fcntl(new_client, F_SETFL, O_NONBLOCK);
@@ -238,7 +242,8 @@ int Config::acceptConnection(int fd, epoll_event& ev)
         Clients[new_client] = client;
         Clients[new_client].setFdClient(new_client);
         Clients[new_client].setTimeout(timeNow());
-        // std::cout << "client connection fd " <<new_client<<"!!!!"<< std::endl;
+        Clients[new_client].setClientIP(std::string(clientIP));
+        // std::cout << "client IP " <<Clients[new_client].getClientIP() <<"!!!!"<< std::endl;
         // add client socket to epoll to monitor
         if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, new_client, &ev) != 0) {
             std::cerr << "epoll_ctl error: " << strerror(errno) << std::endl;

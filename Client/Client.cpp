@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Client.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
+/*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/17 10:34:46 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/02/20 09:42:56 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/03/07 13:58:58 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,6 +18,7 @@ Client::~Client() {}
 
 // Getters
 int      Client::getFdClient() { return fdClient; }
+std::string&    Client::getClientIP() { return clientIP; }
 Request& Client::getRequest() { return (req); }
 Response& Client::getResponse() { return (res); }
 CGI& Client::getCGI() { return (cgi); }
@@ -28,3 +29,4 @@ long long Client::getTimeout() { return (timeout); }
 void Client::setFdClient(int nFd) { fdClient = nFd; }
 void Client::setServer(Server& s) { server = s; }
 void Client::setTimeout(long long t) { timeout = t; }
+void Client::setClientIP(std::string i) { clientIP = i; }

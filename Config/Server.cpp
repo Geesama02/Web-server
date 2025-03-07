@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/22 10:25:22 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/02/28 11:56:01 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/03/05 17:21:50 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -44,7 +44,7 @@ bool Server::getAutoindex() { return autoindex; }
 std::map<int, std::string>& Server::getErrorPage() { return error_page; }
 long long Server::getClientMaxBodySize() { return client_max_body_size; }
 std::string Server::getIndex() { return index; }
-std::map<int, std::string> Server::getRedirect() { return redirect; }
+std::map<int, std::string>& Server::getRedirect() { return redirect; }
 std::vector<Location>& Server::getLocations() { return locations; }
 
 // Setters

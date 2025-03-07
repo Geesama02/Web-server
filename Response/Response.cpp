@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/14 17:03:53 by maglagal          #+#    #+#             */
-/*   Updated: 2025/03/02 15:03:56 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/03/06 15:35:50 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -278,8 +278,13 @@ void    Response::redirectionResponse(Request req, Config& config)
     }
     else
     {
-        std::map<int, std::string> redirect = locationMatch->getRedirect();
-        std::map<int, std::string>::iterator redirectIt = redirect.begin();
+        // std::cout <<"LoationMatc -> " << locationMatch->getURI() << std::endl;
+        std::map<int, std::string>::iterator redirectIt;
+        if (locationMatch)
+            redirectIt = locationMatch->getRedirect().begin();
+        else
+            redirectIt = config.getClients()[clientFd].getServer().getRedirect().begin();
+        // std::cout << "It -> " << redirectIt->second << std::endl;
         if (statusCode >= 301 && statusCode <= 308)
             locationHeader = "http://" + host + redirectIt->second;
     }
@@ -393,7 +398,22 @@ void Response::searchForFile(Config& config, Request& req)
     fileName = req.urlDecode(fileName); 
 
     std::cout << "file request -> " << fileName << std::endl;
-  
+    // searchLocationsForMatch(config, req);
+    // if (locationMatch) {
+    //     std::string tmp_uri = locationMatch->getURI();
+    //     if (*tmp_uri.rbegin() == '/')
+    //         tmp_uri.erase(tmp_uri.size() - 1);
+    //     std::string tmp = req.getPath();
+    //     size_t pos = tmp.find(tmp_uri);
+    //     if (pos != std::string::npos) {
+    //         std::cout << locationMatch->getRoot() << std::endl;
+    //         tmp.erase(pos, tmp_uri.size());
+    //         tmp.insert(pos, locationMatch->getRoot());
+    //     }
+    //     fileName = tmp;
+    //     req.setPath(tmp);
+    // }
+    // std::cout << "after file request -> " << fileName << std::endl;
     if (!stat(fileName.c_str(), &st))
     {
         if (st.st_mode & S_IFDIR || (!(st.st_mode & S_IRUSR)))

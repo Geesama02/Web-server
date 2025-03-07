@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/21 15:09:59 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/02/28 11:49:33 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/03/05 17:22:02 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -43,7 +43,7 @@ class Server {
         long long getClientMaxBodySize();
         std::string getIndex();
         bool getAutoindex();
-        std::map<int, std::string> getRedirect();
+        std::map<int, std::string>& getRedirect();
         std::vector<Location>& getLocations();
 
         // Setters
