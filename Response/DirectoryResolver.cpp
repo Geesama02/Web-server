@@ -6,7 +6,7 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/09 09:49:11 by maglagal          #+#    #+#             */
-/*   Updated: 2025/03/06 12:02:19 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/03/07 16:10:30 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -240,7 +240,7 @@ int    Response::checkDefinedErrorPage(Config& config, std::string rootPath, std
             }
             else
             {
-              returnDefinedPage(config, rootPath, it->second);
+              returnDefinedPage(config, it->first, rootPath, it->second);
               return (1);
             }
         }
@@ -255,7 +255,7 @@ void Response::checkErrorPages(Config& config, Request& req)
     if (locationMatch)
     { 
         checkDefinedErrorPage(config, config.getClients()[clientFd].getServer().getRoot(),
-          locationMatch->getErrorPage());
+        locationMatch->getErrorPage());
     }
     else
     {
@@ -264,9 +264,8 @@ void Response::checkErrorPages(Config& config, Request& req)
     }
 }
 
-void    Response::returnDefinedPage(Config& config, std::string rootPath, std::string errorPageFile)
+void    Response::returnDefinedPage(Config& config, int errorStatus, std::string rootPath, std::string errorPageFile)
 {
-    (void)config;
     std::string buffer;
     struct stat st;
     std::string relativeErrorPage = errorPageFile;
@@ -282,18 +281,23 @@ void    Response::returnDefinedPage(Config& config, std::string rootPath, std::s
     if (locationMatch)
     {
         body.clear();
-        statusCode = 301;
-        char portChar[150];
-        int port = config.getClients()[clientFd].getServer().getPort(); 
-        sprintf(portChar, "%d", port);
-        std::string host = config.getClients()[clientFd].getServer().getHost() + ":" + portChar;
         if (locationMatch->getRedirect().size() > 0)
         {
-            statusCode = locationMatch->getRedirect().begin()->first; 
-            locationHeader = "http://" + host + locationMatch->getRedirect().begin()->second;
+            if ((locationMatch->getRedirect().begin()->first >= 301
+                && locationMatch->getRedirect().begin()->first <= 303)
+                || locationMatch->getRedirect().begin()->first == 307
+                || locationMatch->getRedirect().begin()->first == 308)
+                statusCode = locationMatch->getRedirect().begin()->first;
+            else
+                statusCode = errorStatus;
+            body = locationMatch->getRedirect().begin()->second;
+            checkForFileExtension(relativeErrorPage);
+            redirectFlag = 1;
+            return ;
         }
         else
-            locationHeader = "http://" + host + config.getClients()[clientFd].getRequest().getPath();
+            locationHeader = locationMatch->getURI();
+        statusCode = 301;
         return ;
     }
     if (!res && (st.st_mode & S_IRUSR) && (st.st_mode & S_IFDIR))

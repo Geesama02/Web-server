@@ -156,7 +156,7 @@ int CGI::addMetaVariables(Config& config, Request& req, Response& res)
     }
 
     std::map<std::string, std::string>::iterator it = storeEnvs.begin();
-    for (int j = 0; j < 11; j++)
+    for (int j = 0; j < 14; j++)
     {
         std::string env = it->first + "=" + it->second;
         envs[i] = new(std::nothrow) char[env.length() + 1];
@@ -176,7 +176,7 @@ int CGI::addMetaVariables(Config& config, Request& req, Response& res)
         i++;
     }
     envs[i] = NULL;
-    envsNbr += 12;
+    envsNbr += 15;
     return (0);
 }
 
@@ -197,12 +197,14 @@ int CGI::setEnvVars(Config& config, Request& req, Response& res, int fd)
     if (req.getBody().length() > 0)
     sprintf(contentLengthStr, "%ld", req.getBody().length());
     
+    std::cout << "req -> " << req.getPath() << std::endl;
     char portChar[150];
     sprintf(portChar, "%d", config.getClients()[res.getClientFd()].getServer().getPort());
     searchForScriptName(req.getPath());
     storeEnvs["REQUEST_METHOD"] = req.getMethod().c_str();
     storeEnvs["QUERY_STRING"] = (res.getQueryString()).c_str();
     storeEnvs["REMOTE_HOST"] = config.getClients()[res.getClientFd()].getServer().getHost();
+    storeEnvs["REMOTE_ADDR"] = config.getClients()[res.getClientFd()].getClientIP();
     if (req.getPath().empty())
         storeEnvs["SCRIPT_NAME"] = "/";
     else
@@ -210,18 +212,23 @@ int CGI::setEnvVars(Config& config, Request& req, Response& res, int fd)
     storeEnvs["SERVER_NAME"] = "Webserv";
     storeEnvs["SERVER_PROTOCOL"] = "HTTP 1.1";
     storeEnvs["SERVER_PORT"] = portChar;
+    storeEnvs["SERVER_SOFTWARE"] = "Webserv/1.1";
     storeEnvs["GATEWAY_INTERAFCE"] = "CGI/1.1";
     if (req.getMethod() == "GET")
         storeEnvs["CONTENT_LENGTH"] = "0"; //forbidden!!
     else if (req.getMethod() == "POST")
         storeEnvs["CONTENT_LENGTH"] = req.getHeaders()["content-length"].c_str(); //forbidden!! 
     storeEnvs["CONTENT_TYPE"] = req.getHeaders()["content-type"].c_str();
-    if (pathInfo.length() > 0)
+    if (pathInfo.length() > 0) {
         storeEnvs["PATH_INFO"] = pathInfo.c_str();
-    else
+        storeEnvs["PATH_TRANSLATED"] = ((scriptFilePath.substr(0, scriptFilePath.rfind("/"))) + pathInfo).c_str();
+    }
+    else {
         storeEnvs["PATH_INFO"] = "";
+        storeEnvs["PATH_TRANSLATED"] = "";
+    }
     
-    envs = new(std::nothrow) char*[req.getHeaders().size() + 12];
+    envs = new(std::nothrow) char*[req.getHeaders().size() + 15];
     if (!envs)
         return (failureHandler(config, fd));
 

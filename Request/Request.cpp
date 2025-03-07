@@ -6,7 +6,7 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/30 12:07:04 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/03/07 12:35:10 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/03/07 14:57:30 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -599,9 +599,6 @@ int Request::readHeaders(std::string& str, Server& server, std::vector<Server>& 
         currLocation = getMatchedLocation(path, server);
         if ((status = checkAllowedMethods(str)) != 0)
             return (status);
-        for (std::map<std::string, std::string>::iterator it = Headers.begin(); it != Headers.end();it++) {
-            std::cout << it->first << " = " << it->second << std::endl;
-        }
         if (Headers.find("host") == Headers.end() || (method == "POST"
             && Headers.find("content-length") != Headers.end()
             && !isNumber(Headers["content-length"])))
