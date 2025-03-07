@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Config.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
+/*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/22 11:25:38 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/03/07 14:01:58 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/03/06 14:30:25 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,11 +17,9 @@
 // Getters
 std::vector<Server>     Config::getServers() { return Servers; }
 std::map<int, Client>&  Config::getClients() { return Clients; }
-char**                  Config::getEnvp() { return envP; }
 
 // Setters
 void    Config::addServer(Server new_server) { Servers.push_back(new_server); }
-void    Config::setEnvp(char **nEnvp) { envP = nEnvp; }
 
 void    Config::checkCgiScriptExecution(int fd) {
     int status;
@@ -89,10 +87,9 @@ void    Config::checkScriptTimeOut(int fd)
 }
 
 // Functions
-int Config::startServers(char **envp) {
+int Config::startServers() {
     epoll_event ev;
     epoll_fd = epoll_create(1);
-    envP = envp;
     if (epoll_fd < 0) {
         std::cerr << "Cannot create epoll instance!" << std::endl;
         return (1);
@@ -236,10 +233,12 @@ int Config::acceptConnection(int fd, epoll_event& ev)
         ev.data.fd = new_client;
         fcntl(new_client, F_SETFL, O_NONBLOCK);
         Server server = getServer(fd);
-        Client client;
+        // Client client;
         server.setSocket(-1);
-        client.setServer(server);
-        Clients[new_client] = client;
+        // client.setServer(server);
+        // Clients[new_client] = client;
+        // std::cout << "fd -> " << new_client << std::endl;
+        Clients[new_client].setServer(server);
         Clients[new_client].setFdClient(new_client);
         Clients[new_client].setTimeout(timeNow());
         Clients[new_client].setClientIP(std::string(clientIP));
@@ -254,14 +253,16 @@ int Config::acceptConnection(int fd, epoll_event& ev)
     return (0);
 }
 
-void Config::closeConnection(int fd) {
+void Config::closeConnection(int fd)
+{
     epoll_ctl(epoll_fd, EPOLL_CTL_DEL, fd, NULL);
     std::cout << "closed client : " << fd<<std::endl;
     Clients.erase(fd);
     close(fd);
 }
 
-void Config::printLog(int fd) {
+void Config::printLog(int fd)
+{
     std::string tmp = Clients[fd].getRequest().getHeaders()["host"];
     size_t pos = tmp.rfind(':');
     if (pos != std::string::npos)
@@ -287,15 +288,14 @@ int Config::handleClient(int fd) {
         closeConnection(fd);
     else if (status == 2) // if file is uploading
         return (0);
-    else {
+    else
+    {
         if (!Clients[fd].getRequest().getPath().empty())
         {
             // std::cout << "path -> " << request.getPath() << std::endl;
             printLog(fd);
-            if (status == 0) {
-                std::cout << "search for file!!!\n";
+            if (status == 0)
                 Clients[fd].getResponse().searchForFile(*this, Clients[fd].getRequest());
-            }
         }
         Clients[fd].getResponse().sendResponse(*this, Clients[fd].getRequest(), fd);
     }

@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   DirectoryResolver.cpp                              :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
+/*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/09 09:49:11 by maglagal          #+#    #+#             */
-/*   Updated: 2025/03/06 15:24:40 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/03/06 12:02:19 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -37,21 +37,27 @@ int    Response::comparingReqWithLocation(std::string locationPath, std::string 
     return (0);
 }
 
-void    Response::showIndexFile(std::string indexFilePath)
+void    Response::showIndexFile(std::string indexFilePath, Request& req)
 {
-    Headers["Content-Type"] = "text/html";
-    indexFile = new(std::nothrow) std::ifstream(indexFilePath.c_str());
-    if (!indexFile)
+    std::string extensionFile = indexFilePath;
+    filePath = indexFilePath;
+    checkForFileExtension(extensionFile);
+    if (req.getHeaders().find("range") != req.getHeaders().end())
+        statusCode = 206;
+    else
+        statusCode = 200;
+    file = new(std::nothrow) std::ifstream(indexFilePath.c_str());
+    std::cout << "file opened!!\n";
+    if (!file)
     {
         clearResponse();
         statusCode = 500;
         return ;
     }
-    std::string buff;
-    statusCode = 200;
-    while (std::getline(*indexFile, buff))
-        body += buff;
-    indexFile->close();
+    // std::string buff;
+    // while (std::getline(*file, buff))
+    //     body += buff;
+    // file->close();
 }
 
 std::string Response::urlEncode(std::string path)
@@ -143,7 +149,7 @@ void Response::matchReqPathWithLocation(Location& loc, std::string reqPath, Loca
     }
 }
 
-void Response::listingOrIndex(Config& config, std::string reqPath)
+void Response::listingOrIndex(Config& config, Request& req)
 {
   struct stat st;
   std::string locationPath;
@@ -166,7 +172,7 @@ void Response::listingOrIndex(Config& config, std::string reqPath)
       indexFile = pathMatch + locationMatch->getIndex();
   }
   else 
-      indexFile = serverRoot + reqPath + config.getClients()[clientFd].getServer().getIndex();
+      indexFile = serverRoot + req.getPath() + config.getClients()[clientFd].getServer().getIndex();
 
   if (locationMatch)
   {
@@ -175,15 +181,19 @@ void Response::listingOrIndex(Config& config, std::string reqPath)
           if (!stat(indexFile.c_str(), &st) && st.st_mode & S_IFREG)
           {
             lastModified = getDate(&st.st_mtime);
-            showIndexFile(indexFile);
+            sprintf(contentLengthHeader, "%ld", st.st_size);
+            setHeader("Content-Length", contentLengthHeader);
+            showIndexFile(indexFile, req);
           }
           else
-              listDirectories(reqPath);
+              listDirectories(req.getPath());
       }
       else if (!stat(indexFile.c_str(), &st) && st.st_mode & S_IFREG)
       {
           lastModified = getDate(&st.st_mtime);
-          showIndexFile(indexFile);
+          sprintf(contentLengthHeader, "%ld", st.st_size);
+          setHeader("Content-Length", contentLengthHeader);
+          showIndexFile(indexFile, req);
       }
   }
   else 
@@ -191,17 +201,19 @@ void Response::listingOrIndex(Config& config, std::string reqPath)
       if (!stat(indexFile.c_str(), &st) && st.st_mode & S_IFREG)
       {
           lastModified = getDate(&st.st_mtime);
-          showIndexFile(indexFile);
+          sprintf(contentLengthHeader, "%ld", st.st_size);
+          setHeader("Content-Length", contentLengthHeader);
+          showIndexFile(indexFile, req);
       }
       else if (config.getClients()[clientFd].getServer().getAutoindex())
-        listDirectories(reqPath);
+        listDirectories(req.getPath());
   }
 }
 
 void Response::checkAutoIndex(Config& config, Request& req)
 {
     searchLocationsForMatch(config, req); 
-    listingOrIndex(config, req.getPath());
+    listingOrIndex(config, req);
 }
 
 void Response::searchLocationsForMatch(Config& config, Request& req)

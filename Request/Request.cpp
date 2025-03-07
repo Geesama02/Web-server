@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Request.cpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
+/*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/30 12:07:04 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/03/07 13:31:08 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/03/07 12:35:10 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,7 +30,7 @@ Request::Request() {
 std::map<std::string, std::string>& Request::getHeaders() { return Headers; }
 std::string Request::getMethod() { return method; }
 std::string Request::getFileName() { return fileName; }
-std::string Request::getPath() { return path; }
+std::string& Request::getPath() { return path; }
 std::string Request::getVersion() { return version; }
 std::string Request::getBody() { return body; }
 // std::map<int, UploadFile>& Request::getUploads() { return (uploads); }
@@ -662,12 +662,7 @@ int Request::readRequest(int fd, Server& server, std::vector<Server>& Servers) {
     else {
         buff[received] = '\0';
         str.append(buff, received);
-        // std::cout << "---------------------------" << std::endl;
         // std::cout << "received: " << str << std::endl;
-        // if (str.find("\r\n\r") != std::string::npos)
-        //     std::cout << "Is CRLF\n";
-        // if (str == "\n")
-        //     std::cout << "is /n\n";
         return (readHeaders(str, server, Servers));
     }
     return (0);

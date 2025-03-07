@@ -6,15 +6,12 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/17 10:34:46 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/03/07 13:58:58 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/03/06 13:02:42 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Client.hpp"
 // #include "../Cgi/Cgi.hpp"
-
-Client::Client() {}
-Client::~Client() {}
 
 // Getters
 int      Client::getFdClient() { return fdClient; }

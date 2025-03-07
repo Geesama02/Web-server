@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Response.cpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
+/*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/14 17:03:53 by maglagal          #+#    #+#             */
-/*   Updated: 2025/03/06 15:35:50 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/03/07 11:48:56 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,12 +22,14 @@ std::map<std::string, std::string> Response::ContentTypeHeader;
 //constructor
 Response::Response()
 {
+    cgiScript = 0;
+    clientFd = -1;
     FileType = 0;
     redirectFlag = 0;
+    std::memset(contentLengthHeader, '\0', sizeof(contentLengthHeader));
     initializeContentHeader();
     initializeStatusRes();
     file = NULL;
-    indexFile = NULL;
     errorPage = NULL;
     Headers["Content-Type"] = "text/html";
     Headers["Connection"] = "keep-alive";
@@ -44,7 +46,7 @@ Response::Response()
 //Destructor
 Response::~Response() 
 {
-   clearResponse(); 
+   clearResponse();
 }
 
 //getters
@@ -55,7 +57,6 @@ int                                 Response::getStatusCode() { return statusCod
 std::string                         Response::getStatusMssg() { return statusMssg; }
 std::string                         Response::getHeader( std::string key ) { return Headers[key]; };
 std::ifstream&                      Response::getFile() { return *file; }
-std::ifstream&                      Response::getIndexFile() { return *indexFile; }
 
 //setters
 void                                Response::setClientFd( int nFd ) { clientFd = nFd; }
@@ -64,7 +65,6 @@ void                                Response::setStatusCode(int value) { statusC
 void                                Response::setStatusMssg( std::string value ) { statusMssg = value; };
 void                                Response::setHeader( std::string key, std::string value ) { Headers[key] = value; };
 void                                Response::setFile(std::ifstream *nFile) { file = nFile; }
-void                                Response::setIndexFile(std::ifstream *nIndexFile) { indexFile = nIndexFile; }
 
 
 //other
@@ -72,7 +72,6 @@ void Response::initializeStatusRes()
 {
     locationMatch = NULL;
     errorPage = NULL;
-    indexFile = NULL;
     file = NULL;
     resStatus.insert(std::make_pair(200, "OK"));
     resStatus.insert(std::make_pair(201, "Created"));
@@ -116,7 +115,6 @@ void Response::initializeContentHeader()
     ContentTypeHeader[".json"] = "application/json";
 }
 
-
 void    Response::addHeadersToResponse()
 {
     std::map<std::string, std::string>::iterator it = Headers.begin();
@@ -129,6 +127,7 @@ void    Response::addHeadersToResponse()
 
 void    Response::clearResponse()
 {
+    cgiScript = 0;
     Headers.clear();
     statusMssg.clear();
     Headers["Connection"] = "keep-alive";
@@ -142,24 +141,19 @@ void    Response::clearResponse()
     locationMatch = NULL;
     body.clear();
     finalRes.clear();
+    filePath.erase();
     if (file)
     {
         file->close();
         delete file;
     }
-    if (indexFile)
-    {
-        indexFile->close();
-        delete indexFile;
-    }
+    file = NULL;
     if (errorPage)
     {
         errorPage->close();
         delete errorPage;
     }
-    file = NULL;
     errorPage = NULL;
-    indexFile = NULL;
 }
 
 std::string Response::getDate()
@@ -219,7 +213,7 @@ void Response::generateRes(Config& config)
         Headers["Connection"] = "close";
 }
 
-void Response::successResponse(Config& config, Request& req)
+void Response::successResponse(Config& config)
 {
     char contentLengthHeader[150];
     statusMssg += "200 OK\r\n";
@@ -234,7 +228,7 @@ void Response::successResponse(Config& config, Request& req)
     if (!file && FileType)
     {
         Headers["Accept-Ranges"] = "bytes";
-        file = new(std::nothrow) std::ifstream(req.getPath().erase(0, 1).c_str(), std::ios::binary);
+        file = new(std::nothrow) std::ifstream(filePath.c_str(), std::ios::binary);
         if (!file)
         {
             clearResponse();
@@ -278,13 +272,11 @@ void    Response::redirectionResponse(Request req, Config& config)
     }
     else
     {
-        // std::cout <<"LoationMatc -> " << locationMatch->getURI() << std::endl;
         std::map<int, std::string>::iterator redirectIt;
         if (locationMatch)
             redirectIt = locationMatch->getRedirect().begin();
         else
             redirectIt = config.getClients()[clientFd].getServer().getRedirect().begin();
-        // std::cout << "It -> " << redirectIt->second << std::endl;
         if (statusCode >= 301 && statusCode <= 308)
             locationHeader = "http://" + host + redirectIt->second;
     }
@@ -300,7 +292,7 @@ void Response::rangeResponse(Config& config, Request& req)
 {
     if (!file)
     {
-        file = new(std::nothrow) std::ifstream(req.getPath().erase(0, 1).c_str(), std::ios::binary);
+        file = new(std::nothrow) std::ifstream(filePath.c_str(), std::ios::binary);
         if (!file)
         {
             clearResponse();
@@ -320,7 +312,8 @@ void Response::rangeResponse(Config& config, Request& req)
         return ;
     range.replace(i, 1, " ");
     if (getHeader("Content-Type") == "video/mp4"
-            || getHeader("Content-Type") == "audio/mpeg") {
+            || getHeader("Content-Type") == "audio/mpeg")
+    {
         char buff2[150];
         size_t length = req.strToDecimal(Headers["Content-Length"]);
         sprintf(buff2, "%ld", length - 1);
@@ -378,12 +371,57 @@ void Response::verifyDirectorySlash(std::string fileName, Request& req)
         statusCode = 204;
 }
 
+void Response::handleCgiScript(Config& config, std::string& fileName)
+{
+    std::cout << "handle cgi script!!\n";
+    struct stat st;
+    std::string cgiScriptExtension;
+    size_t index = 0;
+
+    cgiScript = 1;
+    std::vector<Location>::iterator it = config.getClients()[clientFd].getServer().getLocations().begin();
+    while(it != config.getClients()[clientFd].getServer().getLocations().end())
+    {
+        if ((it->getURI() == "/cgi-bin/"))
+        {
+            std::vector<std::string>::iterator extensionIt = it->getCgiExt().begin();
+            while(extensionIt != it->getCgiExt().end())
+            {
+                std::cout << "extension in map -> " << *extensionIt<< std::endl;
+                
+                index = fileName.find(*extensionIt);
+                if (index != std::string::npos) {
+                    cgiScriptExtension = *extensionIt;
+                    break;
+                }
+                extensionIt++;
+            }
+        }
+        it++;
+    }
+    if (!cgiScriptExtension.length())
+    {
+        statusCode = 500;
+        return ;
+    }
+    config.getClients()[clientFd].getCGI().setExtensionFile(cgiScriptExtension);
+    std::string scriptPath = fileName.substr(0, index + cgiScriptExtension.length());
+    if (!stat(scriptPath.c_str(), &st))
+        statusCode = 200;
+    else {
+        statusCode = 404;
+        return ;
+    }
+    config.getClients()[clientFd].getCGI().setscriptFilePath(scriptPath);
+    std::string pathInfo = fileName.substr(index + cgiScriptExtension.length());
+    config.getClients()[clientFd].getCGI().setPathInfo(pathInfo);
+}
+
 void Response::searchForFile(Config& config, Request& req)
 {
     struct stat st;
     std::string fileName;
     std::string serverRoot = config.getClients()[clientFd].getServer().getRoot();
-    char buff3[150];
 
     if (fileName == "/")
         fileName = serverRoot;
@@ -398,22 +436,9 @@ void Response::searchForFile(Config& config, Request& req)
     fileName = req.urlDecode(fileName); 
 
     std::cout << "file request -> " << fileName << std::endl;
-    // searchLocationsForMatch(config, req);
-    // if (locationMatch) {
-    //     std::string tmp_uri = locationMatch->getURI();
-    //     if (*tmp_uri.rbegin() == '/')
-    //         tmp_uri.erase(tmp_uri.size() - 1);
-    //     std::string tmp = req.getPath();
-    //     size_t pos = tmp.find(tmp_uri);
-    //     if (pos != std::string::npos) {
-    //         std::cout << locationMatch->getRoot() << std::endl;
-    //         tmp.erase(pos, tmp_uri.size());
-    //         tmp.insert(pos, locationMatch->getRoot());
-    //     }
-    //     fileName = tmp;
-    //     req.setPath(tmp);
-    // }
-    // std::cout << "after file request -> " << fileName << std::endl;
+
+    if (!strncmp(req.getPath().c_str(), "/cgi-bin/", 9))
+        return (handleCgiScript(config, fileName));
     if (!stat(fileName.c_str(), &st))
     {
         if (st.st_mode & S_IFDIR || (!(st.st_mode & S_IRUSR)))
@@ -428,8 +453,9 @@ void Response::searchForFile(Config& config, Request& req)
             if (req.getHeaders().find("range") != req.getHeaders().end())
             {
                 statusCode = 206;
-                sprintf(buff3, "%ld", st.st_size);
-                setHeader("Content-Length", buff3);
+                filePath = fileName;
+                sprintf(contentLengthHeader, "%ld", st.st_size);
+                setHeader("Content-Length", contentLengthHeader);
                 checkForFileExtension(fileName);
             }
             else
@@ -438,11 +464,12 @@ void Response::searchForFile(Config& config, Request& req)
                     statusCode = 204;
                 else
                     statusCode = 200;
-                if (statusCode == 200)
+                if (statusCode == 200 || statusCode == 206)
                     FileType = 1;
+                filePath = fileName;
                 lastModified = getDate(&st.st_mtime);
-                sprintf(buff3, "%ld", st.st_size);
-                setHeader("Content-Length", buff3);
+                sprintf(contentLengthHeader, "%ld", st.st_size);
+                setHeader("Content-Length", contentLengthHeader);
                 checkForFileExtension(fileName);
             }
         }
@@ -454,7 +481,8 @@ void Response::searchForFile(Config& config, Request& req)
 int Response::sendBodyBytes()
 {
     int bytesR = 0;
-    if (file) {
+    if (file)
+    {
         char buff[1024];
         // if marouan updates, update timeout of client here ---------
         file->read(buff, 1024);
@@ -512,7 +540,7 @@ void Response::fillBody(Config& config, Request& req)
     if (!redirectFlag && req.getMethod() == "DELETE" && statusCode == 204)
         handleDeleteRequest(config, req);
     if (statusCode == 200)
-        successResponse(config, req);
+        successResponse(config);
     else if (statusCode == 206)
         rangeResponse(config, req);
     else if (statusCode >= 301 && statusCode <= 303)
@@ -523,8 +551,9 @@ void Response::fillBody(Config& config, Request& req)
 
 void Response::sendResponse(Config& config, Request& req, int fd)
 {
-    if (!strncmp(req.getPath().c_str(), "/cgi-bin/", 9) && statusCode == 200)
+    if (cgiScript && statusCode == 200)
     {
+        
         int status = 0;
         status = config.getClients()[fd].getCGI().execute_cgi_script(config, *this, clientFd, req);
         if (fd != 0)
