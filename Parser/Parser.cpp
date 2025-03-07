@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/21 14:31:56 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/03/03 15:58:45 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/03/07 15:46:48 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,9 +15,7 @@
 int Parser::startParsing(Config &config, char *filename) {
     std::string holder;
     if (!filename) {
-        Server defaultServer;
-        config.addServer(defaultServer);
-        return (0);
+        filename = (char *)"config.conf";
     }
     struct stat fileInfo;
     if (stat(filename, &fileInfo) != 0) {
