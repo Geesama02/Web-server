@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Parser.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
+/*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/23 10:46:14 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/03/07 17:27:27 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/03/08 13:37:46 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,7 +27,7 @@ class Parser {
         static void replace(std::string& line, std::string old_char, std::string new_char);
         int fillServer(Config& config, std::vector<std::string>& holder, size_t& index);
         int parseLocation(std::vector<std::string>& holder, Server& tmp_server, size_t& index);
-        int isNumber(std::string& str);
+        static int isNumber(std::string& str);
         int isValidValue(std::string& str);
         long long strToDecimal(std::string str);
         int setPortVar(std::vector<std::string>& holder, Server& tmp_server, size_t& index);

@@ -52,22 +52,14 @@ void        CGI::setExtensionFile(std::string nValue) {extensionFile = nValue;}
 //define cgi execution paths from config file
 void CGI::defineExecutionPaths(int fd, Config& config)
 {
-    std::vector<Location>::iterator it = config.getClients()[fd].getServer().getLocations().begin();
-    while(it != config.getClients()[fd].getServer().getLocations().end())
+    std::vector<std::string>::iterator extensionIt = config.getClients()[fd].getServer().getCgiExt().begin();
+    std::vector<std::string>::iterator pathIt = config.getClients()[fd].getServer().getCgiPath().begin();
+    while(extensionIt != config.getClients()[fd].getServer().getCgiExt().end()
+        && pathIt != config.getClients()[fd].getServer().getCgiPath().end())
     {
-        if ((it->getURI() == "/cgi-bin/"))
-        {
-            std::vector<std::string>::iterator extensionIt = it->getCgiExt().begin();
-            std::vector<std::string>::iterator pathIt = it->getCgiPath().begin();
-            while(extensionIt != it->getCgiExt().end()
-                && pathIt != it->getCgiPath().end())
-            {
-                executablePaths[*extensionIt] = *pathIt;
-                extensionIt++;
-                pathIt++;
-            }
-        }
-        it++;
+        executablePaths[*extensionIt] = *pathIt;
+        extensionIt++;
+        pathIt++;
     }
 }
 
@@ -137,7 +129,6 @@ void CGI::checkHeaderName(std::string& headerName)
             headerName[i] = toupper(headerName[i]);
         else if(headerName[i] == '-')
             headerName[i] = '_';
-
     }
 }
 
