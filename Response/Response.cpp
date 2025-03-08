@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Response.cpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
+/*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/14 17:03:53 by maglagal          #+#    #+#             */
-/*   Updated: 2025/03/07 16:29:40 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/03/08 17:03:03 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -56,7 +56,7 @@ std::string                         Response::getQueryString() { return queryStr
 int                                 Response::getStatusCode() { return statusCode; }
 std::string                         Response::getStatusMssg() { return statusMssg; }
 std::string                         Response::getHeader( std::string key ) { return Headers[key]; };
-std::ifstream&                      Response::getFile() { return *file; }
+std::ifstream*                      Response::getFile() { return file; }
 
 //setters
 void                                Response::setClientFd( int nFd ) { clientFd = nFd; }
@@ -487,7 +487,7 @@ void Response::searchForFile(Config& config, Request& req)
         statusCode = 404;
 }
 
-int Response::sendBodyBytes()
+int Response::sendBodyBytes(int epoll_fd)
 {
     int bytesR = 0;
     if (file)
@@ -506,6 +506,13 @@ int Response::sendBodyBytes()
             file->close();
             delete file;
             file = NULL;
+            epoll_event ev;
+            ev.events = EPOLLIN;
+            ev.data.fd = clientFd;
+            if (epoll_ctl(epoll_fd, EPOLL_CTL_MOD, clientFd, &ev) != 0) {
+                std::cerr << "epoll_ctl error: " << strerror(errno) << std::endl;
+                return (-1);
+            }
             return (0);
         }
         bytesR = file->gcount();

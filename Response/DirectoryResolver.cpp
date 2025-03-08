@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   DirectoryResolver.cpp                              :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
+/*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/09 09:49:11 by maglagal          #+#    #+#             */
-/*   Updated: 2025/03/07 16:10:30 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/03/07 21:54:03 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -129,18 +129,18 @@ void Response::listDirectories(std::string reqPath)
 void Response::matchReqPathWithLocation(Location& loc, std::string reqPath, Location **match)
 {
     std::string uri;
-    size_t index;
+    // size_t index;
 
     uri = loc.getURI();
-    index = uri.rfind("/");
-    if ((index == 0 || index != uri.length() - 1) && uri.length() != 1)
-    {
-        uri = uri + "/";
-        loc.setURI(uri);
-    } 
-    index = reqPath.rfind("/");
-    if ((index == 0 || index != reqPath.length() - 1) && reqPath.length() != 1)
-        reqPath = reqPath + "/";
+    // index = uri.rfind("/");
+    // if ((index == 0 || index != uri.length() - 1) && uri.length() != 1)
+    // {
+    //     uri = uri + "/";
+    //     loc.setURI(uri);
+    // } 
+    // index = reqPath.rfind("/");
+    // if ((index == 0 || index != reqPath.length() - 1) && reqPath.length() != 1)
+    //     reqPath = reqPath + "/";
 
     if (uri.length() > 0 && uri[0] == '/' && !strncmp(uri.c_str(), reqPath.c_str(), uri.length()))
     {  //dir should have a leading slash

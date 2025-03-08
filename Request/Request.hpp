@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Request.hpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
+/*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/30 11:15:32 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/03/07 12:35:20 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/03/07 21:18:27 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -99,7 +99,7 @@ class Request {
         int checkValidPath(std::string& path);
         static Location* getMatchedLocation(std::string path, Server& server);
         int joinPath(Location* location, UploadFile& file);
-        int checkAllowedMethods(std::string& str);
+        int checkAllowedMethods(std::string& str, Server& server);
 
         // Destructor
         ~Request();

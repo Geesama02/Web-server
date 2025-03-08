@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Request.cpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
+/*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/30 12:07:04 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/03/07 14:57:30 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/03/08 12:47:28 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -187,6 +187,7 @@ int Request::parse(std::string& buffer, size_t& stop_p) {
     std::stringstream s(tmp_buff);
     std::string line;
     // std::cout << "out buffer -> " << buffer << std::endl;
+    // std::cout << "out tmp -> " << tmp_buff << std::endl;
     // if (state && buffer.find("\r\n") == std::string::npos)
     //     return (2);
     int retValue = handleReqLine(s);
@@ -560,7 +561,7 @@ Location *Request::getMatchedLocation(std::string path, Server& server) {
     return (loc);
 }
 
-int Request::checkAllowedMethods(std::string& str) {
+int Request::checkAllowedMethods(std::string& str, Server& server) {
     if (currLocation) {
         for (std::vector<std::string>::iterator it = currLocation->getAllowedMethods().begin(); it != currLocation->getAllowedMethods().end(); it++) {
             if (*it == method) {
@@ -576,6 +577,8 @@ int Request::checkAllowedMethods(std::string& str) {
     else {
         if (method == "DELETE")
             return (405);
+        if (!server.getCgiDir().empty() && method == "POST" && strncmp(server.getCgiDir().c_str(), path.c_str(), server.getCgiDir().size()) == 0)
+            return (0);
         if (method != "GET")
             return (403);
     }
@@ -590,14 +593,15 @@ int Request::readHeaders(std::string& str, Server& server, std::vector<Server>& 
         size_t stop_p = str.find("\r\n\r\n");
         if ((status = parse(str, stop_p)) != 0)
             return (status);
-        std::cout <<  "OUT\n";
+        // std::cout <<  "OUT\n";
         if (Headers.find("host") != Headers.end())
             server = getServer(server, Servers);
         // std::cout << "stop_p -> " << stop_p << std::endl;
         str = str.substr(stop_p + 4);
-        // std::cout << "AFTER OUT\n" << std::endl;
         currLocation = getMatchedLocation(path, server);
-        if ((status = checkAllowedMethods(str)) != 0)
+        if (currLocation)
+            std::cout << "FOUND LOCATION -> " << currLocation->getURI() << std::endl;
+        if ((status = checkAllowedMethods(str, server)) != 0)
             return (status);
         if (Headers.find("host") == Headers.end() || (method == "POST"
             && Headers.find("content-length") != Headers.end()
