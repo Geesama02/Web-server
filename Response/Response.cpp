@@ -6,7 +6,7 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/14 17:03:53 by maglagal          #+#    #+#             */
-/*   Updated: 2025/03/08 15:55:43 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/03/08 16:46:23 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -313,6 +313,8 @@ void Response::makeContentRangeHeader(Request& req, std::vector<std::string>& ra
         std::string& rangeNumber, std::string& contentLengthHeader, size_t& rangeEndNbr)
 {
     char        rangeEndChar[150];
+    char        rangeStartChar[150];
+    size_t      rangeStartNbr = 0;
     size_t      length = req.strToDecimal(contentLengthHeader);
     std::string rangeHeader;
 
@@ -329,7 +331,15 @@ void Response::makeContentRangeHeader(Request& req, std::vector<std::string>& ra
     }
     else
     {
-        
+        if (!rangeNumbers[0].length())
+            rangeStartNbr = length - rangeEndNbr;
+        else
+            rangeStartNbr = req.strToDecimal(rangeNumbers[0]);
+        sprintf(rangeStartChar, "%ld", rangeStartNbr);
+        sprintf(rangeEndChar, "%ld", length - 1);
+        std::string rangeStartString = rangeStartChar;
+        std::string rangeEndString = rangeEndChar;
+        rangeHeader = rangeStartString + '-' + rangeEndString;
     }
     Headers["Content-Range"] = "bytes " + rangeHeader + '/' + contentLengthHeader;
 }
@@ -382,21 +392,15 @@ void Response::rangeResponse(Config& config, Request& req)
     }
     else
     {
-        char buff2[150];
-        sprintf(buff2, "%ld", length - 1);
         if (rangeEndNbr > length - 1)
-            rangeEndNbr = length - 1;
+            rangeEndNbr = length;
         if (!isdigit(rangeNumber[0]))
             rangeNumber.erase(0, 1);
         if (!isdigit(rangeNumber[rangeNumber.length() - 1]))
             rangeNumber.erase(rangeNumber.length() - 1, 1);
 
-        std::cout << "start " << rangeStartNbr << std::endl;
-        std::cout << "end " << rangeEndNbr << std::endl;
-        
-        std::cout << "range number -> " << rangeNumber << std::endl;
-        Headers["Content-Range"] = "bytes " + rangeNumber + '-' + buff2 + '/' + contentLengthHeader;
-        std::cout <<"content range -> "<< Headers["Content-Range"]<< std::endl;;
+        makeContentRangeHeader(req, rangeNumbers, rangeNumber,
+            contentLengthHeader, rangeEndNbr);
         if (!rangeNumbers[0].length())
         { 
             sprintf(rangeContentLength, "%ld", rangeEndNbr);
@@ -404,7 +408,6 @@ void Response::rangeResponse(Config& config, Request& req)
         }
         else if (!rangeNumbers[1].length())
             sprintf(rangeContentLength, "%ld", length - rangeStartNbr);
-
         if (rangeStartNbr >= length)
             return rangeResponseFail(config, req);
         setHeader("Content-Length", rangeContentLength);
