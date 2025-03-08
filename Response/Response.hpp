@@ -3,7 +3,7 @@
 /*                                                        :::      ::::::::   */
 /*   Response.hpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
+/*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/14 16:55:34 by maglagal          #+#    #+#             */
 /*   Updated: 2025/03/08 15:45:59 by maglagal         ###   ########.fr       */
@@ -74,7 +74,7 @@ class Response {
         std::string                         getStatusMssg();
         std::map<std::string, std::string>& getHeadersRes( );
         std::string                         getHeader( std::string key );
-        std::ifstream&                      getFile();
+        std::ifstream*                      getFile();
 
         //setters
         void            setClientFd(int nFd);
@@ -117,7 +117,7 @@ class Response {
         void                redirectionResponse(Request req, Config& config);
         void                rangeResponse(Config& config, Request& req);
         void                sendResponse(Config& config, Request& req, int fd);
-        int                 sendBodyBytes();
+        int                 sendBodyBytes(int epoll_fd);
         void                searchForFile(Config& config, Request& Req);
         std::string         urlEncode(std::string path);
 };
