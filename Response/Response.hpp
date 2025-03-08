@@ -6,7 +6,7 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/14 16:55:34 by maglagal          #+#    #+#             */
-/*   Updated: 2025/03/07 15:31:08 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/03/08 15:45:59 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -85,6 +85,8 @@ class Response {
         void            setFile(std::ifstream *nFile);
         
         //other
+        void                makeContentRangeHeader(Request& req, std::vector<std::string>& rangeNumbers, std::string& rangeNumber, std::string& contentLengthHeader, size_t& rangeEndNbr);
+        void                rangeResponseFail(Config& config, Request& req);
         void                handleCgiScript(Config& config, std::string& fileName);
         void                returnResponse(Config& config);
         static int          callbackRemove(const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf);

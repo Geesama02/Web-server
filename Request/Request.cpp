@@ -6,7 +6,7 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/30 12:07:04 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/03/07 14:57:30 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/03/08 13:10:13 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -590,7 +590,7 @@ int Request::readHeaders(std::string& str, Server& server, std::vector<Server>& 
         size_t stop_p = str.find("\r\n\r\n");
         if ((status = parse(str, stop_p)) != 0)
             return (status);
-        std::cout <<  "OUT\n";
+        // std::cout <<  "OUT\n";
         if (Headers.find("host") != Headers.end())
             server = getServer(server, Servers);
         // std::cout << "stop_p -> " << stop_p << std::endl;
@@ -659,7 +659,7 @@ int Request::readRequest(int fd, Server& server, std::vector<Server>& Servers) {
     else {
         buff[received] = '\0';
         str.append(buff, received);
-        // std::cout << "received: " << str << std::endl;
+        std::cout << "received: " << str << std::endl;
         return (readHeaders(str, server, Servers));
     }
     return (0);

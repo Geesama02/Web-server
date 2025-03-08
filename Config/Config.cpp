@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Config.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
+/*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/22 11:25:38 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/03/07 14:07:16 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/03/08 11:36:18 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -276,7 +276,7 @@ int Config::handleClient(int fd) {
     Response res;
     int status;
 
-    // std::cout << "------------------------------------------" << std::endl;
+    std::cout << "------------------------------------------" << std::endl;
     Clients[fd].setTimeout(timeNow());
     Clients[fd].getResponse().clearResponse();
     status = Clients[fd].getRequest().readRequest(fd, Clients[fd].getServer(), Servers);
@@ -299,7 +299,7 @@ int Config::handleClient(int fd) {
         }
         Clients[fd].getResponse().sendResponse(*this, Clients[fd].getRequest(), fd);
     }
-    // std::cout << "------------------------------------------" << std::endl;
+    std::cout << "------------------------------------------" << std::endl;
     return (0);
 }
 

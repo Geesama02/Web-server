@@ -6,7 +6,7 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/14 17:03:53 by maglagal          #+#    #+#             */
-/*   Updated: 2025/03/07 16:29:40 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/03/08 15:55:43 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -93,6 +93,7 @@ void Response::initializeStatusRes()
     resStatus.insert(std::make_pair(413, "Content Too Large"));
     resStatus.insert(std::make_pair(414, "URI Too Long"));
     resStatus.insert(std::make_pair(415, "Unsupported Media Type"));
+    resStatus.insert(std::make_pair(416, "Requested Range Not Satisfiable"));
     resStatus.insert(std::make_pair(444, "No Response"));
     resStatus.insert(std::make_pair(500, "Internal Server Error"));
     resStatus.insert(std::make_pair(501, "Not Implemented"));
@@ -104,6 +105,7 @@ void Response::initializeContentHeader()
 {
     ContentTypeHeader[".txt"] = "text/plain";
     ContentTypeHeader[".html"] = "text/html";
+    ContentTypeHeader[".htm"] = "text/html";
     ContentTypeHeader[".css"] = "text/css";
     ContentTypeHeader[".js"] = "application/javascript";
     ContentTypeHeader[".pdf"] = "application/pdf";
@@ -270,6 +272,8 @@ void    Response::redirectionResponse(Request req, Config& config)
             locationHeader = "http://" + host + req.getPath() + "/";
         else if (statusCode == 301 && locationHeader.length() > 0)
             locationHeader = "http://" + host + locationHeader + "/";
+        std::cout << "location header -> " << locationHeader << std::endl;
+        setHeader("Location", locationHeader);
     }
     else
     {
@@ -297,6 +301,39 @@ void    Response::redirectionResponse(Request req, Config& config)
     Headers["Date"] = getDate();
 }
 
+void Response::rangeResponseFail(Config& config, Request& req)
+{
+    clearResponse();
+    statusCode = 416;
+    Headers["Content-Range"] = "bytes */" + Headers["Content-Length"];
+    fillBody(config, req);
+}
+
+void Response::makeContentRangeHeader(Request& req, std::vector<std::string>& rangeNumbers,
+        std::string& rangeNumber, std::string& contentLengthHeader, size_t& rangeEndNbr)
+{
+    char        rangeEndChar[150];
+    size_t      length = req.strToDecimal(contentLengthHeader);
+    std::string rangeHeader;
+
+    if (rangeNumbers[0].length() && rangeNumbers[1].length())
+    {
+        if (rangeEndNbr > length - 1)
+        {
+            rangeEndNbr = length - 1;
+            sprintf(rangeEndChar, "%ld", rangeEndNbr);
+            rangeHeader = rangeNumbers[0] + '-' + rangeEndChar;
+        }
+        else
+            rangeHeader = rangeNumber;
+    }
+    else
+    {
+        
+    }
+    Headers["Content-Range"] = "bytes " + rangeHeader + '/' + contentLengthHeader;
+}
+
 void Response::rangeResponse(Config& config, Request& req)
 {
     if (!file)
@@ -308,35 +345,73 @@ void Response::rangeResponse(Config& config, Request& req)
             statusCode = 500;
             generateRes(config);
             return ;
-        } 
+        }
     }
-    char buff[150];
+    std::string contentLengthHeader = Headers["Content-Length"];
+    size_t length = req.strToDecimal(contentLengthHeader);
     std::string statusCodeStr;
+    char rangeContentLength[150];
+    char buff[150];
+
     sprintf(buff, "%d", statusCode);
     statusCodeStr = buff;
-    statusMssg += statusCodeStr + " " + resStatus[statusCode];
+    statusMssg += statusCodeStr + " " + resStatus[statusCode] + "\r\n";
     std::string range = req.getHeaders()["range"];
     size_t i = range.find("=");
     if (i == std::string::npos)
         return ;
     range.replace(i, 1, " ");
-    if (getHeader("Content-Type") == "video/mp4"
-            || getHeader("Content-Type") == "audio/mpeg")
+    std::string rangeNumber = range.substr(i + 1, range.size() - i);
+
+    std::vector<std::string>rangeNumbers = Request::split(rangeNumber, 0, '-');
+    size_t rangeStartNbr = req.strToDecimal(rangeNumbers[0]);
+    size_t rangeEndNbr = req.strToDecimal(rangeNumbers[1]);
+
+    if (((rangeNumbers[0].length() && !Parser::isNumber(rangeNumbers[0])))
+        || (rangeNumbers[1].length() && !Parser::isNumber(rangeNumbers[1])))
+        return rangeResponseFail(config, req);
+
+    if (rangeNumbers[0].length() && rangeNumbers[1].length())
+    {
+        makeContentRangeHeader(req, rangeNumbers, rangeNumber,
+                contentLengthHeader, rangeEndNbr);
+        if (rangeStartNbr > rangeEndNbr)
+            return rangeResponseFail(config, req);
+        sprintf(rangeContentLength, "%ld", (rangeEndNbr - rangeStartNbr) + 1);
+        setHeader("Content-Length", rangeContentLength);
+    }
+    else
     {
         char buff2[150];
-        size_t length = req.strToDecimal(Headers["Content-Length"]);
         sprintf(buff2, "%ld", length - 1);
-        Headers["Content-Range"] = range + buff2 + '/' + Headers["Content-Length"]; // construct the header content-range with the corresponding values
-        std::string rangeNumber = range.substr(i, range.size() - i);
-        long long rangeStart = req.strToDecimal(rangeNumber);
-        file->seekg(rangeStart);  //this is where we start sending the video content
-        size_t len = req.strToDecimal(Headers["Content-Length"]);
-        char rangeContentLength[150];
-        sprintf(rangeContentLength, "%lld", len - rangeStart);
+        if (rangeEndNbr > length - 1)
+            rangeEndNbr = length - 1;
+        if (!isdigit(rangeNumber[0]))
+            rangeNumber.erase(0, 1);
+        if (!isdigit(rangeNumber[rangeNumber.length() - 1]))
+            rangeNumber.erase(rangeNumber.length() - 1, 1);
+
+        std::cout << "start " << rangeStartNbr << std::endl;
+        std::cout << "end " << rangeEndNbr << std::endl;
+        
+        std::cout << "range number -> " << rangeNumber << std::endl;
+        Headers["Content-Range"] = "bytes " + rangeNumber + '-' + buff2 + '/' + contentLengthHeader;
+        std::cout <<"content range -> "<< Headers["Content-Range"]<< std::endl;;
+        if (!rangeNumbers[0].length())
+        { 
+            sprintf(rangeContentLength, "%ld", rangeEndNbr);
+            rangeStartNbr = length - rangeEndNbr;
+        }
+        else if (!rangeNumbers[1].length())
+            sprintf(rangeContentLength, "%ld", length - rangeStartNbr);
+
+        if (rangeStartNbr >= length)
+            return rangeResponseFail(config, req);
         setHeader("Content-Length", rangeContentLength);
-        Headers["Date"] = getDate();
-        Headers["Last-Modified"] = lastModified; 
     }
+    file->seekg(rangeStartNbr);  //this is where we start sending the video content
+    Headers["Date"] = getDate();
+    Headers["Last-Modified"] = lastModified;
 }
 
 void Response::checkForFileExtension(std::string extension)
@@ -385,28 +460,33 @@ void Response::handleCgiScript(Config& config, std::string& fileName)
     std::cout << "handle cgi script!!\n";
     struct stat st;
     std::string cgiScriptExtension;
+    std::string serverRoot = config.getClients()[clientFd].getServer().getRoot();
     size_t index = 0;
 
     cgiScript = 1;
-    std::vector<Location>::iterator it = config.getClients()[clientFd].getServer().getLocations().begin();
-    while(it != config.getClients()[clientFd].getServer().getLocations().end())
+    
+    
+    std::string cgi_dir = serverRoot + config.getClients()[clientFd].getServer().getCgiDir();
+    if (*cgi_dir.rbegin() == '/')
+        cgi_dir.erase(cgi_dir.length() - 1, 1);
+    std::cout << "cgi dir -> " <<cgi_dir<< std::endl;
+    if (!stat(cgi_dir.c_str(), &st))
     {
-        if ((it->getURI() == "/cgi-bin/"))
+        if (!(st.st_mode & S_IFDIR))
         {
-            std::vector<std::string>::iterator extensionIt = it->getCgiExt().begin();
-            while(extensionIt != it->getCgiExt().end())
-            {
-                std::cout << "extension in map -> " << *extensionIt<< std::endl;
-                
-                index = fileName.find(*extensionIt);
-                if (index != std::string::npos) {
-                    cgiScriptExtension = *extensionIt;
-                    break;
-                }
-                extensionIt++;
-            }
+            statusCode = 500;
+            return ;
         }
-        it++;
+    }
+    std::vector<std::string>::iterator extensionIt = config.getClients()[clientFd].getServer().getCgiExt().begin();
+    while(extensionIt != config.getClients()[clientFd].getServer().getCgiExt().end())
+    {
+        index = fileName.find(*extensionIt);
+        if (index != std::string::npos) {
+            cgiScriptExtension = *extensionIt;
+            break;
+        }
+        extensionIt++;
     }
     if (!cgiScriptExtension.length())
     {
@@ -417,20 +497,24 @@ void Response::handleCgiScript(Config& config, std::string& fileName)
     std::string scriptPath = fileName.substr(0, index + cgiScriptExtension.length());
     if (!stat(scriptPath.c_str(), &st))
         statusCode = 200;
-    else {
+    else if (errno == EACCES)
+        statusCode = 403;
+    else
         statusCode = 404;
+    if (statusCode != 200)
         return ;
-    }
     config.getClients()[clientFd].getCGI().setscriptFilePath(scriptPath);
     std::string pathInfo = fileName.substr(index + cgiScriptExtension.length());
     config.getClients()[clientFd].getCGI().setPathInfo(pathInfo);
 }
 
+//remove last / bcz /assets/main.py/ is not found for me but its same as /assets/main.py
 void Response::searchForFile(Config& config, Request& req)
 {
     struct stat st;
     std::string fileName;
     std::string serverRoot = config.getClients()[clientFd].getServer().getRoot();
+    std::string cgiDir = config.getClients()[clientFd].getServer().getCgiDir();
 
     if (fileName == "/")
         fileName = serverRoot;
@@ -443,10 +527,12 @@ void Response::searchForFile(Config& config, Request& req)
 
     req.setPath(req.urlDecode(req.getPath()));
     fileName = req.urlDecode(fileName); 
+    if (*cgiDir.rbegin() != '/')
+        cgiDir += '/';
 
-    std::cout << "file request -> " << fileName << std::endl;
-
-    if (!strncmp(req.getPath().c_str(), "/cgi-bin/", 9))
+    std::cout << "req -> " <<  fileName << std::endl;
+    
+    if (!strncmp(req.getPath().c_str(), cgiDir.c_str(), cgiDir.length()))
         return (handleCgiScript(config, fileName));
     if (!stat(fileName.c_str(), &st))
     {
@@ -463,6 +549,7 @@ void Response::searchForFile(Config& config, Request& req)
             {
                 statusCode = 206;
                 filePath = fileName;
+                lastModified = getDate(&st.st_mtime);
                 sprintf(contentLengthHeader, "%ld", st.st_size);
                 setHeader("Content-Length", contentLengthHeader);
                 checkForFileExtension(fileName);
