@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Response.hpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
+/*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/14 16:55:34 by maglagal          #+#    #+#             */
-/*   Updated: 2025/03/09 14:21:07 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/03/09 15:44:02 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -120,7 +120,7 @@ class Response {
         void                redirectionResponse(Request req, Config& config);
         void                rangeResponse(Config& config, Request& req);
         void                sendResponse(Config& config, Request& req, int fd);
-        int                 sendBodyBytes(int epoll_fd);
+        int                 sendBodyBytes(Config& config, int epoll_fd);
         void                searchForFile(Config& config, Request& Req);
         std::string         urlEncode(std::string path);
 };

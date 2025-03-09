@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   DirectoryResolver.cpp                              :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
+/*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/09 09:49:11 by maglagal          #+#    #+#             */
-/*   Updated: 2025/03/09 15:14:33 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/03/09 21:21:47 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -47,7 +47,6 @@ void    Response::showIndexFile(std::string indexFilePath, Request& req)
     else
         statusCode = 200;
     file = new(std::nothrow) std::ifstream(indexFilePath.c_str());
-    std::cout << "file opened!!\n";
     if (!file)
     {
         clearResponse();
@@ -92,25 +91,24 @@ void Response::listDirectories(Request& req, std::string dirAsbolute)
 
     statusCode = 200;
     Headers["Content-Type"] = "text/html";
-    std::cout << "dir -> " << dirAsbolute << std::endl;
     DIR *dir = opendir(dirAsbolute.c_str());
     std::string lDirectoriesPage = "<!DOCTYPE html>"
                 "<html>"
                 "<head>"
-                    "<style>p {text-align:left;font-size: small} h1 {text-align: left; font-size: large}</style>"
+                    "<style>p {text-align:left;font-size:medium;padding-left:12px;;padding-right:12px;} h1 {text-align: left;padding-left:12px;padding-right:12px;}</style>"
                 "</head>"
                 "<body>"
-                "<h1>Webserv</h1>"
-                "<hr></hr>";
+                "<h1>Index Of ";
     
+    lDirectoriesPage += req.getPath() + "</h1>" + "<hr></hr>";
     while ((stDir = readdir(dir)))
     {
         direntName = stDir->d_name;
-        if (direntName != ".")
+        if (direntName != "." && (*direntName.begin() != '.' || direntName == ".."))
         {
             direntPath = req.getPath() + direntName;
             EncodedPath = urlEncode(direntPath);
-            std::string absoluteDirentPath = currentDirAbsolutePath + direntPath;
+            std::string absoluteDirentPath = dirAsbolute + direntPath;
             if (!stat(absoluteDirentPath.c_str(), &st) && st.st_mode & S_IFDIR)
             {
                 EncodedPath += "/";
@@ -161,8 +159,6 @@ void Response::listingOrIndex(Config& config, Request& req)
         else
             pathMatch = uri;
 
-        std::cout << "location index -> " << locationIndex << std::endl;
-        std::cout << "location first -> " << *locationIndex.rbegin() << std::endl;
         if (*locationIndex.begin() == '/')
             indexFile = serverRoot + locationIndex;
         else
@@ -174,7 +170,6 @@ void Response::listingOrIndex(Config& config, Request& req)
   else 
         indexFile = serverRoot + req.getPath() + config.getClients()[clientFd].getServer().getIndex();
 
-  std::cout << "index file -> " << indexFile << std::endl;
   if (locationMatch)
   {
       if (locationMatch->getAutoindex())
@@ -241,7 +236,6 @@ int    Response::checkDefinedErrorPage(Config& config, std::string rootPath, std
             }
             else
             {
-                std::cout << "error page -> " << it->second << std::endl;
               returnDefinedPage(config, it->first, rootPath, it->second);
               return (1);
             }
@@ -281,8 +275,9 @@ void    Response::returnDefinedPage(Config& config, int errorStatus, std::string
             rootPath.erase(0, 1);
         errorPageFile = rootPath + errorPageFile;
     }
+    std::cout << "error page file ->  "<<errorPageFile << std::endl;
     int res = stat(errorPageFile.c_str(), &st);
-    if (locationMatch)
+    if (!res && locationMatch)
     {
         body.clear();
         if (locationMatch->getRedirect().size() > 0)
@@ -293,8 +288,10 @@ void    Response::returnDefinedPage(Config& config, int errorStatus, std::string
                 || locationMatch->getRedirect().begin()->first == 308)
                 statusCode = locationMatch->getRedirect().begin()->first;
             else
+            {    
                 statusCode = errorStatus;
-            body = locationMatch->getRedirect().begin()->second;
+                body = locationMatch->getRedirect().begin()->second;
+            }
             checkForFileExtension(relativeErrorPage);
             redirectFlag = 1;
             return ;

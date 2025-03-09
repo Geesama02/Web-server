@@ -6,7 +6,7 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/22 11:25:38 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/03/08 17:42:19 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/03/09 16:58:32 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,39 +21,40 @@ std::map<int, Client>&  Config::getClients() { return Clients; }
 // Setters
 void    Config::addServer(Server new_server) { Servers.push_back(new_server); }
 
-void    Config::checkCgiScriptExecution(int fd) {
+void    Config::checkCgiScriptExecution()
+{
     int status;
     std::map<int, Client>::iterator it = Clients.begin();
     while (it != Clients.end())
     {
-        if (it->first == fd && Clients[fd].getCGI().getCpid() != 0)
+        if (it->second.getCGI().getCpid() != 0)
         {
-            pid_t child = waitpid(Clients[fd].getCGI().getCpid(), &status, WNOHANG);
+            pid_t child = waitpid(it->second.getCGI().getCpid(), &status, WNOHANG);
             if (child > 0)
             {
                 if (WEXITSTATUS(status))
                 {
-                    Clients[fd].getCGI().setChildStatus(WEXITSTATUS(status));
-                    Clients[fd].getCGI().clearCGI();
-                    Clients[fd].getResponse().clearResponse();
-                    Clients[fd].getResponse().setStatusCode(502);
-                    Clients[fd].getResponse().sendResponse(*this, Clients[fd].getRequest(), fd);
+                    it->second.getCGI().setChildStatus(WEXITSTATUS(status));
+                    it->second.getCGI().clearCGI();
+                    it->second.getResponse().clearResponse();
+                    it->second.getResponse().setStatusCode(502);
+                    it->second.getResponse().sendResponse(*this, it->second.getRequest(), it->first);
                 }
                 else
                 { 
-                    if (Clients[fd].getCGI().read_cgi_response(*this, fd) == -1) //error in cgi script
+                    if (it->second.getCGI().read_cgi_response(*this, it->first) == -1) //error in cgi script
                     {
-                        Clients[fd].getCGI().clearCGI();
-                        Clients[fd].getResponse().clearResponse();
-                        Clients[fd].getResponse().setStatusCode(502);
-                        Clients[fd].getResponse().sendResponse(*this, Clients[fd].getRequest(), fd);
-                        closeConnection(fd);
+                        it->second.getCGI().clearCGI();
+                        it->second.getResponse().clearResponse();
+                        it->second.getResponse().setStatusCode(502);
+                        it->second.getResponse().sendResponse(*this, it->second.getRequest(), it->first);
+                        closeConnection(it->first);
                         return ;
                     }
-                    Clients[fd].getCGI().sendServerResponse(fd, *this);
-                    Clients[fd].getCGI().clearCGI();
-                    if (Clients[fd].getRequest().getFileName().length() > 0)
-                        remove(Clients[fd].getRequest().getFileName().c_str());
+                    it->second.getCGI().sendServerResponse(it->first, *this);
+                    it->second.getCGI().clearCGI();
+                    if (it->second.getRequest().getFileName().length() > 0)
+                        remove(it->second.getRequest().getFileName().c_str());
                 }
             }
         }
@@ -61,26 +62,22 @@ void    Config::checkCgiScriptExecution(int fd) {
     }
 }
 
-void    Config::checkScriptTimeOut(int fd)
+void    Config::checkScriptTimeOut()
 {
     std::map<int, Client>::iterator it = Clients.begin();
     while (it != Clients.end())
     {
-        if (it->first == fd)
+        if (it->second.getCGI().getCpid() != 0 && timeNow() - it->second.getCGI().getStartTime() >= 10)
         {
-            if (Clients[fd].getCGI().getCpid() != 0 && timeNow() - Clients[fd].getCGI().getStartTime() > 10)
-            {
-                kill(Clients[fd].getCGI().getCpid(), SIGKILL);
-                waitpid(Clients[fd].getCGI().getCpid(), NULL, 0);
-                close(Clients[fd].getCGI().getRpipe());
-                Clients[fd].getCGI().clearCGI();
-                Clients[fd].getResponse().clearResponse();
-                Clients[fd].getResponse().setStatusCode(504);
-                Clients[fd].getResponse().sendResponse(*this, Clients[fd].getRequest(), fd);
-                if (Clients[fd].getRequest().getFileName().length() > 0)
-                    remove(Clients[fd].getRequest().getFileName().c_str());
-                closeConnection(fd);
-            }
+            kill(it->second.getCGI().getCpid(), SIGKILL);
+            waitpid(it->second.getCGI().getCpid(), NULL, 0);
+            close(it->second.getCGI().getRpipe());
+            it->second.getCGI().clearCGI();
+            it->second.getResponse().clearResponse();
+            it->second.getResponse().setStatusCode(504);
+            it->second.getResponse().sendResponse(*this, it->second.getRequest(), it->first);
+            if (it->second.getRequest().getFileName().length() > 0)
+                remove(it->second.getRequest().getFileName().c_str());
         }
         it++;
     }
@@ -99,7 +96,7 @@ int Config::startServers() {
     epoll_event events[MAX_EVENTS]; // max events(ready to read or write is an event)
     while (1) {
         // monitor if any socket ready for read or write
-        int fds = epoll_wait(epoll_fd, events, MAX_EVENTS, -1);
+        int fds = epoll_wait(epoll_fd, events, MAX_EVENTS, 5000);
         if (fds < 0) {
             std::cerr << "Cannot wait on sockets!" << std::endl;
             close(epoll_fd);
@@ -123,7 +120,7 @@ int Config::startServers() {
             }
             else if (events[i].events & EPOLLOUT)
             {
-                if (Clients[events[i].data.fd].getResponse().sendBodyBytes(epoll_fd) == -1)
+                if (Clients[events[i].data.fd].getResponse().sendBodyBytes(*this, epoll_fd) == -1)
                 {
                     Clients[events[i].data.fd].getResponse().clearResponse();
                     Clients[events[i].data.fd].getResponse().setStatusCode(500);
@@ -131,12 +128,9 @@ int Config::startServers() {
                     closeConnection(events[i].data.fd);
                 }
             }
-            if (events[i].data.fd != 0)
-            {
-                checkCgiScriptExecution(events[i].data.fd);
-                checkScriptTimeOut(events[i].data.fd);
-            }
         }
+        checkCgiScriptExecution();
+        checkScriptTimeOut();
         monitorTimeout();
     }
     close(epoll_fd);
@@ -152,7 +146,7 @@ int Config::monitorTimeout() {
         {
             epoll_ctl(epoll_fd, EPOLL_CTL_DEL, it->first, NULL);
             close(it->first);
-            std::cout << "get KICKED\n";
+            std::cout << "get KICKED -> "<<it->first<<std::endl;
             std::map<int, Client>::iterator tmp = it;
             it++;
             Clients.erase(tmp->first);

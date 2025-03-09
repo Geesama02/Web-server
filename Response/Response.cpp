@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Response.cpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
+/*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/14 17:03:53 by maglagal          #+#    #+#             */
-/*   Updated: 2025/03/09 15:31:57 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/03/09 21:46:47 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -146,7 +146,9 @@ void    Response::clearResponse()
     locationMatch = NULL;
     body.clear();
     finalRes.clear();
-    filePath.erase();
+    filePath.clear();
+    reqResolved.clear();
+    locationHeader.clear();
     if (file)
     {
         file->close();
@@ -275,7 +277,6 @@ void    Response::redirectionResponse(Request req, Config& config)
             locationHeader = "http://" + host + req.getPath() + "/";
         else if (statusCode == 301 && locationHeader.length() > 0)
             locationHeader = "http://" + host + locationHeader + "/";
-        std::cout << "location header -> " << locationHeader << std::endl;
         setHeader("Location", locationHeader);
     }
     else
@@ -466,7 +467,6 @@ void Response::verifyDirectorySlash(std::string fileName, Request& req)
 
 void Response::handleCgiScript(Config& config, std::string& fileName)
 {
-    std::cout << "handle cgi script!!\n";
     struct stat st;
     std::string cgiScriptExtension;
     std::string serverRoot = config.getClients()[clientFd].getServer().getRoot();
@@ -478,7 +478,6 @@ void Response::handleCgiScript(Config& config, std::string& fileName)
     std::string cgi_dir = serverRoot + config.getClients()[clientFd].getServer().getCgiDir();
     if (*cgi_dir.rbegin() == '/')
         cgi_dir.erase(cgi_dir.length() - 1, 1);
-    std::cout << "cgi dir -> " <<cgi_dir<< std::endl;
     if (!stat(cgi_dir.c_str(), &st))
     {
         if (!(st.st_mode & S_IFDIR))
@@ -542,10 +541,10 @@ void Response::searchForFile(Config& config, Request& req)
     if (*cgiDir.rbegin() != '/')
         cgiDir += '/';
 
-    std::cout << "req -> " <<  fileName << std::endl;
     reqResolved = fileName;
     if (!strncmp(req.getPath().c_str(), cgiDir.c_str(), cgiDir.length()))
         return (handleCgiScript(config, fileName));
+    std::cout << "search for -> " << reqResolved << std::endl;
     if (!stat(fileName.c_str(), &st))
     {
         if (st.st_mode & S_IFDIR || (!(st.st_mode & S_IRUSR)))
@@ -586,33 +585,25 @@ void Response::searchForFile(Config& config, Request& req)
         statusCode = 404;
 }
 
-int Response::sendBodyBytes(int epoll_fd)
+int Response::sendBodyBytes(Config& config, int epoll_fd)
 {
-    // int bytesR = 0;
     if (file && bytesToSend)
     {
-        // if (statusCode == 200) {
-        //     std::cout << "client -> " << clientFd << std::endl;
-        //     std::cout << "bytes sent -> " << bytesToSend << std::endl;
-        //     exit(1);
-        // }
-        char buff[8096];
+        char buff[8192];
         // if marouan updates, update timeout of client here
-        if (bytesToSend - bytesSent >= 8096)
-            file->read(buff, 8096);
+        config.getClients()[clientFd].setTimeout(Config::timeNow());
+        if (bytesToSend - bytesSent >= 8192)
+            file->read(buff, 8192);
         else
             file->read(buff, bytesToSend - bytesSent);
         bytesSent += file->gcount();
         if (file->eof() || (bytesSent == bytesToSend)) 
         {
-            // bytesR = file->gcount();
             if (send(clientFd, buff, file->gcount(), 0) == -1)
             {
                 std::cerr << "Error : Send Fail" << std::endl;
                 return (-1);
             }
-            std::cout << "bytes to send -> " <<bytesToSend<< std::endl;
-            std::cout << "bytes sent -> " << bytesSent << std::endl; 
             file->close();
             delete file;
             file = NULL;
@@ -625,7 +616,6 @@ int Response::sendBodyBytes(int epoll_fd)
             }
             return (0);
         }
-        // bytesR = file->gcount();
         if (send(clientFd, buff, file->gcount(), 0) == -1)
         {
             std::cerr << "Error : Send Fail" << std::endl;
@@ -685,8 +675,8 @@ void Response::sendResponse(Config& config, Request& req, int fd)
         status = config.getClients()[fd].getCGI().execute_cgi_script(config, *this, clientFd, req);
         if (fd != 0)
         {
-            config.checkCgiScriptExecution(fd);
-            config.checkScriptTimeOut(fd);
+            config.checkCgiScriptExecution();
+            config.checkScriptTimeOut();
         }
         if (!config.getClients()[fd].getCGI().getChildStatus() && !status)
         return ;
@@ -700,7 +690,7 @@ void Response::sendResponse(Config& config, Request& req, int fd)
     // add body to final response
     finalRes += "\r\n";
     if (!body.empty())
-    finalRes += body;
+        finalRes += body;
     
     send(clientFd, finalRes.c_str(), finalRes.length(), 0);
     if (statusCode == 400 || statusCode >= 500)

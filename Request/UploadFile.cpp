@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   UploadFile.cpp                                     :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
+/*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/03 11:07:50 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/02/25 15:58:40 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/03/09 16:29:26 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -56,7 +56,6 @@ void UploadFile::newFilename() {
 int UploadFile::openFile() {
     newFilename();
     filename = path + filename;
-    std::cout << "file allocated!!" << std::endl;
     fd = new(std::nothrow) std::ofstream(filename.c_str());
     if (!fd || fd->is_open()) {
         // std::cout << "file created for " << filename << std::endl;
@@ -72,7 +71,6 @@ int UploadFile::openFile() {
 
 // Destructor
 UploadFile::~UploadFile() {
-    std::cout << "Destroyed file -> |" << filename << "|\n";
     if (fd && fd->is_open()) {
         if (!state) { // delete file if connection closed before full file uploaded
             int status = remove(filename.c_str());

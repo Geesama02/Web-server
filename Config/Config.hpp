@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Config.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
+/*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/21 15:07:06 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/03/08 16:38:38 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/03/09 17:09:02 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,7 +19,7 @@
 
 #include "../Client/Client.hpp"
 // #include "../Request/Request.hpp"
-#define MAX_EVENTS 10
+#define MAX_EVENTS 1024
 
 class Request;
 class Response;
@@ -38,8 +38,8 @@ class Config {
         void addServer(Server new_server);
 
         // Functions
-        void    checkCgiScriptExecution(int fd);
-        void    checkScriptTimeOut(int fd);
+        void    checkCgiScriptExecution();
+        void    checkScriptTimeOut();
         int     startServers();
         int     monitorServers(epoll_event& ev);
         int     isServerFd(int fd);
