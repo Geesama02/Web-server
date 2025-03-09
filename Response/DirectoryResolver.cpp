@@ -3,7 +3,7 @@
 /*                                                        :::      ::::::::   */
 /*   DirectoryResolver.cpp                              :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
+/*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/09 09:49:11 by maglagal          #+#    #+#             */
 /*   Updated: 2025/03/09 15:14:33 by maglagal         ###   ########.fr       */

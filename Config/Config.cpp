@@ -123,7 +123,7 @@ int Config::startServers() {
             }
             else if (events[i].events & EPOLLOUT)
             {
-                if (Clients[events[i].data.fd].getResponse().sendBodyBytes() == -1)
+                if (Clients[events[i].data.fd].getResponse().sendBodyBytes(epoll_fd) == -1)
                 {
                     Clients[events[i].data.fd].getResponse().clearResponse();
                     Clients[events[i].data.fd].getResponse().setStatusCode(500);
@@ -229,7 +229,7 @@ int Config::acceptConnection(int fd, epoll_event& ev)
         }
         char clientIP[INET_ADDRSTRLEN];
         inet_ntop(AF_INET, &clientAddress.sin_addr, clientIP, INET_ADDRSTRLEN);
-        ev.events = EPOLLIN | EPOLLOUT;
+        ev.events = EPOLLIN;
         ev.data.fd = new_client;
         fcntl(new_client, F_SETFL, O_NONBLOCK);
         Server server = getServer(fd);
@@ -259,6 +259,19 @@ void Config::closeConnection(int fd)
     std::cout << "closed client : " << fd<<std::endl;
     Clients.erase(fd);
     close(fd);
+}
+
+void Config::checkFileSend(int fd) {
+    if (Clients[fd].getResponse().getFile()) {
+        epoll_event ev;
+        ev.events = EPOLLIN | EPOLLOUT;
+        ev.data.fd = fd;
+        if (epoll_ctl(epoll_fd, EPOLL_CTL_MOD, fd, &ev) != 0) {
+            std::cerr << "epoll_ctl error: " << strerror(errno) << std::endl;
+            Clients.erase(fd);
+            close(fd);
+        }
+    }
 }
 
 void Config::printLog(int fd)
@@ -297,6 +310,7 @@ int Config::handleClient(int fd) {
                 Clients[fd].getResponse().searchForFile(*this, Clients[fd].getRequest());
         }
         Clients[fd].getResponse().sendResponse(*this, Clients[fd].getRequest(), fd);
+        checkFileSend(fd);
     }
     return (0);
 }
