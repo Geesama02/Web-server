@@ -6,7 +6,7 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/09 09:49:11 by maglagal          #+#    #+#             */
-/*   Updated: 2025/03/07 21:55:04 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/03/09 15:14:33 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -54,6 +54,8 @@ void    Response::showIndexFile(std::string indexFilePath, Request& req)
         statusCode = 500;
         return ;
     }
+    bytesToSend = req.strToDecimal(Headers["Content-Length"]);
+    Headers["Accept-Ranges"] = "bytes";
     // std::string buff;
     // while (std::getline(*file, buff))
     //     body += buff;
@@ -79,12 +81,11 @@ std::string Response::urlEncode(std::string path)
     return (res);
 }
 
-void Response::listDirectories(std::string reqPath)
+void Response::listDirectories(Request& req, std::string dirAsbolute)
 {
     struct dirent *stDir;
     struct stat   st;
     std::string row;
-    std::string dirAsbolute = currentDirAbsolutePath + reqPath;
     std::string direntName;
     std::string direntPath;
     std::string EncodedPath;
@@ -107,8 +108,8 @@ void Response::listDirectories(std::string reqPath)
         direntName = stDir->d_name;
         if (direntName != ".")
         {
-            direntPath = reqPath + direntName;
-            EncodedPath = urlEncode(reqPath + direntName);
+            direntPath = req.getPath() + direntName;
+            EncodedPath = urlEncode(direntPath);
             std::string absoluteDirentPath = currentDirAbsolutePath + direntPath;
             if (!stat(absoluteDirentPath.c_str(), &st) && st.st_mode & S_IFDIR)
             {
@@ -147,22 +148,33 @@ void Response::listingOrIndex(Config& config, Request& req)
   std::string root;
   std::string pathMatch;
   std::string serverRoot;
+  std::string locationIndex;
 
   serverRoot = config.getClients()[clientFd].getServer().getRoot();
   if (locationMatch)
   {
-      uri = locationMatch->getURI();
-      root = locationMatch->getRoot();
-      if (root != "/")
-          pathMatch = root + uri;
-      else
-          pathMatch = uri;
-      
-      indexFile = pathMatch + locationMatch->getIndex();
+        locationIndex = locationMatch->getIndex();
+        uri = locationMatch->getURI();
+        root = locationMatch->getRoot();
+        if (root != "/")
+            pathMatch = root + uri;
+        else
+            pathMatch = uri;
+
+        std::cout << "location index -> " << locationIndex << std::endl;
+        std::cout << "location first -> " << *locationIndex.rbegin() << std::endl;
+        if (*locationIndex.begin() == '/')
+            indexFile = serverRoot + locationIndex;
+        else
+        { 
+            locationIndex = "/" + locationIndex;
+            indexFile = pathMatch + locationIndex;
+        }
   }
   else 
-      indexFile = serverRoot + req.getPath() + config.getClients()[clientFd].getServer().getIndex();
+        indexFile = serverRoot + req.getPath() + config.getClients()[clientFd].getServer().getIndex();
 
+  std::cout << "index file -> " << indexFile << std::endl;
   if (locationMatch)
   {
       if (locationMatch->getAutoindex())
@@ -175,7 +187,7 @@ void Response::listingOrIndex(Config& config, Request& req)
             showIndexFile(indexFile, req);
           }
           else
-              listDirectories(req.getPath());
+            listDirectories(req, reqResolved);
       }
       else if (!stat(indexFile.c_str(), &st) && st.st_mode & S_IFREG)
       {
@@ -195,13 +207,13 @@ void Response::listingOrIndex(Config& config, Request& req)
           showIndexFile(indexFile, req);
       }
       else if (config.getClients()[clientFd].getServer().getAutoindex())
-        listDirectories(req.getPath());
+        listDirectories(req, reqResolved);
   }
 }
 
 void Response::checkAutoIndex(Config& config, Request& req)
 {
-    searchLocationsForMatch(config, req); 
+    searchLocationsForMatch(config, req);
     listingOrIndex(config, req);
 }
 
@@ -229,6 +241,7 @@ int    Response::checkDefinedErrorPage(Config& config, std::string rootPath, std
             }
             else
             {
+                std::cout << "error page -> " << it->second << std::endl;
               returnDefinedPage(config, it->first, rootPath, it->second);
               return (1);
             }
@@ -259,14 +272,16 @@ void    Response::returnDefinedPage(Config& config, int errorStatus, std::string
     struct stat st;
     std::string relativeErrorPage = errorPageFile;
 
+    locationMatch = Request::getMatchedLocation(relativeErrorPage, config.getClients()[clientFd].getServer());
+    if (*errorPageFile.begin() == '/' && locationMatch)
+        rootPath = locationMatch->getRoot();
     if (rootPath != "/")
     {
         if (rootPath.rfind("/") == rootPath.length() - 1)
             rootPath.erase(0, 1);
-        errorPageFile = rootPath + errorPageFile; 
+        errorPageFile = rootPath + errorPageFile;
     }
     int res = stat(errorPageFile.c_str(), &st);
-    locationMatch = Request::getMatchedLocation(relativeErrorPage, config.getClients()[clientFd].getServer());
     if (locationMatch)
     {
         body.clear();
