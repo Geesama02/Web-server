@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/14 16:55:34 by maglagal          #+#    #+#             */
-/*   Updated: 2025/03/08 15:45:59 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/03/09 14:21:07 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -54,11 +54,14 @@ class Response {
         std::string                        body;
         std::string                        locationHeader;
         std::string                        lastModified;
+        std::string                        reqResolved;
         Location*                          locationMatch;
         int                                FileType;
         int                                redirectFlag;
         char                               contentLengthHeader[150];
         int                                cgiScript;
+        size_t                             bytesToSend;
+        size_t                             bytesSent;
 
     public:
         static std::map<std::string, std::string> ContentTypeHeader;
@@ -104,7 +107,7 @@ class Response {
         void                checkAutoIndex(Config& config, Request& req);
         void                checkErrorPages(Config& config, Request& req);
         void                searchLocationsForMatch(Config& config, Request& req);
-        void                listDirectories(std::string dirName);
+        void                listDirectories(Request& req, std::string dirName);
         void                showIndexFile(std::string indexFilePath, Request& req);
         int                 comparingReqWithLocation(std::string locationPath, std::string reqPath);
         void                verifyDirectorySlash(std::string fileName, Request& req);

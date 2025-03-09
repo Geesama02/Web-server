@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/14 17:03:53 by maglagal          #+#    #+#             */
-/*   Updated: 2025/03/08 16:46:23 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/03/09 15:31:57 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,6 +26,8 @@ Response::Response()
     clientFd = -1;
     FileType = 0;
     redirectFlag = 0;
+    bytesToSend = 0;
+    bytesSent = 0;
     std::memset(contentLengthHeader, '\0', sizeof(contentLengthHeader));
     initializeContentHeader();
     initializeStatusRes();
@@ -140,6 +142,7 @@ void    Response::clearResponse()
     statusCode = 0;
     FileType = 0;
     redirectFlag = 0;
+    bytesSent = 0;
     locationMatch = NULL;
     body.clear();
     finalRes.clear();
@@ -211,7 +214,7 @@ void Response::generateRes(Config& config)
     }
     if (!redirectFlag && statusCode == 201)
         Headers["Location"] = config.getClients()[clientFd].getRequest().getFileName();
-    if (!redirectFlag && statusCode >= 500)
+    if (statusCode >= 500 || statusCode == 400)
         Headers["Connection"] = "close";
 }
 
@@ -238,6 +241,7 @@ void Response::successResponse(Config& config)
             generateRes(config);
             return ;
         }
+        bytesToSend = config.getClients()[clientFd].getRequest().strToDecimal(Headers["Content-Length"]);
     }
     Headers["Date"] = getDate();
 }
@@ -267,7 +271,6 @@ void    Response::redirectionResponse(Request req, Config& config)
     }
     if (!redirectFlag)
     {
-        std::cout << "locationheader -> " << locationHeader << std::endl;
         if (statusCode == 301 && locationHeader.length() == 0)
             locationHeader = "http://" + host + req.getPath() + "/";
         else if (statusCode == 301 && locationHeader.length() > 0)
@@ -290,10 +293,7 @@ void    Response::redirectionResponse(Request req, Config& config)
         }
         else
             body = redirectIt->second;
-    }
-    std::cout << "redirection response!!"<< std::endl;
-    std::cout << "status code -> " << statusCode << std::endl;
-    
+    }    
     char contentLengthHeader[150];
     std::sprintf(contentLengthHeader, "%ld", body.length());
     Headers["Content-Type"] = "text/html";
@@ -373,7 +373,9 @@ void Response::rangeResponse(Config& config, Request& req)
     range.replace(i, 1, " ");
     std::string rangeNumber = range.substr(i + 1, range.size() - i);
 
-    std::vector<std::string>rangeNumbers = Request::split(rangeNumber, 0, '-');
+    std::vector<std::string> rangeNumbers = Request::split(rangeNumber, 0, '-');
+    std::string rangeStart = rangeNumbers[0];
+    std::string rangeEnd = rangeNumbers[1];
     size_t rangeStartNbr = req.strToDecimal(rangeNumbers[0]);
     size_t rangeEndNbr = req.strToDecimal(rangeNumbers[1]);
 
@@ -388,30 +390,34 @@ void Response::rangeResponse(Config& config, Request& req)
         if (rangeStartNbr > rangeEndNbr)
             return rangeResponseFail(config, req);
         sprintf(rangeContentLength, "%ld", (rangeEndNbr - rangeStartNbr) + 1);
-        setHeader("Content-Length", rangeContentLength);
     }
     else
     {
         if (rangeEndNbr > length - 1)
             rangeEndNbr = length;
+
         if (!isdigit(rangeNumber[0]))
             rangeNumber.erase(0, 1);
         if (!isdigit(rangeNumber[rangeNumber.length() - 1]))
             rangeNumber.erase(rangeNumber.length() - 1, 1);
-
+            
         makeContentRangeHeader(req, rangeNumbers, rangeNumber,
             contentLengthHeader, rangeEndNbr);
-        if (!rangeNumbers[0].length())
-        { 
+    
+        if (!rangeStart.length())
+        {
             sprintf(rangeContentLength, "%ld", rangeEndNbr);
             rangeStartNbr = length - rangeEndNbr;
         }
-        else if (!rangeNumbers[1].length())
+        else if (!rangeEnd.length())
+        {
             sprintf(rangeContentLength, "%ld", length - rangeStartNbr);
+        }
         if (rangeStartNbr >= length)
             return rangeResponseFail(config, req);
-        setHeader("Content-Length", rangeContentLength);
     }
+    Headers["Content-Length"] = rangeContentLength;
+    bytesToSend = req.strToDecimal(Headers["Content-Length"]);
     file->seekg(rangeStartNbr);  //this is where we start sending the video content
     Headers["Date"] = getDate();
     Headers["Last-Modified"] = lastModified;
@@ -516,14 +522,17 @@ void Response::searchForFile(Config& config, Request& req)
 {
     struct stat st;
     std::string fileName;
-    std::string serverRoot = config.getClients()[clientFd].getServer().getRoot();
+    std::string root = config.getClients()[clientFd].getServer().getRoot();
     std::string cgiDir = config.getClients()[clientFd].getServer().getCgiDir();
 
+    searchLocationsForMatch(config, req);
+    if (locationMatch)
+        root = locationMatch->getRoot();
     if (fileName == "/")
-        fileName = serverRoot;
-    else if (serverRoot.length() > 0 && serverRoot.rfind("/") == serverRoot.length() - 1) 
-        serverRoot.erase(serverRoot.length() - 1);
-    fileName = serverRoot + req.getPath();
+        fileName = root;
+    else if (root.length() > 0 && root.rfind("/") == root.length() - 1) 
+        root.erase(root.length() - 1);
+    fileName = root + req.getPath();
 
     //seperating filename from querystring
     checkForQueryString(fileName);
@@ -534,7 +543,7 @@ void Response::searchForFile(Config& config, Request& req)
         cgiDir += '/';
 
     std::cout << "req -> " <<  fileName << std::endl;
-    
+    reqResolved = fileName;
     if (!strncmp(req.getPath().c_str(), cgiDir.c_str(), cgiDir.length()))
         return (handleCgiScript(config, fileName));
     if (!stat(fileName.c_str(), &st))
@@ -579,20 +588,31 @@ void Response::searchForFile(Config& config, Request& req)
 
 int Response::sendBodyBytes(int epoll_fd)
 {
-    int bytesR = 0;
-    if (file)
+    // int bytesR = 0;
+    if (file && bytesToSend)
     {
-        char buff[1024];
-        // if marouan updates, update timeout of client here ---------
-        file->read(buff, 1024);
-        if (file->eof()) 
+        // if (statusCode == 200) {
+        //     std::cout << "client -> " << clientFd << std::endl;
+        //     std::cout << "bytes sent -> " << bytesToSend << std::endl;
+        //     exit(1);
+        // }
+        char buff[8096];
+        // if marouan updates, update timeout of client here
+        if (bytesToSend - bytesSent >= 8096)
+            file->read(buff, 8096);
+        else
+            file->read(buff, bytesToSend - bytesSent);
+        bytesSent += file->gcount();
+        if (file->eof() || (bytesSent == bytesToSend)) 
         {
-            bytesR = file->gcount();
-            if (send(clientFd, buff, bytesR, 0) == -1)
+            // bytesR = file->gcount();
+            if (send(clientFd, buff, file->gcount(), 0) == -1)
             {
                 std::cerr << "Error : Send Fail" << std::endl;
                 return (-1);
             }
+            std::cout << "bytes to send -> " <<bytesToSend<< std::endl;
+            std::cout << "bytes sent -> " << bytesSent << std::endl; 
             file->close();
             delete file;
             file = NULL;
@@ -605,8 +625,8 @@ int Response::sendBodyBytes(int epoll_fd)
             }
             return (0);
         }
-        bytesR = file->gcount();
-        if (send(clientFd, buff, bytesR, 0) == -1)
+        // bytesR = file->gcount();
+        if (send(clientFd, buff, file->gcount(), 0) == -1)
         {
             std::cerr << "Error : Send Fail" << std::endl;
             return (-1);
@@ -669,19 +689,20 @@ void Response::sendResponse(Config& config, Request& req, int fd)
             config.checkScriptTimeOut(fd);
         }
         if (!config.getClients()[fd].getCGI().getChildStatus() && !status)
-            return ;
+        return ;
     }
     fillBody(config, req);
     finalRes += statusMssg;
-
+    
     //add headers to final response
     addHeadersToResponse();
-
+    
     // add body to final response
     finalRes += "\r\n";
     if (!body.empty())
-        finalRes += body;
+    finalRes += body;
+    
     send(clientFd, finalRes.c_str(), finalRes.length(), 0);
-    if (statusCode >= 400)
+    if (statusCode == 400 || statusCode >= 500)
         config.closeConnection(fd);
 }
