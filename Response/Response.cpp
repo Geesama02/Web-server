@@ -6,7 +6,7 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/14 17:03:53 by maglagal          #+#    #+#             */
-/*   Updated: 2025/03/10 22:04:44 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/03/11 17:50:20 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -134,6 +134,7 @@ void    Response::clearResponse()
     cgiScript = 0;
     Headers.clear();
     statusMssg.clear();
+    savedRedirects.clear();
     Headers["Connection"] = "keep-alive";
     Headers["Content-Length"] = "0";
     Headers["Server"] = "Webserv";

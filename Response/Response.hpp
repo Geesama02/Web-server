@@ -6,7 +6,7 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/14 16:55:34 by maglagal          #+#    #+#             */
-/*   Updated: 2025/03/10 22:08:45 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/03/11 17:46:00 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -42,6 +42,7 @@ class Response {
     private:
         std::map<std::string, std::string> Headers;
         std::map<int, std::string>         resStatus;
+        std::vector<std::string>           savedRedirects;
         std::ifstream                      *file;
         std::ifstream                      *errorPage;
         int                                clientFd;
@@ -88,6 +89,10 @@ class Response {
         void            setFile(std::ifstream *nFile);
         
         //other
+        void                listOrIndex(Config &config, Request& req, std::string& indexFile);
+        void                updateIndexFilePath(Config& config, std::string& indexFile, std::string& locationIndex, std::string& pathMatch);
+        void                IndexFileLogic(Config& config, Request& req);
+        void                verifyInfiniteRedirections(std::string toCheck);
         void                makeContentRangeHeader(Request& req, std::vector<std::string>& rangeNumbers, std::string& rangeNumber, std::string& contentLengthHeader, size_t& rangeEndNbr);
         void                rangeResponseFail(Config& config, Request& req);
         void                handleCgiScript(Config& config, std::string& fileName);
