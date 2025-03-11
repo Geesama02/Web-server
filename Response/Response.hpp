@@ -6,7 +6,7 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/14 16:55:34 by maglagal          #+#    #+#             */
-/*   Updated: 2025/03/11 17:46:00 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/03/11 20:25:57 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -89,6 +89,7 @@ class Response {
         void            setFile(std::ifstream *nFile);
         
         //other
+        void                indexFileWithoutSlashes(Config& config, std::string& indexFile, std::string& pathMatch, std::string& locationIndex, Location* locationIndexMatch);
         void                listOrIndex(Config &config, Request& req, std::string& indexFile);
         void                updateIndexFilePath(Config& config, std::string& indexFile, std::string& locationIndex, std::string& pathMatch);
         void                IndexFileLogic(Config& config, Request& req);
