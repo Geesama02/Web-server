@@ -6,7 +6,7 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/09 09:49:11 by maglagal          #+#    #+#             */
-/*   Updated: 2025/03/09 21:21:47 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/03/11 13:51:24 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -37,9 +37,22 @@ int    Response::comparingReqWithLocation(std::string locationPath, std::string 
     return (0);
 }
 
-void    Response::showIndexFile(std::string indexFilePath, Request& req)
+void    Response::showIndexFile(Config& config, std::string indexFilePath, Request& req)
 {
     std::string extensionFile = indexFilePath;
+    // std::string cgiDir = config.getClients()[clientFd].getServer().getCgiDir();
+    // if (*cgiDir.rbegin() != '/')
+    //     cgiDir += '/'; // need to fix
+    // if (!strncmp(req.getPath().c_str(), cgiDir.c_str(), cgiDir.length()))
+    //     return (handleCgiScript(config, reqResolved));
+    if (*indexFilePath.begin() == '/')
+    {
+        
+    }
+    else
+    {
+        
+    }
     filePath = indexFilePath;
     checkForFileExtension(extensionFile);
     if (req.getHeaders().find("range") != req.getHeaders().end())
@@ -55,10 +68,6 @@ void    Response::showIndexFile(std::string indexFilePath, Request& req)
     }
     bytesToSend = req.strToDecimal(Headers["Content-Length"]);
     Headers["Accept-Ranges"] = "bytes";
-    // std::string buff;
-    // while (std::getline(*file, buff))
-    //     body += buff;
-    // file->close();
 }
 
 std::string Response::urlEncode(std::string path)
@@ -147,6 +156,7 @@ void Response::listingOrIndex(Config& config, Request& req)
   std::string pathMatch;
   std::string serverRoot;
   std::string locationIndex;
+  Location* locationIndexMatch = NULL;
 
   serverRoot = config.getClients()[clientFd].getServer().getRoot();
   if (locationMatch)
@@ -154,6 +164,7 @@ void Response::listingOrIndex(Config& config, Request& req)
         locationIndex = locationMatch->getIndex();
         uri = locationMatch->getURI();
         root = locationMatch->getRoot();
+        locationIndexMatch = Request::getMatchedLocation(locationIndex, config.getClients()[clientFd].getServer());
         if (root != "/")
             pathMatch = root + uri;
         else
@@ -179,7 +190,7 @@ void Response::listingOrIndex(Config& config, Request& req)
             lastModified = getDate(&st.st_mtime);
             sprintf(contentLengthHeader, "%ld", st.st_size);
             setHeader("Content-Length", contentLengthHeader);
-            showIndexFile(indexFile, req);
+            showIndexFile(config, indexFile, req);
           }
           else
             listDirectories(req, reqResolved);
@@ -189,7 +200,7 @@ void Response::listingOrIndex(Config& config, Request& req)
           lastModified = getDate(&st.st_mtime);
           sprintf(contentLengthHeader, "%ld", st.st_size);
           setHeader("Content-Length", contentLengthHeader);
-          showIndexFile(indexFile, req);
+          showIndexFile(config, indexFile, req);
       }
   }
   else 
@@ -199,7 +210,7 @@ void Response::listingOrIndex(Config& config, Request& req)
           lastModified = getDate(&st.st_mtime);
           sprintf(contentLengthHeader, "%ld", st.st_size);
           setHeader("Content-Length", contentLengthHeader);
-          showIndexFile(indexFile, req);
+          showIndexFile(config, indexFile, req);
       }
       else if (config.getClients()[clientFd].getServer().getAutoindex())
         listDirectories(req, reqResolved);
@@ -275,7 +286,6 @@ void    Response::returnDefinedPage(Config& config, int errorStatus, std::string
             rootPath.erase(0, 1);
         errorPageFile = rootPath + errorPageFile;
     }
-    std::cout << "error page file ->  "<<errorPageFile << std::endl;
     int res = stat(errorPageFile.c_str(), &st);
     if (!res && locationMatch)
     {
@@ -297,9 +307,17 @@ void    Response::returnDefinedPage(Config& config, int errorStatus, std::string
             return ;
         }
         else
-            locationHeader = locationMatch->getURI();
-        statusCode = 301;
-        return ;
+        {
+            if (st.st_mode & S_IFREG)
+                statusCode = errorStatus;
+        //     else {
+        //         locationHeader = locationMatch->getURI();
+        //         std::cout << "dir !!\n";
+        //         statusCode = 301;
+        //     }
+        }
+        // if (statusCode == 301)
+        //     return ;
     }
     if (!res && (st.st_mode & S_IRUSR) && (st.st_mode & S_IFDIR))
     {
@@ -363,7 +381,10 @@ void Response::returnResponse(Config& config)
         {
             redirectFlag = 1;
             statusCode = redirectIt->first;
-            if (statusCode < 301 || statusCode > 308)
+            if ((statusCode >= 301 && statusCode <= 303)
+                || statusCode == 307 || statusCode == 308)
+                locationHeader = redirectIt->second;
+            else
                 body = redirectIt->second;
             Headers["Content-Type"] = "application/octet-stream";
         }
@@ -376,7 +397,10 @@ void Response::returnResponse(Config& config)
         {
             redirectFlag = 1;
             statusCode = redirectIt->first;
-            if (statusCode < 301 || statusCode > 308)
+            if ((statusCode >= 301 && statusCode <= 303)
+                || statusCode == 307 || statusCode == 308)
+                locationHeader = redirectIt->second;
+            else
                 body = redirectIt->second;
             Headers["Content-Type"] = "application/octet-stream";
         }

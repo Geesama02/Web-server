@@ -6,7 +6,7 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/22 11:25:38 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/03/09 16:58:32 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/03/10 20:21:42 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -41,14 +41,14 @@ void    Config::checkCgiScriptExecution()
                     it->second.getResponse().sendResponse(*this, it->second.getRequest(), it->first);
                 }
                 else
-                { 
+                {
+                    
                     if (it->second.getCGI().read_cgi_response(*this, it->first) == -1) //error in cgi script
                     {
                         it->second.getCGI().clearCGI();
                         it->second.getResponse().clearResponse();
                         it->second.getResponse().setStatusCode(502);
                         it->second.getResponse().sendResponse(*this, it->second.getRequest(), it->first);
-                        closeConnection(it->first);
                         return ;
                     }
                     it->second.getCGI().sendServerResponse(it->first, *this);
@@ -71,7 +71,6 @@ void    Config::checkScriptTimeOut()
         {
             kill(it->second.getCGI().getCpid(), SIGKILL);
             waitpid(it->second.getCGI().getCpid(), NULL, 0);
-            close(it->second.getCGI().getRpipe());
             it->second.getCGI().clearCGI();
             it->second.getResponse().clearResponse();
             it->second.getResponse().setStatusCode(504);
@@ -96,7 +95,7 @@ int Config::startServers() {
     epoll_event events[MAX_EVENTS]; // max events(ready to read or write is an event)
     while (1) {
         // monitor if any socket ready for read or write
-        int fds = epoll_wait(epoll_fd, events, MAX_EVENTS, 5000);
+        int fds = epoll_wait(epoll_fd, events, MAX_EVENTS, 50);
         if (fds < 0) {
             std::cerr << "Cannot wait on sockets!" << std::endl;
             close(epoll_fd);
@@ -231,7 +230,6 @@ int Config::acceptConnection(int fd, epoll_event& ev)
         server.setSocket(-1);
         // client.setServer(server);
         // Clients[new_client] = client;
-        // std::cout << "fd -> " << new_client << std::endl;
         Clients[new_client].setServer(server);
         Clients[new_client].setFdClient(new_client);
         Clients[new_client].setTimeout(timeNow());

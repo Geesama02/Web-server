@@ -37,6 +37,8 @@ long long    CGI::getStartTime() { return startTime; }
 std::string& CGI::getPathInfo() {return pathInfo;}
 std::string& CGI::getscriptFilePath() {return scriptFilePath; }
 std::string& CGI::getExtensionFile() {return extensionFile;}
+int          CGI::getOutFileFd() {return outFileFd;}
+std::string& CGI::getOutFileName() {return outFileName;}
 
 //setters
 void        CGI::setBody(std::string newBody) { ResBody = newBody; }
@@ -47,6 +49,8 @@ void        CGI::setStartTime(long long nTime) {startTime = nTime;}
 void        CGI::setPathInfo(std::string nValue) {pathInfo = nValue;}
 void        CGI::setscriptFilePath(std::string nValue) { scriptFilePath = nValue; }
 void        CGI::setExtensionFile(std::string nValue) {extensionFile = nValue;}
+void        CGI::setOutFileFd(int nFd) {outFileFd = nFd;}
+void        CGI::setOutFileName(std::string& nValue) {outFileName = nValue;}
 
 
 //define cgi execution paths from config file
@@ -81,13 +85,20 @@ void CGI::clearCGI()
         delete[] executablePathArray;
     executablePathArray = NULL;
     absoluteFilePath = NULL;
-    if (rPipe != 0)
-        close(rPipe);
+    if (outFileFd != 0)
+    {   
+        close(outFileFd);
+        if (outFilePath.length() > 0)
+            remove(outFilePath.c_str());
+    }
     cPid = 0;
     rPipe = 0;
     startTime = 0;
+    outFileFd = 0;
     childStatus = 0;
     envsNbr = 0;
+    outFileName.clear();
+    outFilePath.clear();
     headersInScript.clear();
     ResBody.clear();
     cgiRes.clear();
@@ -311,12 +322,18 @@ void CGI::findHeadersInsideScript(Response& res) {
 int CGI::read_cgi_response(Config& config, int fd)
 {
     char buff[1025];
-    if (fcntl(rPipe, F_SETFL, O_NONBLOCK) == -1)
+
+    if (fcntl(outFileFd, F_SETFL, O_NONBLOCK) == -1)
     {
         std::cerr << "Error: Fcntl Failed" << std::endl;
         return (failureHandler(config, fd));
     }
-    int nbytes = read(rPipe, buff, 1024);
+    // Reset the file pointer to the beginning of the file
+    if (lseek(outFileFd, 0, SEEK_SET) == -1) {
+        std::cerr << "Error: lseek Failed" << std::endl;
+        return (failureHandler(config, fd));
+    }
+    int nbytes = read(outFileFd, buff, 1024);
     if (nbytes < 0)
     {
         std::cerr << "Error: Read Failed" << std::endl;
@@ -324,7 +341,13 @@ int CGI::read_cgi_response(Config& config, int fd)
     }
     buff[nbytes] = '\0';
     ResBody += buff;
-    while ((nbytes = read(rPipe, buff, 1024)) > 0) {
+    while ((nbytes = read(outFileFd, buff, 1024)) > 0)
+    {
+        if (nbytes < 0)
+        {
+            std::cerr << "Error: Read Failed" << std::endl;
+            return (failureHandler(config, fd));
+        }
         buff[nbytes] = '\0';
         ResBody += buff;
     }
@@ -352,6 +375,32 @@ void CGI::sendServerResponse(int fd, Config& config)
     send(fd, cgiRes.c_str(), cgiRes.length(), 0);    
 } 
 
+void CGI::generateFileName()
+{
+    struct timeval tv;
+    std::ostringstream time;
+    gettimeofday(&tv, NULL);
+    time << (tv.tv_sec * 1000000) + tv.tv_usec;
+    outFileName.insert(outFileName.size(), "_" + time.str());
+}
+
+int CGI::creatingOutFile()
+{
+    generateFileName();
+    char *user = std::getenv("USER");
+    if (user) {
+        std::string userStr = user;
+        outFilePath = "/home/" + userStr + "/goinfre/" + '.' + outFileName;
+    }
+    else
+        outFilePath = "/tmp/" + '.' + outFileName;
+    FILE* fileOut = fopen(outFilePath.c_str(), "w+");
+    if (!fileOut)
+        return (-1);
+    outFileFd = fileno(fileOut);
+    return (0);
+}
+
 int CGI::execute_cgi_script(Config& config, Response& res, int fd, Request req)
 {
     //set executable paths
@@ -372,7 +421,13 @@ int CGI::execute_cgi_script(Config& config, Response& res, int fd, Request req)
     if (defineArgv(config, fd) == -1)
         return (-1);
 
-    int fds[2];
+    if (creatingOutFile() == -1)
+    {     
+        std::cerr << "error creating out file!!" << std::endl;
+        return failureHandler(config, fd);
+    }
+    std::cout << "file name -> " << outFileName << std::endl;
+    // int fds[2];
     int save_out = dup(1);
     if (save_out == -1)
     {
@@ -385,11 +440,11 @@ int CGI::execute_cgi_script(Config& config, Response& res, int fd, Request req)
         std::cerr << "Error: Dup Failed" << std::endl;
         return (failureHandler(config, fd));
     }
-    if (pipe(fds) != 0)
-    { 
-        std::cerr << "Error: Pipe Failed" << std::endl;
-        return (failureHandler(config, fd));
-    }
+    // if (pipe(fds) != 0)
+    // { 
+    //     std::cerr << "Error: Pipe Failed" << std::endl;
+    //     return (failureHandler(config, fd));
+    // }
     pid_t c_pid = fork();
     if (c_pid == -1)
     { //pipes already opened we should close
@@ -400,11 +455,10 @@ int CGI::execute_cgi_script(Config& config, Response& res, int fd, Request req)
     {
         startTime = Config::timeNow();
         cPid = c_pid;
-        rPipe = fds[0];
     }
     if (!c_pid)
     {
-        close(fds[0]);
+        // close(fds[0]);
         if (req.getMethod() == "POST")
         {
             int bodyFd = open(req.getFileName().c_str(), S_IRUSR);
@@ -415,20 +469,17 @@ int CGI::execute_cgi_script(Config& config, Response& res, int fd, Request req)
             close(bodyFd);
             remove(req.getFileName().c_str());
         }
-        if (dup2(fds[1], 1) == -1)
+        if (dup2(outFileFd, 1) == -1)
             exit(EXIT_FAILURE);
-        close(fds[1]);
+        close(outFileFd);
         if (execve(executablePathArray, argv, envs) == -1)
-        {
             std::cerr << "Error Execve : " << strerror(errno) << std::endl;
-            exit(EXIT_FAILURE);
-        }
         dup2(save_out, 1);
         dup2(save_in, 0);
         close(save_out);
         close(save_in);
+        exit(EXIT_FAILURE);
     }
-    close(fds[1]);
     close(save_out);
     close(save_in);
     return (0);

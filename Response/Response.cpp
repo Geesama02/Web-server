@@ -6,7 +6,7 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/14 17:03:53 by maglagal          #+#    #+#             */
-/*   Updated: 2025/03/09 21:46:47 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/03/10 22:04:44 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -277,7 +277,7 @@ void    Response::redirectionResponse(Request req, Config& config)
             locationHeader = "http://" + host + req.getPath() + "/";
         else if (statusCode == 301 && locationHeader.length() > 0)
             locationHeader = "http://" + host + locationHeader + "/";
-        setHeader("Location", locationHeader);
+        Headers["Location"] = locationHeader;
     }
     else
     {
@@ -289,15 +289,16 @@ void    Response::redirectionResponse(Request req, Config& config)
         if ((statusCode >= 301 && statusCode <= 303)
             || statusCode == 307 || statusCode == 308)
         {
-            locationHeader = "http://" + host + redirectIt->second;
-            setHeader("Location", locationHeader);
+            if (*locationHeader.begin() == '/')
+                locationHeader = "http://" + host + locationHeader;
+            Headers["Location"] = locationHeader;
+            Headers["Content-Type"] = "text/html";
         }
         else
             body = redirectIt->second;
     }    
     char contentLengthHeader[150];
     std::sprintf(contentLengthHeader, "%ld", body.length());
-    Headers["Content-Type"] = "text/html";
     Headers["Content-Length"] = contentLengthHeader;
     Headers["Date"] = getDate();
 }

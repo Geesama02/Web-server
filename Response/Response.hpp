@@ -6,7 +6,7 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/14 16:55:34 by maglagal          #+#    #+#             */
-/*   Updated: 2025/03/09 15:44:02 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/03/10 22:08:45 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -108,7 +108,7 @@ class Response {
         void                checkErrorPages(Config& config, Request& req);
         void                searchLocationsForMatch(Config& config, Request& req);
         void                listDirectories(Request& req, std::string dirName);
-        void                showIndexFile(std::string indexFilePath, Request& req);
+        void                showIndexFile(Config& config, std::string indexFilePath, Request& req);
         int                 comparingReqWithLocation(std::string locationPath, std::string reqPath);
         void                verifyDirectorySlash(std::string fileName, Request& req);
         void                generateRes(Config& config);
