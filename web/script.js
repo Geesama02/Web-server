@@ -5,10 +5,8 @@ let obj = [
 
 function createPlayer(newElem) {
     return new Promise((resolve, reject) => {
-        setTimeout(() => {
             obj.push(newElem);
             resolve();
-        }, 2000);
     });
 }
 

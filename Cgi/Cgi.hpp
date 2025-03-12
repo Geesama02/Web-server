@@ -6,13 +6,14 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/30 18:22:52 by maglagal          #+#    #+#             */
-/*   Updated: 2025/03/07 19:25:02 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/03/12 13:34:05 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef CGI_HPP
 #define CGI_HPP
 
+#include <stdio.h>
 #include <iostream>
 #include <cstdlib>
 #include <fcntl.h>
@@ -34,6 +35,9 @@ class Config;
 class Response;
 class CGI {
     private :
+        int                                  outFileFd;
+        std::string                          outFileName;
+        std::string                          outFilePath;
         std::map<std::string, std::string>   executablePaths;
         std::map<std::string, std::string>   storeEnvs;
         std::vector<char *>                  Envs;
@@ -71,6 +75,8 @@ class CGI {
         std::string&    getPathInfo();
         std::string&    getscriptFilePath();
         std::string&    getExtensionFile();
+        int             getOutFileFd();
+        std::string&    getOutFileName();
 
         //setters
         void            setBody(std::string newBody);
@@ -81,10 +87,14 @@ class CGI {
         void            setPathInfo(std::string nValue);
         void            setscriptFilePath(std::string nValue);
         void            setExtensionFile(std::string nValue);
+        void            setOutFileFd(int nFd);
+        void            setOutFileName(std::string& nValue);
         
 
         //other
-        void    searchForScriptName(std::string& reqPath);
+        void    generateFileName();
+        int     creatingOutFile();
+        void    searchForScriptName(Config& config, int fd);
         void    checkHeaderName(std::string& headerName);
         int     failureHandler(Config& config, int fd);
         int     defineArgv(Config& config, int fd);

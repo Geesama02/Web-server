@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Response.hpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
+/*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/14 16:55:34 by maglagal          #+#    #+#             */
-/*   Updated: 2025/03/09 14:21:07 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/03/11 20:25:57 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -42,6 +42,7 @@ class Response {
     private:
         std::map<std::string, std::string> Headers;
         std::map<int, std::string>         resStatus;
+        std::vector<std::string>           savedRedirects;
         std::ifstream                      *file;
         std::ifstream                      *errorPage;
         int                                clientFd;
@@ -88,6 +89,11 @@ class Response {
         void            setFile(std::ifstream *nFile);
         
         //other
+        void                indexFileWithoutSlashes(Config& config, std::string& indexFile, std::string& pathMatch, std::string& locationIndex, Location* locationIndexMatch);
+        void                listOrIndex(Config &config, Request& req, std::string& indexFile);
+        void                updateIndexFilePath(Config& config, std::string& indexFile, std::string& locationIndex, std::string& pathMatch);
+        void                IndexFileLogic(Config& config, Request& req);
+        void                verifyInfiniteRedirections(std::string toCheck);
         void                makeContentRangeHeader(Request& req, std::vector<std::string>& rangeNumbers, std::string& rangeNumber, std::string& contentLengthHeader, size_t& rangeEndNbr);
         void                rangeResponseFail(Config& config, Request& req);
         void                handleCgiScript(Config& config, std::string& fileName);
@@ -108,7 +114,7 @@ class Response {
         void                checkErrorPages(Config& config, Request& req);
         void                searchLocationsForMatch(Config& config, Request& req);
         void                listDirectories(Request& req, std::string dirName);
-        void                showIndexFile(std::string indexFilePath, Request& req);
+        void                showIndexFile(Config& config, std::string indexFilePath, Request& req);
         int                 comparingReqWithLocation(std::string locationPath, std::string reqPath);
         void                verifyDirectorySlash(std::string fileName, Request& req);
         void                generateRes(Config& config);
@@ -120,7 +126,7 @@ class Response {
         void                redirectionResponse(Request req, Config& config);
         void                rangeResponse(Config& config, Request& req);
         void                sendResponse(Config& config, Request& req, int fd);
-        int                 sendBodyBytes(int epoll_fd);
+        int                 sendBodyBytes(Config& config, int epoll_fd);
         void                searchForFile(Config& config, Request& Req);
         std::string         urlEncode(std::string path);
 };
