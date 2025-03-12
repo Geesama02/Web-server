@@ -6,7 +6,7 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/30 18:22:52 by maglagal          #+#    #+#             */
-/*   Updated: 2025/03/10 17:45:47 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/03/12 13:34:05 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -94,7 +94,7 @@ class CGI {
         //other
         void    generateFileName();
         int     creatingOutFile();
-        void    searchForScriptName(std::string& reqPath);
+        void    searchForScriptName(Config& config, int fd);
         void    checkHeaderName(std::string& headerName);
         int     failureHandler(Config& config, int fd);
         int     defineArgv(Config& config, int fd);

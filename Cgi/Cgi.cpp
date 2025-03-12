@@ -17,6 +17,7 @@ CGI::CGI()
 {
     cPid = 0;
     envsNbr = 0;
+    outFileFd = 0;
     envs = NULL;
     executablePathArray = NULL;
     absoluteFilePath = NULL;
@@ -182,15 +183,24 @@ int CGI::addMetaVariables(Config& config, Request& req, Response& res)
     return (0);
 }
 
-void CGI::searchForScriptName(std::string& reqPath)
+void CGI::searchForScriptName(Config& config, int fd)
 {
+    std::string reqPath = config.getClients()[fd].getRequest().getPath();
+    char portChar[150];
+    int  port;
     if (pathInfo.length())
     {
         size_t index = reqPath.find(pathInfo);
         scriptFileName = reqPath.substr(0, index);
+        if (config.getClients()[fd].getResponse().getQueryString().length() > 0)
+            scriptFileName += "?"+ config.getClients()[fd].getResponse().getQueryString();
     }
     else
         scriptFileName = reqPath;
+    port = config.getClients()[fd].getServer().getPort(); 
+    sprintf(portChar, "%d", port);
+    std::string host = config.getClients()[fd].getServer().getHost() + ":" + portChar;
+    scriptFileName = "http://" + host + scriptFileName;
 }
 
 int CGI::setEnvVars(Config& config, Request& req, Response& res, int fd)
@@ -199,10 +209,9 @@ int CGI::setEnvVars(Config& config, Request& req, Response& res, int fd)
     if (req.getBody().length() > 0)
     sprintf(contentLengthStr, "%ld", req.getBody().length());
     
-    std::cout << "req -> " << req.getPath() << std::endl;
     char portChar[150];
     sprintf(portChar, "%d", config.getClients()[res.getClientFd()].getServer().getPort());
-    searchForScriptName(req.getPath());
+    searchForScriptName(config, fd);
     storeEnvs["REQUEST_METHOD"] = req.getMethod().c_str();
     storeEnvs["QUERY_STRING"] = (res.getQueryString()).c_str();
     storeEnvs["REMOTE_HOST"] = config.getClients()[res.getClientFd()].getServer().getHost();
@@ -459,8 +468,6 @@ int CGI::execute_cgi_script(Config& config, Response& res, int fd, Request req)
     }
     if (!c_pid)
     {
-        // alarm(10);
-        // close(fds[0]);
         if (req.getMethod() == "POST")
         {
             int bodyFd = open(req.getFileName().c_str(), S_IRUSR);

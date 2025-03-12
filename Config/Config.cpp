@@ -6,7 +6,7 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/22 11:25:38 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/03/12 00:58:00 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/03/12 12:15:22 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,10 +30,8 @@ void    Config::checkCgiScriptExecution()
         if (it->second.getCGI().getCpid() != 0)
         {
             pid_t child = waitpid(it->second.getCGI().getCpid(), &status, WNOHANG);
-            // std::cerr << child << std::endl;
             if (child > 0)
             {
-                std::cerr << "child -> " << child << std::endl;
                 if (WIFSIGNALED(status) || (WIFEXITED(status) && WEXITSTATUS(status) != 0))
                 {
                     it->second.getCGI().clearCGI();
