@@ -6,7 +6,7 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/22 11:25:38 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/03/10 20:21:42 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/03/12 00:58:00 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,11 +30,12 @@ void    Config::checkCgiScriptExecution()
         if (it->second.getCGI().getCpid() != 0)
         {
             pid_t child = waitpid(it->second.getCGI().getCpid(), &status, WNOHANG);
+            // std::cerr << child << std::endl;
             if (child > 0)
             {
-                if (WEXITSTATUS(status))
+                std::cerr << "child -> " << child << std::endl;
+                if (WIFSIGNALED(status) || (WIFEXITED(status) && WEXITSTATUS(status) != 0))
                 {
-                    it->second.getCGI().setChildStatus(WEXITSTATUS(status));
                     it->second.getCGI().clearCGI();
                     it->second.getResponse().clearResponse();
                     it->second.getResponse().setStatusCode(502);
@@ -42,7 +43,6 @@ void    Config::checkCgiScriptExecution()
                 }
                 else
                 {
-                    
                     if (it->second.getCGI().read_cgi_response(*this, it->first) == -1) //error in cgi script
                     {
                         it->second.getCGI().clearCGI();
@@ -76,7 +76,7 @@ void    Config::checkScriptTimeOut()
             it->second.getResponse().setStatusCode(504);
             it->second.getResponse().sendResponse(*this, it->second.getRequest(), it->first);
             if (it->second.getRequest().getFileName().length() > 0)
-                remove(it->second.getRequest().getFileName().c_str());
+            remove(it->second.getRequest().getFileName().c_str());
         }
         it++;
     }
@@ -248,6 +248,12 @@ int Config::acceptConnection(int fd, epoll_event& ev)
 void Config::closeConnection(int fd)
 {
     epoll_ctl(epoll_fd, EPOLL_CTL_DEL, fd, NULL);
+    if (Clients[fd].getCGI().getCpid() != 0) {
+        int status;
+        kill(Clients[fd].getCGI().getCpid(), SIGKILL);
+        waitpid(Clients[fd].getCGI().getCpid(), &status, 0);
+        Clients[fd].getCGI().clearCGI();
+    }
     std::cout << "closed client : " << fd<<std::endl;
     Clients.erase(fd);
     close(fd);

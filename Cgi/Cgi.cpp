@@ -453,11 +453,13 @@ int CGI::execute_cgi_script(Config& config, Response& res, int fd, Request req)
     }
     if (c_pid != 0)
     {
+        std::cout << "pid -> " << c_pid << std::endl;
         startTime = Config::timeNow();
         cPid = c_pid;
     }
     if (!c_pid)
     {
+        // alarm(10);
         // close(fds[0]);
         if (req.getMethod() == "POST")
         {

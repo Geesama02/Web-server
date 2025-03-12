@@ -6,7 +6,7 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/09 09:49:11 by maglagal          #+#    #+#             */
-/*   Updated: 2025/03/11 22:06:55 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/03/11 22:11:48 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -239,11 +239,8 @@ void Response::IndexFileLogic(Config& config, Request& req)
   serverRoot = config.getClients()[clientFd].getServer().getRoot();
   if (locationMatch)
   {
-      // uri = locationMatch->getURI();
-      // root = locationMatch->getRoot();
         locationIndex = locationMatch->getIndex();
         locationIndexMatch = Request::getMatchedLocation(locationIndex, config.getClients()[clientFd].getServer());
-
         if (locationIndexMatch && *locationIndex.begin() == '/' && *locationIndex.rbegin() == '/')
         {
             locationMatch = locationIndexMatch;
@@ -261,7 +258,6 @@ void Response::IndexFileLogic(Config& config, Request& req)
         }
         else if (*locationIndex.begin() == '/' && *locationIndex.rbegin() != '/')
         {
-            std::cout << "location index -> " << locationIndex << std::endl;
             if (locationIndexMatch)
                 locationMatch = locationIndexMatch;
             updateIndexFilePath(config, indexFile, locationIndex, pathMatch);
@@ -286,44 +282,7 @@ void Response::IndexFileLogic(Config& config, Request& req)
             }
         }
         else
-        {    
             indexFileWithoutSlashes(config, indexFile, pathMatch, locationIndex, locationIndexMatch);
-            // if (!locationIndexMatch)
-            //     config.getClients()[clientFd].getRequest().setPath(locationIndex);
-            // locationMatch = locationIndexMatch;
-            // if (root != "/")
-            //     pathMatch = root + uri;
-            // else
-            //     pathMatch = uri;
-            // if (*pathMatch.rbegin() != '/' && *config.getClients()[clientFd].getRequest().getPath().begin() != '/')
-            //     pathMatch += '/';
-            // reqResolved = pathMatch + config.getClients()[clientFd].getRequest().getPath();
-            // errno = 0;
-            // if (!stat(reqResolved.c_str(), &st))
-            // {
-            //     if (!(st.st_mode & S_IFDIR))
-            //         reqResolved = pathMatch;
-            // }
-            // else
-            // {
-            //     errno = 0;
-            //     if (!stat(pathMatch.c_str(), &st) && (st.st_mode & S_IFDIR))
-            //         reqResolved = pathMatch;
-            //     else if (errno == ENOENT)
-            //     {
-            //         clearResponse();
-            //         statusCode = 404;
-            //         return ;
-            //     }
-            // }
-            // if (*locationIndex.begin() == '/')
-            //     indexFile = serverRoot + locationIndex;
-            // else
-            // {
-            //     locationIndex = "/" + locationIndex;
-            //     indexFile = pathMatch + locationIndex;
-            // }
-        }
   }
   else 
     indexFile = serverRoot + req.getPath() + config.getClients()[clientFd].getServer().getIndex();
