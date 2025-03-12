@@ -6,7 +6,7 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/14 17:03:53 by maglagal          #+#    #+#             */
-/*   Updated: 2025/03/12 00:40:26 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/03/12 17:46:23 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,6 +28,7 @@ Response::Response()
     redirectFlag = 0;
     bytesToSend = 0;
     bytesSent = 0;
+    errStatusCode = 0;
     std::memset(contentLengthHeader, '\0', sizeof(contentLengthHeader));
     initializeContentHeader();
     initializeStatusRes();
@@ -133,17 +134,18 @@ void    Response::clearResponse()
 {
     cgiScript = 0;
     Headers.clear();
-    statusMssg.clear();
     savedRedirects.clear();
     Headers["Connection"] = "keep-alive";
     Headers["Content-Length"] = "0";
     Headers["Server"] = "Webserv";
     Headers["Date"] = "0";
+    statusMssg.clear();
     statusMssg = "HTTP/1.1 ";
     statusCode = 0;
     FileType = 0;
     redirectFlag = 0;
     bytesSent = 0;
+    errStatusCode = 0;
     locationMatch = NULL;
     body.clear();
     finalRes.clear();
@@ -187,6 +189,8 @@ std::string Response::getDate(time_t *time)
 
 void Response::generateRes(Config& config)
 {
+    if (errStatusCode != 0)
+        statusCode = errStatusCode;
     char buff[150];
     std::string statusCodeStr;
     sprintf(buff, "%d", statusCode);
@@ -223,8 +227,14 @@ void Response::generateRes(Config& config)
 
 void Response::successResponse(Config& config)
 {
+    if (errStatusCode != 0)
+        statusCode = errStatusCode;
     char contentLengthHeader[150];
-    statusMssg += "200 OK\r\n";
+    char buff[150];
+    std::string statusCodeStr;
+    sprintf(buff, "%d", statusCode);
+    statusCodeStr = buff;
+    statusMssg += statusCodeStr + " " + resStatus[statusCode] + "\r\n";
     
     if (!body.empty())
     {
@@ -297,6 +307,7 @@ void    Response::redirectionResponse(Request req, Config& config)
         }
         else
             body = redirectIt->second;
+        std::cout << "location header -> " << locationHeader << std::endl;
     }    
     char contentLengthHeader[150];
     std::sprintf(contentLengthHeader, "%ld", body.length());
@@ -552,6 +563,21 @@ void Response::searchForFile(Config& config, Request& req)
         if (st.st_mode & S_IFDIR || (!(st.st_mode & S_IRUSR)))
         {
             statusCode = 403;
+            searchLocationsForMatch(config, req);
+            if (locationMatch)
+            {
+                std::map<int, std::string> redirect = locationMatch->getRedirect();
+                if (redirect.size() > 0)
+                    redirectFlag = 1;
+            }
+            else
+            {
+                std::map<int, std::string> redirect = config.getClients()[clientFd].getServer().getRedirect();
+                if (redirect.size() > 0)
+                    redirectFlag = 1;
+            }
+            if (redirectFlag)
+                return ;
             verifyDirectorySlash(fileName, req);
             if (statusCode == 403)
                 checkAutoIndex(config, req);
@@ -601,6 +627,7 @@ int Response::sendBodyBytes(Config& config, int epoll_fd)
         bytesSent += file->gcount();
         if (file->eof() || (bytesSent == bytesToSend)) 
         {
+            std::cout <<"client -> " << clientFd<<std::endl;
             if (send(clientFd, buff, file->gcount(), 0) == -1)
             {
                 std::cerr << "Error : Send Fail" << std::endl;
@@ -653,26 +680,36 @@ void Response::handleDeleteRequest(Config& config, Request& req)
 
 void Response::fillBody(Config& config, Request& req)
 {
-    checkErrorPages(config, req);
-    if (!redirectFlag)
+    if (redirectFlag)
+    {
         returnResponse(config);
-    if (!redirectFlag && req.getMethod() == "DELETE" && statusCode == 204)
-        handleDeleteRequest(config, req);
-    if (statusCode == 200)
-        successResponse(config);
-    else if (statusCode == 206)
-        rangeResponse(config, req);
-    else if (statusCode >= 300 && statusCode <= 399)
+        std::cout << "status code -> " << statusCode << std::endl;
         redirectionResponse(req, config);
+    }
     else
-        generateRes(config);
+    {
+        checkErrorPages(config, req);
+        if (statusCode == -1)
+            return ;
+        if (req.getMethod() == "DELETE" && statusCode == 204)
+            handleDeleteRequest(config, req);
+        if (statusCode == 200)
+            successResponse(config);
+        else if (statusCode == 206)
+            rangeResponse(config, req);
+        else if (statusCode >= 300 && statusCode <= 399)
+            redirectionResponse(req, config);
+        else
+            generateRes(config);
+    }
 }
 
 void Response::sendResponse(Config& config, Request& req, int fd)
 {
+    if (!statusCode || statusCode == -1)
+        config.getClients()[clientFd].getResponse().searchForFile(config, req);
     if (cgiScript && statusCode == 200)
     {
-        
         int status = 0;
         status = config.getClients()[fd].getCGI().execute_cgi_script(config, *this, clientFd, req);
         if (fd != 0)
@@ -684,6 +721,13 @@ void Response::sendResponse(Config& config, Request& req, int fd)
             return ;
     }
     fillBody(config, req);
+    if (statusCode == -1)
+    {
+        if (!redirectFlag)
+            statusCode = errStatusCode;
+        send(clientFd, finalRes.c_str(), finalRes.length(), 0);
+        return ;
+    }
     finalRes += statusMssg;
     
     //add headers to final response
@@ -693,8 +737,10 @@ void Response::sendResponse(Config& config, Request& req, int fd)
     finalRes += "\r\n";
     if (!body.empty())
         finalRes += body;
-    
-    send(clientFd, finalRes.c_str(), finalRes.length(), 0);
-    if (statusCode == 400 || statusCode >= 500)
-        config.closeConnection(fd);
+
+    if (!errStatusCode) {
+        send(clientFd, finalRes.c_str(), finalRes.length(), 0);
+        if (statusCode == 400 || statusCode >= 500)
+            config.closeConnection(fd);
+    }
 }

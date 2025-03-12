@@ -6,7 +6,7 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/14 16:55:34 by maglagal          #+#    #+#             */
-/*   Updated: 2025/03/11 20:25:57 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/03/12 15:42:16 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -47,6 +47,7 @@ class Response {
         std::ifstream                      *errorPage;
         int                                clientFd;
         int                                statusCode;
+        int                                errStatusCode;
         std::string                        filePath;
         std::string                        statusMssg;
         std::string                        finalRes;

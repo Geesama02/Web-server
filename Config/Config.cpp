@@ -6,7 +6,7 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/22 11:25:38 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/03/12 12:15:22 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/03/12 15:08:35 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -302,8 +302,6 @@ int Config::handleClient(int fd) {
         {
             // std::cout << "path -> " << request.getPath() << std::endl;
             printLog(fd);
-            if (status == 0)
-                Clients[fd].getResponse().searchForFile(*this, Clients[fd].getRequest());
         }
         Clients[fd].getResponse().sendResponse(*this, Clients[fd].getRequest(), fd);
         checkFileSend(fd);
