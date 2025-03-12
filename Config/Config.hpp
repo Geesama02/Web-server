@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/21 15:07:06 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/03/08 16:38:38 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/03/12 13:08:48 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -50,6 +50,7 @@ class Config {
         int     monitorTimeout();
         void    closeConnection(int fd);
         void    printLog(int fd);
+        void    normalizePath(Request& req);
         void    checkFileSend(int fd);
 };
 

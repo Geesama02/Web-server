@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/30 12:07:04 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/03/08 21:36:07 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/03/11 13:18:57 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -33,7 +33,6 @@ std::string Request::getFileName() { return fileName; }
 std::string& Request::getPath() { return path; }
 std::string Request::getVersion() { return version; }
 std::string Request::getBody() { return body; }
-// std::map<int, UploadFile>& Request::getUploads() { return (uploads); }
 
 // Setters
 void Request::setMethod(std::string& m) { method = m; }
@@ -45,8 +44,6 @@ void Request::addUpload(UploadFile& new_upload) {
     if (!file)
       return ;  
     *file = new_upload;
-    // std::string locationPath = currLocation->getUploadPath();
-    // file->setPath(currLocation->getUploadPath())
 }
 
 // Destructor
