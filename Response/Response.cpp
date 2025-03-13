@@ -6,7 +6,7 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/14 17:03:53 by maglagal          #+#    #+#             */
-/*   Updated: 2025/03/12 17:46:23 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/03/12 21:45:04 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -683,7 +683,6 @@ void Response::fillBody(Config& config, Request& req)
     if (redirectFlag)
     {
         returnResponse(config);
-        std::cout << "status code -> " << statusCode << std::endl;
         redirectionResponse(req, config);
     }
     else

@@ -33,7 +33,6 @@ std::string Request::getFileName() { return fileName; }
 std::string& Request::getPath() { return path; }
 std::string Request::getVersion() { return version; }
 std::string Request::getBody() { return body; }
-// std::map<int, UploadFile>& Request::getUploads() { return (uploads); }
 
 // Setters
 void Request::setMethod(std::string& m) { method = m; }
@@ -45,8 +44,6 @@ void Request::addUpload(UploadFile& new_upload) {
     if (!file)
       return ;  
     *file = new_upload;
-    // std::string locationPath = currLocation->getUploadPath();
-    // file->setPath(currLocation->getUploadPath())
 }
 
 // Destructor

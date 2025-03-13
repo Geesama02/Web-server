@@ -50,6 +50,7 @@ class Config {
         int     monitorTimeout();
         void    closeConnection(int fd);
         void    printLog(int fd);
+        void    normalizePath(Request& req);
         void    checkFileSend(int fd);
 };
 

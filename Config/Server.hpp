@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/21 15:09:59 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/03/07 17:38:56 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/03/10 18:11:32 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -72,7 +72,9 @@ class Server {
         // Functions
         int initServer(std::vector<Server>& Servers, std::vector<Server>::iterator it);
         int checkPortDup(std::vector<Server>& Servers, std::vector<Server>::iterator it);
+        int checkLocahost(std::string host, std::string other_host);
         int checkNameDup(std::vector<Server>& Servers, std::vector<Server>::iterator it, std::string& s_name);
+        int isRepeating(std::vector<std::string>::iterator& it, std::vector<std::string>& arr, std::string& s_name);
 
         // Destructor
         ~Server();

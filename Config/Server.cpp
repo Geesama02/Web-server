@@ -6,7 +6,7 @@
 /*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/22 10:25:22 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/03/07 17:38:38 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/03/10 22:00:55 by oait-laa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,7 +15,7 @@
 // Constructor
 Server::Server() {
     socket_fd = -1;
-    server_name.push_back("Server");
+    // server_name.push_back("Server");
     host = "localhost";
     port = 8080;
     root = "/";
@@ -74,13 +74,28 @@ void Server::addCgiPath(std::string path) { cgi_path.push_back(path); }
 void Server::addCgiExt(std::string ext) { cgi_ext.push_back(ext); }
 
 // Functions
+int Server::checkLocahost(std::string host, std::string other_host) {
+    if ((host == "localhost" || host == "0.0.0.0" || host == "127.0.0.1")
+        && (other_host == "localhost" || other_host == "0.0.0.0" || other_host == "127.0.0.1"))
+        return (1);
+    return (0);
+}
+
 int Server::checkPortDup(std::vector<Server>& Servers, std::vector<Server>::iterator it) {
     for (std::vector<Server>::iterator it2 = Servers.begin(); it2 != it; it2++) {
-        if (it2->getPort() == it->getPort() && it2->getHost() == it->getHost()) {
+        if (it2->getPort() == it->getPort() && (it2->getHost() == it->getHost() || checkLocahost(it2->getHost(), it->getHost()))) {
             return (0);
         }
     }
     return (1);
+}
+
+int Server::isRepeating(std::vector<std::string>::iterator& last_it, std::vector<std::string>& arr, std::string& s_name) {
+    for (std::vector<std::string>::iterator it = arr.begin(); it != last_it; it++) {
+        if (*it == s_name)
+            return (1);
+    }
+    return (0);
 }
 
 int Server::checkNameDup(std::vector<Server>& Servers, std::vector<Server>::iterator it, std::string& s_name) {
@@ -133,7 +148,7 @@ int Server::initServer(std::vector<Server>& Servers, std::vector<Server>::iterat
     }
     fcntl(socket_fd, F_SETFL, O_NONBLOCK);
     for(std::vector<std::string>::iterator it2 = server_name.begin(); it2 != server_name.end(); it2++) {
-        if (checkNameDup(Servers, it, *it2) == 0)
+        if (checkNameDup(Servers, it, *it2) == 0 && !isRepeating(it2, server_name, *it2))
             std::cout << *it2 << ": listening to port " << port << "...\n";
     }
     return (0);
