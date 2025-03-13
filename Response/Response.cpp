@@ -6,7 +6,7 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/14 17:03:53 by maglagal          #+#    #+#             */
-/*   Updated: 2025/03/13 14:34:56 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/03/13 15:41:31 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -656,19 +656,21 @@ int Response::sendBodyBytes(Config& config, int epoll_fd)
     return (0);
 }
 
-void Response::handleDeleteRequest(Config& config, Request& req)
+void Response::handleDeleteRequest(Config& config)
 {
   std::string serverRoot = config.getClients()[clientFd].getServer().getRoot();
   std::string requestedPath;
 
-  if (serverRoot.length() > 0 && serverRoot.rfind("/") != serverRoot.length() - 1)
-      requestedPath = serverRoot + "/" + req.getPath();
-  else
-      requestedPath = serverRoot + req.getPath();
+//   if (serverRoot.length() > 0 && serverRoot.rfind("/") != serverRoot.length() - 1)
+//       requestedPath = serverRoot + "/" + req.getPath();
+//   else
+//       requestedPath = serverRoot + req.getPath();
+    std::cout << reqResolved<< std::endl;
   char requestPath[200];
-  std::strcpy(requestPath, requestedPath.c_str());
+  std::strcpy(requestPath, reqResolved.c_str());
   if (statusCode == 204)
   {
+    std::cout << "path -> " << requestedPath << std::endl;
       if (rmrf(requestPath) == -1)
       {
           clearResponse();
@@ -693,7 +695,7 @@ void Response::fillBody(Config& config, Request& req)
         if (statusCode < 0)
             return ;
         if (req.getMethod() == "DELETE" && statusCode == 204)
-            handleDeleteRequest(config, req);
+            handleDeleteRequest(config);
         if (statusCode == 200)
             successResponse(config);
         else if (statusCode == 206)
@@ -741,7 +743,8 @@ void Response::sendResponse(Config& config, Request& req, int fd)
     finalRes += "\r\n";
     if (!body.empty())
         finalRes += body;
-    if (!errStatusCode) {
+    if (!errStatusCode)
+    {
         send(clientFd, finalRes.c_str(), finalRes.length(), 0);
         if (statusCode == 400 || statusCode >= 500)
             config.closeConnection(fd);
