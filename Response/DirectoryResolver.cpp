@@ -6,7 +6,7 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/09 09:49:11 by maglagal          #+#    #+#             */
-/*   Updated: 2025/03/13 14:28:09 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/03/13 16:34:54 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -418,6 +418,13 @@ void    Response::returnDefinedPage(Config& config, int errorStatus, std::string
     struct stat st;
     std::string relativeErrorPage = errorPageFile;
 
+    if (nbrRedirections)
+    {
+        clearResponse();
+        errStatusCode = errorStatus;
+        statusCode = -1;
+        return ;
+    }
     locationMatch = Request::getMatchedLocation(relativeErrorPage, config.getClients()[clientFd].getServer());
     if (*errorPageFile.begin() == '/' && locationMatch)
         rootPath = locationMatch->getRoot();
@@ -460,35 +467,14 @@ void    Response::returnDefinedPage(Config& config, int errorStatus, std::string
                 {
                     config.getClients()[clientFd].getRequest().setPath(relativeErrorPage);
                     int client_tmp = clientFd;
-                    std::vector<std::string>tmp_redirect = savedRedirects;
-                    size_t tmp = nbrRedirections;
                     clearResponse();
-                    nbrRedirections = tmp;
-                    savedRedirects = tmp_redirect;
-                    verifyInfiniteRedirections(relativeErrorPage);
-                    if (statusCode == 500)
-                    {    
-                        statusCode = -2;
-                        return ;
-                    }
-                        
                     savedRedirects.push_back(relativeErrorPage);
                     clientFd = client_tmp;
                     statusCode = -1;
                     errStatusCode = errorStatus;
                     nbrRedirections++;
                     sendResponse(config, config.getClients()[clientFd].getRequest(), clientFd);
-                    if (statusCode == -2 && nbrRedirections > 1)
-                    {
-                        nbrRedirections--;
-                        return ;
-                    }
-                    else if (statusCode == -2 && nbrRedirections == 1)
-                    {
-                        statusCode = 500;
-                        return ;
-                    }
-                    statusCode = -1;
+                    statusCode = errStatusCode;
                     return ;
                 }
             }

@@ -6,7 +6,7 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/14 17:03:53 by maglagal          #+#    #+#             */
-/*   Updated: 2025/03/13 15:41:31 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/03/13 16:16:19 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -725,15 +725,15 @@ void Response::sendResponse(Config& config, Request& req, int fd)
     }
     
     fillBody(config, req);
-    if (statusCode == -2)
-        return ;
     if (statusCode == -1)
-    {
-        if (!redirectFlag)
-            statusCode = errStatusCode;
-        send(clientFd, finalRes.c_str(), finalRes.length(), 0);
         return ;
-    }
+    // if (statusCode == -1)
+    // {
+    //     if (!redirectFlag)
+    //         statusCode = errStatusCode;
+    //     send(clientFd, finalRes.c_str(), finalRes.length(), 0);
+    //     return ;
+    // }
     finalRes += statusMssg;
     
     //add headers to final response
@@ -743,10 +743,7 @@ void Response::sendResponse(Config& config, Request& req, int fd)
     finalRes += "\r\n";
     if (!body.empty())
         finalRes += body;
-    if (!errStatusCode)
-    {
-        send(clientFd, finalRes.c_str(), finalRes.length(), 0);
-        if (statusCode == 400 || statusCode >= 500)
-            config.closeConnection(fd);
-    }
+    send(clientFd, finalRes.c_str(), finalRes.length(), 0);
+    if (statusCode == 400 || statusCode >= 500)
+        config.closeConnection(fd);
 }
