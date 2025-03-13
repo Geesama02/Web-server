@@ -6,7 +6,7 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/14 16:55:34 by maglagal          #+#    #+#             */
-/*   Updated: 2025/03/11 20:25:57 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/03/13 15:41:04 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -47,6 +47,7 @@ class Response {
         std::ifstream                      *errorPage;
         int                                clientFd;
         int                                statusCode;
+        int                                errStatusCode;
         std::string                        filePath;
         std::string                        statusMssg;
         std::string                        finalRes;
@@ -63,6 +64,7 @@ class Response {
         int                                cgiScript;
         size_t                             bytesToSend;
         size_t                             bytesSent;
+        size_t                             nbrRedirections;
 
     public:
         static std::map<std::string, std::string> ContentTypeHeader;
@@ -89,6 +91,7 @@ class Response {
         void            setFile(std::ifstream *nFile);
         
         //other
+        void                leadingSlashDir(Request& req, std::string& locationIndex, std::string& indexFile);
         void                indexFileWithoutSlashes(Config& config, std::string& indexFile, std::string& pathMatch, std::string& locationIndex, Location* locationIndexMatch);
         void                listOrIndex(Config &config, Request& req, std::string& indexFile);
         void                updateIndexFilePath(Config& config, std::string& indexFile, std::string& locationIndex, std::string& pathMatch);
@@ -103,7 +106,7 @@ class Response {
         static std::string  getDate();
         static std::string  getDate(time_t *time);
         int                 rmrf(char *path);
-        void                handleDeleteRequest(Config& config, Request& req);
+        void                handleDeleteRequest(Config& config);
         void                listingOrIndex(Config&config, Request& req);
         void                fillBody(Config& config, Request& req);
         void                initializeContentHeader();
