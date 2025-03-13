@@ -6,7 +6,7 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/09 09:49:11 by maglagal          #+#    #+#             */
-/*   Updated: 2025/03/13 12:15:19 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/03/13 14:28:09 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -163,9 +163,10 @@ void    Response::updateIndexFilePath(Config& config, std::string& indexFile, st
     std::string locationPath = root + locationIndex;
     errno = 0;
     //in case of file /assets redirect to /404.html index = (index of location /404.html) 
-    //in case of dir /assets redirect to /Request index = (index of location /assets)
-    if (!stat(locationPath.c_str(), &st) && (st.st_mode & S_IFREG)) 
+    //in case of dir /assets redirect to /Request index = (index of location /assets) 
+    if (locationMatch && !stat(locationPath.c_str(), &st) && (st.st_mode & S_IFREG)) 
         locationIndex = locationMatch->getIndex();
+        
     if (root != "/")
         pathMatch = root + config.getClients()[clientFd].getRequest().getPath();
     else
@@ -223,30 +224,29 @@ void Response::indexFileWithoutSlashes(Config& config, std::string& indexFile, s
     // }
 }
 
-void Response::leadingSlashDir(Location*& locationIndexMatch)
+void Response::leadingSlashDir(Request& req, std::string& locationIndex, std::string& indexFile)
 {
-    (void)locationIndexMatch;
-    // locationMatch = locationIndexMatch;
-    // updateIndexFilePath(config, indexFile, locationIndex, pathMatch);
-    // errno = 0;
-    // if (!stat(indexFile.c_str(), &st) && (st.st_mode & S_IFREG))
-    //     reqResolved = root + req.getPath();
-    // else if (errno == ENOENT)
-    // {
-    //     clearResponse();
-    //     statusCode = 404;
-    //     return ;
-    // }
-    // else
-    // {
-    //     statusCode = 301;
-    //     redirectFlag = 1;
-    //     if (st.st_mode & S_IFDIR)
-    //         locationHeader = locationIndex + '/';
-    //     else
-    //         locationHeader = locationIndex;
-    //     return ;
-    // }
+    struct stat st;
+    errno = 0;
+    
+    if (!stat(indexFile.c_str(), &st) && (st.st_mode & S_IFREG))
+        reqResolved = req.getPath();
+    else if (errno == ENOENT)
+    {
+        clearResponse();
+        statusCode = 404;
+        return ;
+    }
+    else
+    {
+        statusCode = 301;
+        redirectFlag = 1;
+        if (st.st_mode & S_IFDIR)
+            locationHeader = locationIndex + '/';
+        else
+            locationHeader = locationIndex;
+        return ;
+    }
 }
 
 
@@ -284,33 +284,20 @@ void Response::IndexFileLogic(Config& config, Request& req)
         }
         else if (*locationIndex.begin() == '/' && *locationIndex.rbegin() != '/')
         {
-            std::string locationIndexPath = locationIndexMatch->getRoot() + locationIndexMatch->getURI();
+            std::string locationIndexPath;
+            if (locationIndexMatch)
+                locationIndexPath = locationIndexMatch->getRoot() + locationIndexMatch->getURI();
+            else
+                locationIndexPath = serverRoot + req.getPath();
             errno = 0;
             int res = stat(locationIndexPath.c_str(), &st);
             if (!res && st.st_mode & S_IFDIR)
-            {    
-                // leadingSlashDir(locationIndexMatch);
+            {
                 locationMatch = locationIndexMatch;
                 updateIndexFilePath(config, indexFile, locationIndex, pathMatch);
-                errno = 0;
-                if (!stat(indexFile.c_str(), &st) && (st.st_mode & S_IFREG))
-                    reqResolved = root + req.getPath();
-                else if (errno == ENOENT)
-                {
-                    clearResponse();
-                    statusCode = 404;
+                leadingSlashDir(req, locationIndex, indexFile);
+                if (statusCode == 301 || statusCode == 404)
                     return ;
-                }
-                else
-                {
-                    statusCode = 301;
-                    redirectFlag = 1;
-                    if (st.st_mode & S_IFDIR)
-                        locationHeader = locationIndex + '/';
-                    else
-                        locationHeader = locationIndex;
-                    return ;
-                }
             }
             else if (!res && st.st_mode & S_IFREG)
                 indexFile = locationIndexPath;
@@ -416,7 +403,7 @@ void Response::checkErrorPages(Config& config, Request& req)
     if (locationMatch)
     { 
         checkDefinedErrorPage(config, config.getClients()[clientFd].getServer().getRoot(),
-        locationMatch->getErrorPage());
+            locationMatch->getErrorPage());
     }
     else
     {
@@ -441,10 +428,10 @@ void    Response::returnDefinedPage(Config& config, int errorStatus, std::string
         errorPageFile = rootPath + errorPageFile;
     }
     int res = stat(errorPageFile.c_str(), &st);
-    if (!res && locationMatch)
+    if (!res)
     {
         body.clear();
-        if (locationMatch->getRedirect().size() > 0)
+        if (locationMatch && locationMatch->getRedirect().size() > 0)
         {
             if ((locationMatch->getRedirect().begin()->first >= 301
                 && locationMatch->getRedirect().begin()->first <= 303)
@@ -473,18 +460,39 @@ void    Response::returnDefinedPage(Config& config, int errorStatus, std::string
                 {
                     config.getClients()[clientFd].getRequest().setPath(relativeErrorPage);
                     int client_tmp = clientFd;
+                    std::vector<std::string>tmp_redirect = savedRedirects;
+                    size_t tmp = nbrRedirections;
                     clearResponse();
+                    nbrRedirections = tmp;
+                    savedRedirects = tmp_redirect;
+                    verifyInfiniteRedirections(relativeErrorPage);
+                    if (statusCode == 500)
+                    {    
+                        statusCode = -2;
+                        return ;
+                    }
+                        
+                    savedRedirects.push_back(relativeErrorPage);
                     clientFd = client_tmp;
                     statusCode = -1;
                     errStatusCode = errorStatus;
+                    nbrRedirections++;
                     sendResponse(config, config.getClients()[clientFd].getRequest(), clientFd);
+                    if (statusCode == -2 && nbrRedirections > 1)
+                    {
+                        nbrRedirections--;
+                        return ;
+                    }
+                    else if (statusCode == -2 && nbrRedirections == 1)
+                    {
+                        statusCode = 500;
+                        return ;
+                    }
                     statusCode = -1;
                     return ;
                 }
             }
         }
-        // if (statusCode == 301)
-        //     return ;
     }
     if (!res && (st.st_mode & S_IRUSR) && (st.st_mode & S_IFDIR) && *relativeErrorPage.begin() == '/')
     {

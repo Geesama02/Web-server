@@ -6,7 +6,7 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/14 17:03:53 by maglagal          #+#    #+#             */
-/*   Updated: 2025/03/12 21:45:04 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/03/13 14:34:56 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,6 +22,7 @@ std::map<std::string, std::string> Response::ContentTypeHeader;
 //constructor
 Response::Response()
 {
+    nbrRedirections=0;
     cgiScript = 0;
     clientFd = -1;
     FileType = 0;
@@ -34,6 +35,9 @@ Response::Response()
     initializeStatusRes();
     file = NULL;
     errorPage = NULL;
+    locationMatch = NULL;
+    errorPage = NULL;
+    file = NULL;
     Headers["Content-Type"] = "text/html";
     Headers["Connection"] = "keep-alive";
     Headers["Server"] = "Webserv";
@@ -73,9 +77,6 @@ void                                Response::setFile(std::ifstream *nFile) { fi
 //other
 void Response::initializeStatusRes()
 {
-    locationMatch = NULL;
-    errorPage = NULL;
-    file = NULL;
     resStatus.insert(std::make_pair(200, "OK"));
     resStatus.insert(std::make_pair(201, "Created"));
     resStatus.insert(std::make_pair(204, "No Content"));
@@ -132,6 +133,7 @@ void    Response::addHeadersToResponse()
 
 void    Response::clearResponse()
 {
+    nbrRedirections = 0;
     cgiScript = 0;
     Headers.clear();
     savedRedirects.clear();
@@ -688,7 +690,7 @@ void Response::fillBody(Config& config, Request& req)
     else
     {
         checkErrorPages(config, req);
-        if (statusCode == -1)
+        if (statusCode < 0)
             return ;
         if (req.getMethod() == "DELETE" && statusCode == 204)
             handleDeleteRequest(config, req);
@@ -719,7 +721,10 @@ void Response::sendResponse(Config& config, Request& req, int fd)
         if (!config.getClients()[fd].getCGI().getChildStatus() && !status)
             return ;
     }
+    
     fillBody(config, req);
+    if (statusCode == -2)
+        return ;
     if (statusCode == -1)
     {
         if (!redirectFlag)
@@ -736,7 +741,6 @@ void Response::sendResponse(Config& config, Request& req, int fd)
     finalRes += "\r\n";
     if (!body.empty())
         finalRes += body;
-
     if (!errStatusCode) {
         send(clientFd, finalRes.c_str(), finalRes.length(), 0);
         if (statusCode == 400 || statusCode >= 500)
