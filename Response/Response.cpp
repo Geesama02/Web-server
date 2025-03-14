@@ -6,7 +6,7 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/14 17:03:53 by maglagal          #+#    #+#             */
-/*   Updated: 2025/03/13 22:18:55 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/03/14 12:41:44 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -389,6 +389,8 @@ void Response::rangeResponse(Config& config, Request& req)
         return ;
     range.replace(i, 1, " ");
     std::string rangeNumber = range.substr(i + 1, range.size() - i);
+    if (rangeNumber.find("-") == std::string::npos)
+        return rangeResponseFail(config, req);
     Parser::replace(rangeNumber, " ", "");
     if (rangeNumber.empty())
     {
@@ -402,6 +404,8 @@ void Response::rangeResponse(Config& config, Request& req)
     else
     {
         rangeNumbers = Request::split(rangeNumber, 0, '-');
+        if (rangeNumbers.size() == 1)
+            rangeNumbers.push_back("");
         rangeStart = rangeNumbers[0];
         rangeEnd = rangeNumbers[1];
         rangeStartNbr = req.strToDecimal(rangeNumbers[0]);
@@ -597,7 +601,8 @@ void Response::searchForFile(Config& config, Request& req)
         }
         else if ((st.st_mode & S_IFREG) && (st.st_mode & S_IRUSR))
         {
-            if (req.getHeaders().find("range") != req.getHeaders().end())
+            if (req.getHeaders().find("range") != req.getHeaders().end()
+                && req.getHeaders()["range"].find("bytes=") == 0 && req.getHeaders()["range"].length() > 6)
             {
                 statusCode = 206;
                 filePath = fileName;
