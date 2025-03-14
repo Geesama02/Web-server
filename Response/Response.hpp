@@ -6,7 +6,7 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/14 16:55:34 by maglagal          #+#    #+#             */
-/*   Updated: 2025/03/13 15:41:04 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/03/13 21:24:12 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,8 +30,6 @@
 #include <iomanip>
 #include <ftw.h>
 
-// #include "../Request/Request.hpp"
-// #include "../Config/Config.hpp"
 #include "../Cgi/Cgi.hpp"
 
 class Config;
@@ -117,7 +115,7 @@ class Response {
         void                checkErrorPages(Config& config, Request& req);
         void                searchLocationsForMatch(Config& config, Request& req);
         void                listDirectories(Request& req, std::string dirName);
-        void                showIndexFile(Config& config, std::string indexFilePath, Request& req);
+        void                showIndexFile(std::string indexFilePath, Request& req);
         int                 comparingReqWithLocation(std::string locationPath, std::string reqPath);
         void                verifyDirectorySlash(std::string fileName, Request& req);
         void                generateRes(Config& config);

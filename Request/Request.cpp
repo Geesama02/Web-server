@@ -6,7 +6,7 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/30 12:07:04 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/03/09 19:19:37 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/03/13 21:20:11 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -98,13 +98,9 @@ int Request::checkMethod(std::string str) {
 int Request::continueReq(std::string& buffer, size_t& stop_p) {
     if (!holder.empty()) {
         buffer = holder + buffer;
-        // std::cout << "holder -> " << holder << std::endl;
         stop_p = buffer.find("\r\n\r\n");
-        // if (stop_p != std::string::npos)
-        //     std::cout << "FOUND\n";
         holder.clear();
     }
-    // std::cout << "bef Buffer -> " << buffer << std::endl;
     if (stop_p == std::string::npos) {
         size_t last_pos = buffer.rfind("\r\n");
         if (last_pos == std::string::npos) {
@@ -114,7 +110,6 @@ int Request::continueReq(std::string& buffer, size_t& stop_p) {
             buffer.clear();
         }
         else {
-            // std::cout << "last_pos -> " << last_pos << std::endl;
             holder = buffer.substr(last_pos);
             buffer.erase(last_pos + 2);
         }
@@ -146,7 +141,6 @@ int Request::checkValidPath(std::string& path) {
 
 int Request::handleReqLine(std::stringstream& s) {
     std::string line;
-    // std::cout << "state -> " << state << std::endl;
     if (state && std::getline(s, line)) {
         std::vector<std::string> holder;
         holder = split(line, 1, ' ');
@@ -183,27 +177,18 @@ int Request::parse(std::string& buffer, size_t& stop_p) {
         tmp_buff = tmp_buff.erase(stop_p);
     std::stringstream s(tmp_buff);
     std::string line;
-    // std::cout << "out buffer -> " << buffer << std::endl;
-    // std::cout << "out tmp -> " << tmp_buff << std::endl;
-    // if (state && buffer.find("\r\n") == std::string::npos)
-    //     return (2);
     int retValue = handleReqLine(s);
     if (retValue != 0)
         return (retValue);
-    // std::cout << "after retValue" << std::endl;
     while (std::getline(s, line)) {
         if (line == "\r")
             continue;
-        // std::cout << "INSIIIDE---------------------------\n";
         headersLength += line.size();
         std::vector<std::string> holder = split(line, 0, ':');
-        // std::cout << "line -> " << line << std::endl;
-        // std::cout << "size -> " << holder.size() << std::endl;
         if (holder.size() != 2 || line.size() >= 8192 || headersLength > 32768)
             return (400);
         Headers[holder[0]] = holder[1];
     }
-    // std::cout << "out line -> " << line<<std::endl;
     if (stop_p == std::string::npos) {
         state = 0;
         return (2);
@@ -478,7 +463,6 @@ int Request::joinPath(Location* location, UploadFile& file) {
         locationPath += '/';
     if (*locationPath.begin() == '/')
         locationPath.erase(0, 1);
-    // std::cout << "Path -> " << locationRoot + locationPath << std::endl;
     file.setPath(locationRoot + locationPath);
     return (0);
 }
@@ -590,20 +574,16 @@ int Request::readHeaders(std::string& str, Server& server, std::vector<Server>& 
         size_t stop_p = str.find("\r\n\r\n");
         if ((status = parse(str, stop_p)) != 0)
             return (status);
-        // std::cout <<  "OUT\n";
         if (Headers.find("host") != Headers.end())
             server = getServer(server, Servers);
-        // std::cout << "stop_p -> " << stop_p << std::endl;
         str = str.substr(stop_p + 4);
         currLocation = getMatchedLocation(path, server);
-        // if (currLocation)
-        //     std::cout << "FOUND LOCATION -> " << currLocation->getURI() << std::endl;
         if ((status = checkAllowedMethods(str, server)) != 0)
             return (status);
         if (Headers.find("host") == Headers.end() || (method == "POST"
             && Headers.find("content-length") != Headers.end()
             && !isNumber(Headers["content-length"])))
-            return (std::cout << "inside bad req\n",400); // Bad Request
+            return (400); // Bad Request
         else if (method == "POST"
             && Headers.find("content-length") != Headers.end() && currLocation
             && strToDecimal(Headers["content-length"]) > currLocation->getClientMaxBodySize()
@@ -660,7 +640,6 @@ int Request::readRequest(int fd, Server& server, std::vector<Server>& Servers) {
     else {
         buff[received] = '\0';
         str.append(buff, received);
-        // std::cout << "received: " << str << std::endl;
         return (readHeaders(str, server, Servers));
     }
     return (0);

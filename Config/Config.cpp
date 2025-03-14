@@ -6,7 +6,7 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/22 11:25:38 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/03/12 17:50:50 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/03/13 21:45:19 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -46,13 +46,15 @@ void    Config::checkCgiScriptExecution()
                         it->second.getCGI().clearCGI();
                         it->second.getResponse().clearResponse();
                         it->second.getResponse().setStatusCode(502);
+                        if (it->second.getRequest().getFileName().length() > 0)
+                            remove(it->second.getRequest().getFileName().c_str());
                         it->second.getResponse().sendResponse(*this, it->second.getRequest(), it->first);
                         return ;
                     }
-                    it->second.getCGI().sendServerResponse(it->first, *this);
-                    it->second.getCGI().clearCGI();
                     if (it->second.getRequest().getFileName().length() > 0)
                         remove(it->second.getRequest().getFileName().c_str());
+                    it->second.getCGI().sendServerResponse(it->first, *this);
+                    it->second.getCGI().clearCGI();
                 }
             }
         }
@@ -72,9 +74,9 @@ void    Config::checkScriptTimeOut()
             it->second.getCGI().clearCGI();
             it->second.getResponse().clearResponse();
             it->second.getResponse().setStatusCode(504);
-            it->second.getResponse().sendResponse(*this, it->second.getRequest(), it->first);
             if (it->second.getRequest().getFileName().length() > 0)
-            remove(it->second.getRequest().getFileName().c_str());
+                remove(it->second.getRequest().getFileName().c_str());
+            it->second.getResponse().sendResponse(*this, it->second.getRequest(), it->first);
         }
         it++;
     }
@@ -145,7 +147,7 @@ int Config::monitorTimeout() {
         {
             epoll_ctl(epoll_fd, EPOLL_CTL_DEL, it->first, NULL);
             close(it->first);
-            std::cout << "get KICKED -> "<<it->first<<std::endl;
+            std::cout << "TIMEOUT CLIENT "<<it->first<<std::endl;
             std::map<int, Client>::iterator tmp = it;
             it++;
             Clients.erase(tmp->first);
@@ -226,15 +228,11 @@ int Config::acceptConnection(int fd, epoll_event& ev)
         ev.data.fd = new_client;
         fcntl(new_client, F_SETFL, O_NONBLOCK);
         Server server = getServer(fd);
-        // Client client;
         server.setSocket(-1);
-        // client.setServer(server);
-        // Clients[new_client] = client;
         Clients[new_client].setServer(server);
         Clients[new_client].setFdClient(new_client);
         Clients[new_client].setTimeout(timeNow());
         Clients[new_client].setClientIP(std::string(clientIP));
-        // std::cout << "client IP " <<Clients[new_client].getClientIP() <<"!!!!"<< std::endl;
         // add client socket to epoll to monitor
         if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, new_client, &ev) != 0) {
             std::cerr << "epoll_ctl error: " << strerror(errno) << std::endl;
@@ -254,7 +252,6 @@ void Config::closeConnection(int fd)
         waitpid(Clients[fd].getCGI().getCpid(), &status, 0);
         Clients[fd].getCGI().clearCGI();
     }
-    std::cout << "closed client : " << fd<<std::endl;
     Clients.erase(fd);
     close(fd);
 }
@@ -303,8 +300,6 @@ int Config::handleClient(int fd) {
     status = Clients[fd].getRequest().readRequest(fd, Clients[fd].getServer(), Servers);
     Clients[fd].getResponse().setStatusCode(status);
     Clients[fd].getResponse().setClientFd(fd);
-    // std::cout << "Requets path -> " << Clients[fd].getRequest().getPath() << std::endl; 
-    std::cout << "request status --> " << status << std::endl;
     if (status == 1) // connection is closed
         closeConnection(fd);
     else if (status == 2) // if file is uploading
@@ -313,7 +308,6 @@ int Config::handleClient(int fd) {
     {
         if (!Clients[fd].getRequest().getPath().empty())
         {
-            // std::cout << "path -> " << request.getPath() << std::endl;
             printLog(fd);
             normalizePath(Clients[fd].getRequest());
         }

@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
+/*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/22 10:25:22 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/03/10 22:00:55 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/03/13 21:22:04 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,14 +15,10 @@
 // Constructor
 Server::Server() {
     socket_fd = -1;
-    // server_name.push_back("Server");
     host = "localhost";
     port = 8080;
     root = "/";
     autoindex = false;
-    // std::vector<int> err;
-    // err.push_back(404);
-    // error_page.insert(std::pair<std::vector<int>, std::string>(err, "/Error_pages/404.html"));
     client_max_body_size = 0;
     index = "index.html";
 }
