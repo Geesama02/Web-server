@@ -435,8 +435,6 @@ int CGI::execute_cgi_script(Config& config, Response& res, int fd, Request req)
         std::cerr << "error creating out file!!" << std::endl;
         return failureHandler(config, fd);
     }
-    std::cout << "file name -> " << outFileName << std::endl;
-    // int fds[2];
     int save_out = dup(1);
     if (save_out == -1)
     {
@@ -449,20 +447,14 @@ int CGI::execute_cgi_script(Config& config, Response& res, int fd, Request req)
         std::cerr << "Error: Dup Failed" << std::endl;
         return (failureHandler(config, fd));
     }
-    // if (pipe(fds) != 0)
-    // { 
-    //     std::cerr << "Error: Pipe Failed" << std::endl;
-    //     return (failureHandler(config, fd));
-    // }
     pid_t c_pid = fork();
     if (c_pid == -1)
-    { //pipes already opened we should close
+    {
         std::cerr << "Error: Fork Failed" << std::endl;
         return (failureHandler(config, fd));
     }
     if (c_pid != 0)
     {
-        std::cout << "pid -> " << c_pid << std::endl;
         startTime = Config::timeNow();
         cPid = c_pid;
     }

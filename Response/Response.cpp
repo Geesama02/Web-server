@@ -6,7 +6,7 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/14 17:03:53 by maglagal          #+#    #+#             */
-/*   Updated: 2025/03/13 16:16:19 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/03/14 12:41:44 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,9 +14,6 @@
 #include "../Config/Config.hpp"
 #include "../Parser/Parser.hpp"
 
-//redirect response just from 304 and above
-
-// std::map<int, std::ifstream *> Response::files;
 std::map<std::string, std::string> Response::ContentTypeHeader;
 
 //constructor
@@ -309,7 +306,6 @@ void    Response::redirectionResponse(Request req, Config& config)
         }
         else
             body = redirectIt->second;
-        std::cout << "location header -> " << locationHeader << std::endl;
     }    
     char contentLengthHeader[150];
     std::sprintf(contentLengthHeader, "%ld", body.length());
@@ -373,6 +369,11 @@ void Response::rangeResponse(Config& config, Request& req)
             return ;
         }
     }
+    std::string rangeStart;
+    std::string rangeEnd;
+    size_t rangeStartNbr;
+    size_t rangeEndNbr;
+    std::vector<std::string> rangeNumbers;
     std::string contentLengthHeader = Headers["Content-Length"];
     size_t length = req.strToDecimal(contentLengthHeader);
     std::string statusCodeStr;
@@ -388,12 +389,28 @@ void Response::rangeResponse(Config& config, Request& req)
         return ;
     range.replace(i, 1, " ");
     std::string rangeNumber = range.substr(i + 1, range.size() - i);
-
-    std::vector<std::string> rangeNumbers = Request::split(rangeNumber, 0, '-');
-    std::string rangeStart = rangeNumbers[0];
-    std::string rangeEnd = rangeNumbers[1];
-    size_t rangeStartNbr = req.strToDecimal(rangeNumbers[0]);
-    size_t rangeEndNbr = req.strToDecimal(rangeNumbers[1]);
+    if (rangeNumber.find("-") == std::string::npos)
+        return rangeResponseFail(config, req);
+    Parser::replace(rangeNumber, " ", "");
+    if (rangeNumber.empty())
+    {
+        rangeStart = "0";
+        rangeEnd = contentLengthHeader;
+        rangeNumbers.push_back(rangeStart);
+        rangeNumbers.push_back(rangeEnd);
+        rangeStartNbr = req.strToDecimal(rangeStart);
+        rangeEndNbr = req.strToDecimal(rangeEnd);
+    }
+    else
+    {
+        rangeNumbers = Request::split(rangeNumber, 0, '-');
+        if (rangeNumbers.size() == 1)
+            rangeNumbers.push_back("");
+        rangeStart = rangeNumbers[0];
+        rangeEnd = rangeNumbers[1];
+        rangeStartNbr = req.strToDecimal(rangeNumbers[0]);
+        rangeEndNbr = req.strToDecimal(rangeNumbers[1]);
+    }
 
     if (((rangeNumbers[0].length() && !Parser::isNumber(rangeNumbers[0])))
         || (rangeNumbers[1].length() && !Parser::isNumber(rangeNumbers[1])))
@@ -412,9 +429,9 @@ void Response::rangeResponse(Config& config, Request& req)
         if (rangeEndNbr > length - 1)
             rangeEndNbr = length;
 
-        if (!isdigit(rangeNumber[0]))
+        if (rangeNumber.length() > 0 && !isdigit(rangeNumber[0]))
             rangeNumber.erase(0, 1);
-        if (!isdigit(rangeNumber[rangeNumber.length() - 1]))
+        if (rangeNumber.length() > 0 && !isdigit(rangeNumber[rangeNumber.length() - 1]))
             rangeNumber.erase(rangeNumber.length() - 1, 1);
             
         makeContentRangeHeader(req, rangeNumbers, rangeNumber,
@@ -531,7 +548,6 @@ void Response::handleCgiScript(Config& config, std::string& fileName)
     config.getClients()[clientFd].getCGI().setPathInfo(pathInfo);
 }
 
-//remove last / bcz /assets/main.py/ is not found for me but its same as /assets/main.py
 void Response::searchForFile(Config& config, Request& req)
 {
     struct stat st;
@@ -559,7 +575,6 @@ void Response::searchForFile(Config& config, Request& req)
     reqResolved = fileName;
     if (!strncmp(req.getPath().c_str(), cgiDir.c_str(), cgiDir.length()))
         return (handleCgiScript(config, fileName));
-    std::cout << "search for -> " << reqResolved << std::endl;
     if (!stat(fileName.c_str(), &st))
     {
         if (st.st_mode & S_IFDIR || (!(st.st_mode & S_IRUSR)))
@@ -586,7 +601,8 @@ void Response::searchForFile(Config& config, Request& req)
         }
         else if ((st.st_mode & S_IFREG) && (st.st_mode & S_IRUSR))
         {
-            if (req.getHeaders().find("range") != req.getHeaders().end())
+            if (req.getHeaders().find("range") != req.getHeaders().end()
+                && req.getHeaders()["range"].find("bytes=") == 0 && req.getHeaders()["range"].length() > 6)
             {
                 statusCode = 206;
                 filePath = fileName;
@@ -620,7 +636,6 @@ int Response::sendBodyBytes(Config& config, int epoll_fd)
     if (file && bytesToSend)
     {
         char buff[8192];
-        // if marouan updates, update timeout of client here
         config.getClients()[clientFd].setTimeout(Config::timeNow());
         if (bytesToSend - bytesSent >= 8192)
             file->read(buff, 8192);
@@ -629,7 +644,6 @@ int Response::sendBodyBytes(Config& config, int epoll_fd)
         bytesSent += file->gcount();
         if (file->eof() || (bytesSent == bytesToSend)) 
         {
-            std::cout <<"client -> " << clientFd<<std::endl;
             if (send(clientFd, buff, file->gcount(), 0) == -1)
             {
                 std::cerr << "Error : Send Fail" << std::endl;
@@ -661,16 +675,10 @@ void Response::handleDeleteRequest(Config& config)
   std::string serverRoot = config.getClients()[clientFd].getServer().getRoot();
   std::string requestedPath;
 
-//   if (serverRoot.length() > 0 && serverRoot.rfind("/") != serverRoot.length() - 1)
-//       requestedPath = serverRoot + "/" + req.getPath();
-//   else
-//       requestedPath = serverRoot + req.getPath();
-    std::cout << reqResolved<< std::endl;
   char requestPath[200];
   std::strcpy(requestPath, reqResolved.c_str());
   if (statusCode == 204)
   {
-    std::cout << "path -> " << requestedPath << std::endl;
       if (rmrf(requestPath) == -1)
       {
           clearResponse();
@@ -727,13 +735,6 @@ void Response::sendResponse(Config& config, Request& req, int fd)
     fillBody(config, req);
     if (statusCode == -1)
         return ;
-    // if (statusCode == -1)
-    // {
-    //     if (!redirectFlag)
-    //         statusCode = errStatusCode;
-    //     send(clientFd, finalRes.c_str(), finalRes.length(), 0);
-    //     return ;
-    // }
     finalRes += statusMssg;
     
     //add headers to final response

@@ -6,7 +6,7 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/03 11:07:50 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/03/09 16:29:26 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/03/13 21:19:53 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -58,7 +58,6 @@ int UploadFile::openFile() {
     filename = path + filename;
     fd = new(std::nothrow) std::ofstream(filename.c_str());
     if (!fd || fd->is_open()) {
-        // std::cout << "file created for " << filename << std::endl;
         return (1);
     }
     else {

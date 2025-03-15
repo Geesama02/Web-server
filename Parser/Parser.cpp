@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Parser.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: oait-laa <oait-laa@student.42.fr>          +#+  +:+       +#+        */
+/*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/21 14:31:56 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/03/07 17:59:14 by oait-laa         ###   ########.fr       */
+/*   Updated: 2025/03/13 21:18:50 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -214,7 +214,6 @@ int Parser::setPortVar(std::vector<std::string>& holder, Server& tmp_server, siz
     if (index < holder.size() && *holder[index].rbegin() == ';') {
         holder[index].erase(holder[index].end() - 1);
         if (!isNumber(holder[index]) || holder[index].empty() || !isValidValue(holder[index]) || holder[index].size() > 5) {
-            std::cout << "Invalid Port Number!\n";
             return (1);
         }
         tmp_server.setPort(std::atoi(holder[index].c_str()));
@@ -290,7 +289,6 @@ int Parser::setMaxBodyVar(std::vector<std::string>& holder, Location& tmp_locati
 }
 
 int Parser::setRootVar(std::vector<std::string>& holder, Server& tmp_server, size_t& index) {
-    // std::cout << "inside" << std::endl;
     index++;
     if (index < holder.size() && *holder[index].rbegin() == ';') {
         holder[index].erase(holder[index].end() - 1);
@@ -319,7 +317,6 @@ int Parser::setCgiDirVar(std::vector<std::string>& holder, Server& tmp_server, s
 }
 
 int Parser::setRootVar(std::vector<std::string>& holder, Location& tmp_location, size_t& index) {
-    // std::cout << "inside" << std::endl;
     index++;
     if (index < holder.size() && *holder[index].rbegin() == ';') {
         holder[index].erase(holder[index].end() - 1);
