@@ -6,15 +6,13 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/30 12:07:04 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/03/13 21:20:11 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/03/14 13:14:35 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Request.hpp"
-// #include "../Response/Response.hpp"
 #include "../Config/Config.hpp"
 #include "../Parser/Parser.hpp"
-// #include "../Config/Location.hpp"
 
 std::map<int, std::string> Request::reqStatus;
 

@@ -6,7 +6,7 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/14 16:55:34 by maglagal          #+#    #+#             */
-/*   Updated: 2025/03/13 21:24:12 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/03/14 13:13:49 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -105,7 +105,6 @@ class Response {
         static std::string  getDate(time_t *time);
         int                 rmrf(char *path);
         void                handleDeleteRequest(Config& config);
-        void                listingOrIndex(Config&config, Request& req);
         void                fillBody(Config& config, Request& req);
         void                initializeContentHeader();
         void                checkForFileExtension(std::string fileName);

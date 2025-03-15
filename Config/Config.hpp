@@ -6,7 +6,7 @@
 /*   By: maglagal <maglagal@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/21 15:07:06 by oait-laa          #+#    #+#             */
-/*   Updated: 2025/03/09 17:09:02 by maglagal         ###   ########.fr       */
+/*   Updated: 2025/03/14 13:16:09 by maglagal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,7 +18,7 @@
 #include <arpa/inet.h>
 
 #include "../Client/Client.hpp"
-// #include "../Request/Request.hpp"
+
 #define MAX_EVENTS 1024
 
 class Request;
